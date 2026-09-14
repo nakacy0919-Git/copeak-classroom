@@ -507,19 +507,31 @@ function escapeHtml(
 
 // ==========================================
 // Copeakを開く
+// Classroom課題の英文を自動で渡す
 // ==========================================
-function openCopeak(
-  assignment
-) {
+function openCopeak(assignment) {
 
   if (!assignment) {
     return;
   }
 
+  // 教材本文がない場合はCopeakを開かない
+  const lessonText =
+    String(
+      assignment.lesson_text || ''
+    ).trim();
+
+  if (!lessonText) {
+    alert(
+      'この課題には音読教材が登録されていません。先生に確認してください。'
+    );
+    return;
+  }
+
+
   const base =
     assignment.copeak_url ||
-    window.COPEAK_CONFIG
-      .copeakBaseUrl;
+    window.COPEAK_CONFIG.copeakBaseUrl;
 
 
   const url =
@@ -529,29 +541,58 @@ function openCopeak(
     );
 
 
-  // 課題ID
+  // ========================================
+  // Copeak Classroom情報
+  // ========================================
+
   url.searchParams.set(
     'classroom_assignment',
     assignment.id
   );
 
-
-  // Classroom経由
   url.searchParams.set(
     'source',
     'copeak-classroom'
   );
 
-
-  // 結果を返す先
   url.searchParams.set(
     'classroom_origin',
     location.origin
   );
 
 
-  // postMessageで結果を受け取るので
-  // noopenerは付けない
+  // ========================================
+  // Copeakへ教材を渡す
+  // ========================================
+
+  url.searchParams.set(
+    'title',
+    assignment.title ||
+    `Week ${assignment.week_no}`
+  );
+
+  url.searchParams.set(
+    'eng',
+    lessonText
+  );
+
+  url.searchParams.set(
+    'jpn',
+    assignment.lesson_translation ||
+    ''
+  );
+
+  url.searchParams.set(
+    'lang',
+    assignment.lesson_lang ||
+    'en-US'
+  );
+
+
+  // ========================================
+  // Copeakを開く
+  // ========================================
+
   const popup =
     window.open(
       url.toString(),
@@ -566,7 +607,6 @@ function openCopeak(
     );
   }
 }
-
 
 // ==========================================
 // Demo提出
