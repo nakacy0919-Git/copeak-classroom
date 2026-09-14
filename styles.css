@@ -207,3 +207,211 @@ textarea {
 
   padding-top: 4px;
 }
+/* ==========================================
+   Teacher Assignment Management
+========================================== */
+
+.teacher-assignment-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.teacher-assignment-card {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 16px;
+
+  padding: 16px;
+
+  background: #fff;
+
+  border:
+    1px solid var(--stone-200);
+
+  transition:
+    .18s ease;
+}
+
+.teacher-assignment-card:hover {
+  border-color:
+    #a8a29e;
+
+  box-shadow:
+    0 7px 18px
+    rgba(28,25,23,.07);
+}
+
+.teacher-assignment-week {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  min-height: 70px;
+
+  background:
+    var(--stone-100);
+
+  border:
+    1px solid var(--stone-300);
+}
+
+.teacher-assignment-week span {
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing:
+    .12em;
+
+  color:
+    var(--stone-500);
+}
+
+.teacher-assignment-week strong {
+  font:
+    700 26px
+    'Lora',
+    serif;
+}
+
+.teacher-assignment-main {
+  min-width: 0;
+}
+
+.teacher-assignment-heading {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    flex-start;
+
+  gap: 12px;
+}
+
+.teacher-assignment-title {
+  font-weight: 800;
+
+  font-size: 15px;
+}
+
+.teacher-assignment-meta {
+  margin-top: 4px;
+
+  color:
+    var(--muted);
+
+  font-size: 10px;
+}
+
+.teacher-assignment-excerpt {
+  margin-top: 10px;
+
+  padding: 10px 12px;
+
+  background:
+    #faf8f5;
+
+  border-left:
+    3px solid #d6d3d1;
+
+  color:
+    var(--stone-700);
+
+  font-size: 11px;
+
+  line-height: 1.6;
+}
+
+.assignment-publish-badge {
+  flex-shrink: 0;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    .07em;
+
+  border:
+    1px solid;
+}
+
+.assignment-publish-badge.published {
+  color:
+    #047857;
+
+  background:
+    #ecfdf5;
+
+  border-color:
+    #a7f3d0;
+}
+
+.assignment-publish-badge.draft {
+  color:
+    #57534e;
+
+  background:
+    #f5f5f4;
+
+  border-color:
+    #d6d3d1;
+}
+
+.teacher-assignment-actions {
+  display: flex;
+
+  gap: 7px;
+
+  flex-wrap: wrap;
+
+  margin-top: 12px;
+}
+
+.assignment-manager-empty {
+  padding: 22px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  text-align: center;
+
+  background:
+    #faf8f5;
+
+  border:
+    1px dashed
+    #d6d3d1;
+
+  color:
+    var(--stone-500);
+}
+
+@media(max-width:560px) {
+
+  .teacher-assignment-card {
+    grid-template-columns:
+      54px minmax(0,1fr);
+
+    gap: 10px;
+  }
+
+  .teacher-assignment-heading {
+    flex-direction: column;
+  }
+}

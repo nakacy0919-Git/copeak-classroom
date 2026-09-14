@@ -29,6 +29,7 @@ let assignments = [];
 
 let submissions = [];
 
+let editingAssignmentId = null;
 
 $('#signOut').onclick =
   signOut;
@@ -131,6 +132,261 @@ function visibleAssignments() {
     );
 }
 
+// ==========================================
+// ASSIGNMENT MANAGEMENT
+// ==========================================
+
+function nextWeekNumber() {
+
+  if (!assignments.length) {
+    return 1;
+  }
+
+  return Math.max(
+    ...assignments.map(
+      assignment =>
+        Number(
+          assignment.week_no || 0
+        )
+    )
+  ) + 1;
+}
+
+
+function assignmentDateLabel(value) {
+
+  if (!value) {
+    return '—';
+  }
+
+  return localDateValue(
+    new Date(value)
+  );
+}
+
+
+function renderAssignmentManager() {
+
+  const root =
+    $('#assignmentManagementList');
+
+  if (!root) {
+    return;
+  }
+
+
+  if (!assignments.length) {
+
+    root.innerHTML = `
+      <div class="assignment-manager-empty">
+
+        <strong>
+          No assignments yet.
+        </strong>
+
+        <span>
+          New Assignmentから最初の課題を作成してください。
+        </span>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  const sorted =
+    [...assignments]
+      .sort(
+        (a, b) =>
+          Number(a.week_no) -
+          Number(b.week_no)
+      );
+
+
+  root.innerHTML =
+    sorted
+      .map(
+        assignment => {
+
+          const submissionCount =
+            submissions.filter(
+              submission =>
+                submission.assignment_id ===
+                assignment.id
+            ).length;
+
+
+          const published =
+            assignment.is_published !==
+            false;
+
+
+          const lessonText =
+            String(
+              assignment.lesson_text ||
+              ''
+            ).trim();
+
+
+          const excerpt =
+            lessonText
+
+              ? (
+                  lessonText.length > 150
+                    ? `${lessonText.slice(0, 150)}…`
+                    : lessonText
+                )
+
+              : '本文未登録';
+
+
+          return `
+            <article class="teacher-assignment-card">
+
+              <div class="teacher-assignment-week">
+
+                <span>
+                  WEEK
+                </span>
+
+                <strong>
+                  ${assignment.week_no}
+                </strong>
+
+              </div>
+
+
+              <div class="teacher-assignment-main">
+
+                <div class="teacher-assignment-heading">
+
+                  <div>
+
+                    <div class="teacher-assignment-title">
+                      ${esc(assignment.title)}
+                    </div>
+
+                    <div class="teacher-assignment-meta">
+
+                      ${esc(
+                        assignment.category ||
+                        'Reading'
+                      )}
+
+                      ・
+
+                      ${assignmentDateLabel(
+                        assignment.release_at
+                      )}
+
+                      →
+
+                      ${assignmentDateLabel(
+                        assignment.due_at
+                      )}
+
+                      ・
+
+                      ${submissionCount}
+                      submission${submissionCount === 1 ? '' : 's'}
+
+                    </div>
+
+                  </div>
+
+
+                  <span
+                    class="
+                      assignment-publish-badge
+                      ${
+                        published
+                          ? 'published'
+                          : 'draft'
+                      }
+                    ">
+
+                    ${
+                      published
+                        ? 'Published'
+                        : 'Draft'
+                    }
+
+                  </span>
+
+                </div>
+
+
+                <div class="teacher-assignment-excerpt">
+                  ${esc(excerpt)}
+                </div>
+
+
+                <div class="teacher-assignment-actions">
+
+                  <button
+                    class="btn btn-sm btn-light"
+                    data-assignment-action="edit"
+                    data-assignment-id="${assignment.id}">
+
+                    Edit
+
+                  </button>
+
+
+                  <button
+                    class="btn btn-sm btn-light"
+                    data-assignment-action="toggle"
+                    data-assignment-id="${assignment.id}">
+
+                    ${
+                      published
+                        ? 'Unpublish'
+                        : 'Publish'
+                    }
+
+                  </button>
+
+
+                  <button
+                    class="btn btn-sm btn-light"
+                    data-assignment-action="duplicate"
+                    data-assignment-id="${assignment.id}">
+
+                    Duplicate
+
+                  </button>
+
+
+                  <button
+                    class="btn btn-sm btn-danger"
+                    data-assignment-action="delete"
+                    data-assignment-id="${assignment.id}"
+                    ${
+                      submissionCount > 0
+                        ? 'disabled'
+                        : ''
+                    }
+                    title="${
+                      submissionCount > 0
+                        ? '提出済み課題は成績保護のため削除できません'
+                        : 'Delete assignment'
+                    }">
+
+                    Delete
+
+                  </button>
+
+                </div>
+
+              </div>
+
+            </article>
+          `;
+        }
+      )
+      .join('');
+}
 
 // ==========================================
 // SUMMARY
@@ -458,6 +714,7 @@ function render() {
 
   renderTable();
 
+  renderAssignmentManager();
 
   $('#classTitle').textContent =
     selectedClass?.name ||
@@ -652,56 +909,66 @@ async function createFirstClass() {
 // NEW ASSIGNMENT FORM
 // ==========================================
 
-function openAssignmentEditor() {
+function openAssignmentEditor(
+  assignment = null
+) {
 
-  const nextWeek =
-    assignments.length
-
-      ? Math.max(
-          ...assignments.map(
-            assignment =>
-              Number(
-                assignment.week_no ||
-                0
-              )
-          )
-        ) + 1
-
-      : 1;
+  editingAssignmentId =
+    assignment?.id ||
+    null;
 
 
   const release =
-    new Date();
+    assignment
+
+      ? new Date(
+          assignment.release_at
+        )
+
+      : new Date();
 
 
   const due =
-    addDays(
-      release,
-      6
-    );
+    assignment
+
+      ? new Date(
+          assignment.due_at
+        )
+
+      : addDays(
+          release,
+          6
+        );
 
 
   $('#assignmentWeek').value =
-    nextWeek;
+    assignment
+      ? assignment.week_no
+      : nextWeekNumber();
 
 
   $('#assignmentCategory').value =
+    assignment?.category ||
     'Reading';
 
 
   $('#assignmentTitle').value =
+    assignment?.title ||
     '';
 
 
   $('#assignmentText').value =
+    assignment?.lesson_text ||
     '';
 
 
   $('#assignmentTranslation').value =
+    assignment?.lesson_translation ||
     '';
 
 
   $('#assignmentLang').value =
+    assignment?.lesson_lang ||
     'en-US';
 
 
@@ -718,11 +985,19 @@ function openAssignmentEditor() {
 
 
   $('#assignmentPublished').checked =
-    true;
+    assignment
+      ? assignment.is_published !== false
+      : true;
 
 
   $('#assignmentMsg').textContent =
     '';
+
+
+  $('#publishAssignment').textContent =
+    editingAssignmentId
+      ? 'Save Changes'
+      : 'Publish Assignment';
 
 
   $('#assignmentEditor')
@@ -737,6 +1012,13 @@ function openAssignmentEditor() {
     .add(
       'hidden'
     );
+
+
+  $('#assignmentEditor')
+    .scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
 
 
   setTimeout(
@@ -746,16 +1028,19 @@ function openAssignmentEditor() {
         .focus();
 
     },
-    100
+    150
   );
 }
-
 
 // ==========================================
 // CLOSE EDITOR
 // ==========================================
 
 function closeAssignmentEditor() {
+
+  editingAssignmentId =
+    null;
+
 
   $('#assignmentEditor')
     .classList
@@ -769,8 +1054,15 @@ function closeAssignmentEditor() {
     .remove(
       'hidden'
     );
-}
 
+
+  $('#publishAssignment').textContent =
+    'Publish Assignment';
+
+
+  $('#assignmentMsg').textContent =
+    '';
+}
 
 // ==========================================
 // RELEASE DATE → DUE +6
@@ -815,26 +1107,21 @@ function updateDueDate() {
 // CREATE ASSIGNMENT
 // ==========================================
 
-async function createAssignment() {
+async function saveAssignment() {
 
-  if (
-    !selectedClass
-  ) {
-
+  if (!selectedClass) {
     return;
   }
 
 
   const week =
     Number(
-      $('#assignmentWeek')
-        .value
+      $('#assignmentWeek').value
     );
 
 
   const category =
-    $('#assignmentCategory')
-      .value;
+    $('#assignmentCategory').value;
 
 
   const title =
@@ -856,23 +1143,19 @@ async function createAssignment() {
 
 
   const language =
-    $('#assignmentLang')
-      .value;
+    $('#assignmentLang').value;
 
 
   const releaseValue =
-    $('#assignmentRelease')
-      .value;
+    $('#assignmentRelease').value;
 
 
   const dueValue =
-    $('#assignmentDue')
-      .value;
+    $('#assignmentDue').value;
 
 
   const published =
-    $('#assignmentPublished')
-      .checked;
+    $('#assignmentPublished').checked;
 
 
   const msg =
@@ -883,10 +1166,7 @@ async function createAssignment() {
     '#b91c1c';
 
 
-  if (
-    !week ||
-    week < 1
-  ) {
+  if (!week || week < 1) {
 
     msg.textContent =
       'Weekを入力してください。';
@@ -895,9 +1175,7 @@ async function createAssignment() {
   }
 
 
-  if (
-    !title
-  ) {
+  if (!title) {
 
     msg.textContent =
       'Titleを入力してください。';
@@ -906,9 +1184,7 @@ async function createAssignment() {
   }
 
 
-  if (
-    !lessonText
-  ) {
+  if (!lessonText) {
 
     msg.textContent =
       '音読するEnglish Textを入力してください。';
@@ -941,15 +1217,47 @@ async function createAssignment() {
     );
 
 
-  if (
-    due <
-    release
-  ) {
+  if (due < release) {
 
     msg.textContent =
       'Due DateはRelease Date以降にしてください。';
 
     return;
+  }
+
+
+  const isEditing =
+    Boolean(
+      editingAssignmentId
+    );
+
+
+  if (isEditing) {
+
+    const submissionCount =
+      submissions.filter(
+        submission =>
+          submission.assignment_id ===
+          editingAssignmentId
+      ).length;
+
+
+    if (
+      submissionCount > 0
+    ) {
+
+      const proceed =
+        confirm(
+          `この課題にはすでに${submissionCount}件の提出があります。\n\n` +
+          `教材内容を変更すると、過去の提出時の教材と内容が異なる可能性があります。\n\n` +
+          `変更を続けますか？`
+        );
+
+
+      if (!proceed) {
+        return;
+      }
+    }
   }
 
 
@@ -965,57 +1273,101 @@ async function createAssignment() {
     'Saving...';
 
 
+  const row = {
+
+    title,
+
+    category,
+
+    week_no:
+      week,
+
+    release_at:
+      release.toISOString(),
+
+    due_at:
+      due.toISOString(),
+
+    is_published:
+      published,
+
+    lesson_text:
+      lessonText,
+
+    lesson_translation:
+      translation ||
+      null,
+
+    lesson_lang:
+      language
+  };
+
+
   try {
 
-    const {
-      error
-    } =
-      await getClient()
-        .from(
-          'assignments'
-        )
-        .insert({
+    const sb =
+      getClient();
 
-          class_id:
-            selectedClass.id,
 
-          title,
-
-          category,
-
-          week_no:
-            week,
-
-          release_at:
-            release
-              .toISOString(),
-
-          due_at:
-            due
-              .toISOString(),
-
-          is_published:
-            published,
-
-          copeak_url:
-            null,
-
-          lesson_text:
-            lessonText,
-
-          lesson_translation:
-            translation ||
-            null,
-
-          lesson_lang:
-            language
-
-        });
+    let error;
 
 
     if (
-      error
+      isEditing
     ) {
+
+      const result =
+        await sb
+          .from(
+            'assignments'
+          )
+          .update(
+            row
+          )
+          .eq(
+            'id',
+            editingAssignmentId
+          );
+
+
+      error =
+        result.error;
+
+    } else {
+
+      const result =
+        await sb
+          .from(
+            'assignments'
+          )
+          .insert({
+            ...row,
+
+            class_id:
+              selectedClass.id,
+
+            copeak_url:
+              null
+          });
+
+
+      error =
+        result.error;
+    }
+
+
+    if (error) {
+
+      if (
+        error.code ===
+        '23505'
+      ) {
+
+        throw new Error(
+          `Week ${week} はすでに登録されています。`
+        );
+      }
+
 
       throw error;
     }
@@ -1033,11 +1385,15 @@ async function createAssignment() {
 
 
     alert(
-      published
+      isEditing
 
-        ? '課題を公開しました！'
+        ? '課題を更新しました！'
 
-        : '課題をDraftとして保存しました。'
+        : published
+
+          ? '課題を公開しました！'
+
+          : '課題をDraftとして保存しました。'
     );
 
 
@@ -1047,21 +1403,275 @@ async function createAssignment() {
 
     msg.textContent =
       error.message ||
-      String(
-        error
-      );
+      String(error);
+
+
+    button.textContent =
+      isEditing
+        ? 'Save Changes'
+        : 'Publish Assignment';
+
 
   } finally {
 
     button.disabled =
       false;
-
-
-    button.textContent =
-      'Publish Assignment';
   }
 }
 
+// ==========================================
+// EDIT
+// ==========================================
+
+function editAssignment(
+  assignment
+) {
+
+  openAssignmentEditor(
+    assignment
+  );
+}
+
+
+// ==========================================
+// PUBLISH / UNPUBLISH
+// ==========================================
+
+async function toggleAssignmentPublish(
+  assignment
+) {
+
+  const nextPublished =
+    !assignment.is_published;
+
+
+  if (
+    nextPublished &&
+    !String(
+      assignment.lesson_text ||
+      ''
+    ).trim()
+  ) {
+
+    alert(
+      '本文が登録されていないためPublishできません。'
+    );
+
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await getClient()
+      .from(
+        'assignments'
+      )
+      .update({
+        is_published:
+          nextPublished
+      })
+      .eq(
+        'id',
+        assignment.id
+      );
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  await loadClass(
+    selectedClass.id
+  );
+
+
+  render();
+}
+
+
+// ==========================================
+// DUPLICATE
+// ==========================================
+
+async function duplicateAssignment(
+  assignment
+) {
+
+  const newWeek =
+    nextWeekNumber();
+
+
+  const oldWeek =
+    Number(
+      assignment.week_no ||
+      1
+    );
+
+
+  const weekDifference =
+    Math.max(
+      1,
+      newWeek -
+      oldWeek
+    );
+
+
+  const release =
+    addDays(
+      new Date(
+        assignment.release_at
+      ),
+      weekDifference *
+      7
+    );
+
+
+  const due =
+    addDays(
+      new Date(
+        assignment.due_at
+      ),
+      weekDifference *
+      7
+    );
+
+
+  const {
+    error
+  } =
+    await getClient()
+      .from(
+        'assignments'
+      )
+      .insert({
+
+        class_id:
+          selectedClass.id,
+
+        title:
+          `${assignment.title} (Copy)`,
+
+        category:
+          assignment.category,
+
+        week_no:
+          newWeek,
+
+        release_at:
+          release.toISOString(),
+
+        due_at:
+          due.toISOString(),
+
+        copeak_url:
+          assignment.copeak_url ||
+          null,
+
+        is_published:
+          false,
+
+        lesson_text:
+          assignment.lesson_text,
+
+        lesson_translation:
+          assignment.lesson_translation,
+
+        lesson_lang:
+          assignment.lesson_lang ||
+          'en-US'
+      });
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  await loadClass(
+    selectedClass.id
+  );
+
+
+  render();
+
+
+  alert(
+    `Week ${newWeek} にDraftとして複製しました。`
+  );
+}
+
+
+// ==========================================
+// DELETE
+// ==========================================
+
+async function deleteAssignment(
+  assignment
+) {
+
+  const submissionCount =
+    submissions.filter(
+      submission =>
+        submission.assignment_id ===
+        assignment.id
+    ).length;
+
+
+  if (
+    submissionCount > 0
+  ) {
+
+    alert(
+      `この課題には${submissionCount}件の提出があります。\n` +
+      `成績データ保護のため削除できません。\n\n` +
+      `必要ならUnpublishしてください。`
+    );
+
+    return;
+  }
+
+
+  const ok =
+    confirm(
+      `「${assignment.title}」を削除しますか？\n\n` +
+      `この操作は元に戻せません。`
+    );
+
+
+  if (!ok) {
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await getClient()
+      .from(
+        'assignments'
+      )
+      .delete()
+      .eq(
+        'id',
+        assignment.id
+      );
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  await loadClass(
+    selectedClass.id
+  );
+
+
+  render();
+}
 
 // ==========================================
 // CNN 30
@@ -1315,8 +1925,7 @@ $('#cancelAssignment').onclick =
 
 $('#publishAssignment').onclick =
   () =>
-    createAssignment();
-
+    saveAssignment();
 
 $('#assignmentRelease').onchange =
   updateDueDate;
@@ -1325,6 +1934,95 @@ $('#assignmentRelease').onchange =
 $('#load30').onclick =
   load30;
 
+  $('#assignmentManagementList')
+  ?.addEventListener(
+    'click',
+    async event => {
+
+      const button =
+        event.target.closest(
+          '[data-assignment-action]'
+        );
+
+
+      if (!button) {
+        return;
+      }
+
+
+      const assignment =
+        assignments.find(
+          item =>
+            item.id ===
+            button.dataset.assignmentId
+        );
+
+
+      if (!assignment) {
+        return;
+      }
+
+
+      const action =
+        button.dataset.assignmentAction;
+
+
+      try {
+
+        if (
+          action ===
+          'edit'
+        ) {
+
+          editAssignment(
+            assignment
+          );
+
+        } else if (
+          action ===
+          'toggle'
+        ) {
+
+          await toggleAssignmentPublish(
+            assignment
+          );
+
+        } else if (
+          action ===
+          'duplicate'
+        ) {
+
+          await duplicateAssignment(
+            assignment
+          );
+
+        } else if (
+          action ===
+          'delete'
+        ) {
+
+          await deleteAssignment(
+            assignment
+          );
+        }
+
+
+      } catch (
+        error
+      ) {
+
+        console.error(
+          error
+        );
+
+
+        alert(
+          error.message ||
+          String(error)
+        );
+      }
+    }
+  );
 
 // ==========================================
 // START
