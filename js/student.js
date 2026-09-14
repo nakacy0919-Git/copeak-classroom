@@ -996,6 +996,10 @@ window.addEventListener(
 // ==========================================
 // Class Code参加
 // ==========================================
+// ==========================================
+// Class Join
+// ==========================================
+
 async function joinClass() {
 
   const code =
@@ -1005,7 +1009,52 @@ async function joinClass() {
       .toUpperCase();
 
 
+  const studentNumber =
+    $('#joinStudentNumber')
+      ?.value
+      .trim() ||
+    '';
+
+
+  const pin =
+    $('#joinPin')
+      ?.value
+      .trim() ||
+    '';
+
+
+  const msg =
+    $('#joinMsg');
+
+
+  msg.textContent =
+    '';
+
+
   if (!code) {
+
+    msg.textContent =
+      'Class Codeを入力してください。';
+
+    return;
+  }
+
+
+  // Student No.とPINの片方だけはNG
+  if (
+    (
+      studentNumber &&
+      !pin
+    ) ||
+    (
+      !studentNumber &&
+      pin
+    )
+  ) {
+
+    msg.textContent =
+      'Student No.とJoin PINの両方を入力してください。';
+
     return;
   }
 
@@ -1014,21 +1063,65 @@ async function joinClass() {
     getClient();
 
 
-  const {
-    error
-  } =
-    await sb.rpc(
-      'join_class_by_code',
-      {
-        p_code:
-          code
-      }
-    );
+  let error;
+
+
+  // ========================================
+  // 名簿認証
+  // ========================================
+
+  if (
+    studentNumber &&
+    pin
+  ) {
+
+    const result =
+      await sb.rpc(
+        'join_class_with_roster',
+        {
+
+          p_code:
+            code,
+
+          p_student_number:
+            studentNumber,
+
+          p_pin:
+            pin
+        }
+      );
+
+
+    error =
+      result.error;
+
+  }
+
+  // ========================================
+  // 従来型Class Code
+  // 名簿なしクラスのみ利用可能
+  // ========================================
+
+  else {
+
+    const result =
+      await sb.rpc(
+        'join_class_by_code',
+        {
+          p_code:
+            code
+        }
+      );
+
+
+    error =
+      result.error;
+  }
 
 
   if (error) {
 
-    $('#joinMsg').textContent =
+    msg.textContent =
       error.message;
 
     return;
@@ -1037,7 +1130,6 @@ async function joinClass() {
 
   location.reload();
 }
-
 
 // ==========================================
 // Studentデータ読み込み
