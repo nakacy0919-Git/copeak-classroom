@@ -136,3 +136,74 @@ th:first-child{z-index:5}td:first-child{background:#fff;font-weight:800}
 
 @media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}.auth-card{grid-template-columns:1fr}.auth-intro{padding:30px}.hero{align-items:flex-start;flex-direction:column}.this-week{grid-template-columns:1fr}.assignment{grid-template-columns:58px minmax(0,1fr)}.assignment-score{grid-column:1/-1;text-align:left;display:flex;justify-content:space-between;align-items:center}.assignment-actions{margin:0}.topbar{position:relative;top:0}}
 @media(max-width:560px){.app-shell{padding:10px}.topbar{padding:12px}.brand-sub{display:none}.brand-title{font-size:17px}.grid-4,.grid-2{grid-template-columns:1fr}.section{padding:16px}.auth-form{padding:24px}.auth-intro{padding:28px 24px}.assignment{gap:10px}.top-actions .user-label{display:none}}
+/* ==========================================
+   Assignment Editor
+========================================== */
+
+textarea {
+  font: inherit;
+}
+
+.assignment-editor {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 12px;
+
+  background: #f5f5f4;
+
+  border:
+    1px solid #d6d3d1;
+}
+
+.assignment-textarea {
+  min-height: 180px;
+  resize: vertical;
+  line-height: 1.7;
+}
+
+.assignment-textarea-sm {
+  min-height: 100px;
+}
+
+.publish-check {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 12px;
+
+  border:
+    1px solid #d6d3d1;
+
+  background:
+    #fff;
+}
+
+.publish-check input {
+  width: 20px;
+  height: 20px;
+
+  accent-color:
+    #047857;
+}
+
+.publish-check span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.publish-check small {
+  color:
+    #78716c;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  padding-top: 4px;
+}
