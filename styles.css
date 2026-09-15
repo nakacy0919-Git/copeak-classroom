@@ -969,3 +969,15 @@ textarea {
     width: 100%;
   }
 }
+.app-modal-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.app-modal-error {
+  min-height: 18px;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 600;
+}

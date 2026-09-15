@@ -3,134 +3,17 @@ import {
   getClient
 } from './supabase.js';
 
+import {
+  showConfirmModal,
+  showInfoModal,
+   showFormModal
+} from './ui.js';
 
 const $ =
   selector =>
     document.querySelector(selector);
 
-  function closeAppModal() {
-
-  $('#appModal')
-    ?.classList
-    .add('hidden');
-}
-
-
-function showConfirmModal({
-  badge = 'Confirm',
-  badgeType = 'danger',
-  title = 'Confirm action',
-  message = '',
-  confirmText = 'OK',
-  cancelText = 'Cancel'
-}) {
-
-  return new Promise(resolve => {
-
-    const modal = $('#appModal');
-    const badgeEl = $('#appModalBadge');
-    const titleEl = $('#appModalTitle');
-    const bodyEl = $('#appModalBody');
-    const cancelBtn = $('#appModalCancel');
-    const confirmBtn = $('#appModalConfirm');
-
-    if (
-      !modal ||
-      !badgeEl ||
-      !titleEl ||
-      !bodyEl ||
-      !cancelBtn ||
-      !confirmBtn
-    ) {
-      resolve(window.confirm(message || title));
-      return;
-    }
-
-    badgeEl.textContent = badge;
-    badgeEl.className = `app-modal-badge ${badgeType}`;
-
-    titleEl.textContent = title;
-    bodyEl.textContent = message;
-
-    cancelBtn.textContent = cancelText;
-    confirmBtn.textContent = confirmText;
-
-    modal.classList.remove('hidden');
-
-    const cleanup = () => {
-      cancelBtn.onclick = null;
-      confirmBtn.onclick = null;
-    };
-
-    cancelBtn.onclick = () => {
-      cleanup();
-      closeAppModal();
-      resolve(false);
-    };
-
-    confirmBtn.onclick = () => {
-      cleanup();
-      closeAppModal();
-      resolve(true);
-    };
-  });
-}
-
-
-function showInfoModal({
-  badge = 'Done',
-  badgeType = 'info',
-  title = 'Completed',
-  message = '',
-  confirmText = 'OK'
-}) {
-
-  return new Promise(resolve => {
-
-    const modal = $('#appModal');
-    const badgeEl = $('#appModalBadge');
-    const titleEl = $('#appModalTitle');
-    const bodyEl = $('#appModalBody');
-    const cancelBtn = $('#appModalCancel');
-    const confirmBtn = $('#appModalConfirm');
-
-    if (
-      !modal ||
-      !badgeEl ||
-      !titleEl ||
-      !bodyEl ||
-      !cancelBtn ||
-      !confirmBtn
-    ) {
-      window.alert(message || title);
-      resolve(true);
-      return;
-    }
-
-    badgeEl.textContent = badge;
-    badgeEl.className = `app-modal-badge ${badgeType}`;
-
-    titleEl.textContent = title;
-    bodyEl.textContent = message;
-
-    cancelBtn.classList.add('hidden');
-    confirmBtn.textContent = confirmText;
-
-    modal.classList.remove('hidden');
-
-    const cleanup = () => {
-      cancelBtn.onclick = null;
-      confirmBtn.onclick = null;
-      cancelBtn.classList.remove('hidden');
-    };
-
-    confirmBtn.onclick = () => {
-      cleanup();
-      closeAppModal();
-      resolve(true);
-    };
-  });
-}
+  
 
 let ctx = null;
 
@@ -786,9 +669,22 @@ async function importRoster() {
     await loadRoster();
 
 
-    alert(
-      `${rows.length}名を登録しました。`
-    );
+    await showInfoModal({
+
+  badge:
+    'Imported',
+
+  badgeType:
+    'info',
+
+  title:
+    '生徒を登録しました',
+
+  message:
+    `${rows.length}名の生徒をRosterに追加しました。`
+
+});
+
 
 
   } catch (error) {
@@ -838,20 +734,45 @@ https://cc.pic-speak-story.com`;
       );
 
 
-    alert(
-      `${student.display_name} の参加情報をコピーしました。`
-    );
+    await showInfoModal({
+
+  badge:
+    'Copied',
+
+  badgeType:
+    'info',
+
+  title:
+    'ログイン情報をコピーしました',
+
+  message:
+    `${student.display_name} のログイン情報をクリップボードにコピーしました。`
+
+});
 
 
   } catch {
 
-    prompt(
-      '下記をコピーしてください。',
-      text
-    );
-  }
+  await showInfoModal({
+
+    badge:
+      'Copy Failed',
+
+    badgeType:
+      'danger',
+
+    title:
+      'コピーできませんでした',
+
+    message:
+      `ブラウザがクリップボードへのアクセスを許可していません。
+
+${text}`
+
+  });
 }
 
+}
 
 // ==========================================
 // EDIT STUDENT
@@ -861,52 +782,56 @@ async function editRosterStudent(
   student
 ) {
 
-  const studentNumber =
-    prompt(
-      'Student No.',
-      student.student_number
-    );
+  const values =
+    await showFormModal({
+
+      badge:
+        'Edit Student',
+
+      badgeType:
+        'info',
+
+      title:
+        '生徒情報を編集',
+
+      confirmText:
+        'Save',
+
+      cancelText:
+        'Cancel',
+
+      fields: [
+        {
+          name:
+            'studentNumber',
+
+          label:
+            'Student No.',
+
+          value:
+            student.student_number,
+
+          required:
+            true
+        },
+        {
+          name:
+            'displayName',
+
+          label:
+            'Student Name',
+
+          value:
+            student.display_name,
+
+          required:
+            true
+        }
+      ]
+    });
 
 
-  if (
-    studentNumber === null
-  ) {
-
-    return;
-  }
-
-
-  const displayName =
-    prompt(
-      'Student Name',
-      student.display_name
-    );
-
-
-  if (
-    displayName === null
-  ) {
-
-    return;
-  }
-
-
-  const number =
-    studentNumber.trim();
-
-
-  const name =
-    displayName.trim();
-
-
-  if (
-    !number ||
-    !name
-  ) {
-
-    alert(
-      'Student No.とStudent Nameは必須です。'
-    );
+  if (!values) {
 
     return;
   }
@@ -924,10 +849,10 @@ async function editRosterStudent(
             student.id,
 
           p_student_number:
-            number,
+            values.studentNumber,
 
           p_display_name:
-            name
+            values.displayName
 
         }
       );
@@ -942,11 +867,22 @@ async function editRosterStudent(
   await loadRoster();
 
 
-  alert(
-    '生徒情報を更新しました。'
-  );
-}
+  await showInfoModal({
 
+    badge:
+      'Updated',
+
+    badgeType:
+      'info',
+
+    title:
+      '更新しました',
+
+    message:
+      `${values.displayName} の生徒情報を更新しました。`
+
+  });
+}
 
 // ==========================================
 // REGENERATE PIN
@@ -957,9 +893,32 @@ async function regeneratePin(
 ) {
 
   const ok =
-    confirm(
-      `「${student.display_name}」のJoin PINを再発行しますか？\n\n古いPINは使用できなくなります。`
-    );
+    await showConfirmModal({
+
+      badge:
+        'New PIN',
+
+      badgeType:
+        'danger',
+
+      title:
+        'Join PINを再発行しますか？',
+
+      message:
+        `「${student.display_name}」のJoin PINを再発行します。
+
+古いPINは使用できなくなります。`,
+
+      confirmText:
+        'Generate New PIN',
+
+      cancelText:
+        'Cancel',
+
+      confirmVariant:
+        'danger'
+
+    });
 
 
   if (!ok) {
@@ -1004,11 +963,26 @@ async function regeneratePin(
   await loadRoster();
 
 
-  alert(
-    `${student.display_name} の新しいPINは ${newPin} です。`
-  );
-}
+  await showInfoModal({
 
+    badge:
+      'PIN Updated',
+
+    badgeType:
+      'info',
+
+    title:
+      '新しいJoin PIN',
+
+    message:
+      `${student.display_name}
+
+${newPin}
+
+古いPINは使用できません。`
+
+  });
+}
 
 // ==========================================
 // DELETE
@@ -1158,13 +1132,25 @@ function csvValue(value) {
 // PRINT LOGIN CARDS
 // ==========================================
 
-function printLoginCards() {
+async function printLoginCards() {
 
   if (!roster.length) {
 
-    alert(
-      '名簿がありません。'
-    );
+    await showInfoModal({
+
+  badge:
+    'Roster',
+
+  badgeType:
+    'info',
+
+  title:
+    '名簿がありません',
+
+  message:
+    '先に生徒をRosterへ登録してください。'
+
+});
 
     return;
   }
@@ -1234,9 +1220,21 @@ function printLoginCards() {
 
   if (!printWindow) {
 
-    alert(
-      '印刷画面を開けませんでした。ポップアップを許可してください。'
-    );
+    await showInfoModal({
+
+  badge:
+    'Print',
+
+  badgeType:
+    'danger',
+
+  title:
+    '印刷画面を開けませんでした',
+
+  message:
+    'ブラウザのポップアップを許可してから、もう一度Print Login Cardsを押してください。'
+
+});
 
     return;
   }
@@ -1376,13 +1374,25 @@ window.onload = () => {
   printWindow.document.close();
 }
 
-function exportRosterCsv() {
+async function exportRosterCsv() {
 
   if (!roster.length) {
 
-    alert(
-      '名簿がありません。'
-    );
+    await showInfoModal({
+
+  badge:
+    'Export',
+
+  badgeType:
+    'info',
+
+  title:
+    'Exportするデータがありません',
+
+  message:
+    '先に生徒をRosterへ登録してください。'
+
+});
 
     return;
   }
@@ -1578,10 +1588,22 @@ async function handleRosterAction(
     );
 
 
-    alert(
-      error.message ||
-      String(error)
-    );
+    await showInfoModal({
+
+  badge:
+    'Error',
+
+  badgeType:
+    'danger',
+
+  title:
+    '処理を完了できませんでした',
+
+  message:
+    error.message ||
+    String(error)
+
+});
   }
 }
 
@@ -1751,7 +1773,7 @@ async function loadTeacherClass() {
 
 })()
 .catch(
-  error => {
+  async error => {
 
     console.error(
       '[Roster]',
@@ -1759,11 +1781,21 @@ async function loadTeacherClass() {
     );
 
 
-    alert(
-      `名簿の読み込みに失敗しました: ${
+    await showInfoModal({
+
+      badge:
+        'Error',
+
+      badgeType:
+        'danger',
+
+      title:
+        '名簿を読み込めませんでした',
+
+      message:
         error.message ||
-        error
-      }`
-    );
+        String(error)
+
+    });
   }
 );
