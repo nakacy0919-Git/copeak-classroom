@@ -179,7 +179,7 @@ function setupRosterToolbar() {
 
   exportButton.onclick =
     exportRosterCsv;
-}
+
 
   // -----------------------------------------
   // CLEAR ROSTER
@@ -214,6 +214,7 @@ function setupRosterToolbar() {
 
   clearButton.onclick =
     clearEntireRoster;
+}
 
 // ==========================================
 // RENDER
