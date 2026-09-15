@@ -1259,15 +1259,15 @@ async function saveAssignment() {
 
 
   const release =
-    new Date(
-      `${releaseValue}T00:00:00`
-    );
+  new Date(
+    `${releaseValue}T00:00:00+09:00`
+  );
 
 
-  const due =
-    new Date(
-      `${dueValue}T23:59:00`
-    );
+const due =
+  new Date(
+    `${dueValue}T23:59:00+09:00`
+  );
 
 
   if (due < release) {
@@ -1393,21 +1393,37 @@ async function saveAssignment() {
     ) {
 
       const result =
-        await sb
-          .from(
-            'assignments'
-          )
-          .update(
-            row
-          )
-          .eq(
-            'id',
-            editingAssignmentId
-          );
+  await sb
+    .from(
+      'assignments'
+    )
+    .update(
+      row
+    )
+    .eq(
+      'id',
+      editingAssignmentId
+    )
+    .select(
+      'id, release_at, due_at'
+    )
+    .single();
 
 
-      error =
-        result.error;
+error =
+  result.error;
+
+
+if (
+  !error &&
+  !result.data
+) {
+
+  error =
+    new Error(
+      'Assignment was not updated.'
+    );
+}
 
     } else {
 
