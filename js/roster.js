@@ -181,6 +181,40 @@ function setupRosterToolbar() {
     exportRosterCsv;
 }
 
+  // -----------------------------------------
+  // CLEAR ROSTER
+  // -----------------------------------------
+
+  const clearButton =
+    document.createElement(
+      'button'
+    );
+
+
+  clearButton.id =
+    'clearRoster';
+
+
+  clearButton.className =
+    'btn btn-danger';
+
+
+  clearButton.textContent =
+    'Clear Roster';
+
+
+  clearButton.disabled =
+    roster.length === 0;
+
+
+  wrapper.appendChild(
+    clearButton
+  );
+
+
+  clearButton.onclick =
+    clearEntireRoster;
+
 // ==========================================
 // RENDER
 // ==========================================
@@ -190,6 +224,15 @@ function renderRoster() {
   const total =
     roster.length;
 
+    const clearButton =
+    $('#clearRoster');
+
+
+  if (clearButton) {
+
+    clearButton.disabled =
+      total === 0;
+  }
 
   const joined =
     roster.filter(
@@ -1111,6 +1154,223 @@ async function deleteRosterStudent(
         'OK'
 
     });
+  }
+}
+
+// ==========================================
+// CLEAR ENTIRE ROSTER
+// ==========================================
+
+async function clearEntireRoster() {
+
+  if (
+    !activeClass ||
+    !roster.length
+  ) {
+
+    await showInfoModal({
+
+      badge:
+        'Roster',
+
+      badgeType:
+        'info',
+
+      title:
+        '削除する生徒がいません',
+
+      message:
+        'Rosterはすでに空です。'
+
+    });
+
+    return;
+  }
+
+
+  const total =
+    roster.length;
+
+
+  const joined =
+    roster.filter(
+      student =>
+        Boolean(
+          student.linked_student_id
+        )
+    ).length;
+
+
+  const waiting =
+    total -
+    joined;
+
+
+  const message =
+    joined > 0
+
+      ? `「${activeClass.name}」のRosterを全員削除します。
+
+Registered: ${total}名
+Joined: ${joined}名
+Waiting: ${waiting}名
+
+Joined済みの生徒については、
+・このクラスへの参加情報
+・このクラスの提出データ
+・Roster登録
+
+も削除されます。
+
+生徒のアカウント自体は削除されません。
+
+この操作は元に戻せません。`
+
+      : `「${activeClass.name}」のRosterを全員削除します。
+
+Registered: ${total}名
+Waiting: ${waiting}名
+
+現在のRoster登録をすべて削除します。
+
+この操作は元に戻せません。`;
+
+
+  const ok =
+    await showConfirmModal({
+
+      badge:
+        'Clear Roster',
+
+      badgeType:
+        'danger',
+
+      title:
+        `${total}名を一括削除しますか？`,
+
+      message,
+
+      confirmText:
+        'Delete All Students',
+
+      cancelText:
+        'Cancel',
+
+      confirmVariant:
+        'danger'
+
+    });
+
+
+  if (!ok) {
+
+    return;
+  }
+
+
+  const button =
+    $('#clearRoster');
+
+
+  if (button) {
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      'Deleting...';
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await getClient()
+        .rpc(
+          'teacher_clear_class_roster',
+          {
+
+            p_class_id:
+              activeClass.id
+
+          }
+        );
+
+
+    if (error) {
+
+      throw error;
+    }
+
+
+    await loadRoster();
+
+
+    const result =
+      data || {};
+
+
+    await showInfoModal({
+
+      badge:
+        'Roster Cleared',
+
+      badgeType:
+        'info',
+
+      title:
+        'Rosterを削除しました',
+
+      message:
+        `${result.roster_count || total}名をRosterから削除しました。
+
+Joined: ${result.joined_count || 0}名
+削除した提出データ: ${result.submission_count || 0}件
+
+生徒アカウント自体は削除されていません。`
+
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      '[Clear Roster]',
+      error
+    );
+
+
+    await showInfoModal({
+
+      badge:
+        'Error',
+
+      badgeType:
+        'danger',
+
+      title:
+        'Rosterを削除できませんでした',
+
+      message:
+        error.message ||
+        String(error)
+
+    });
+
+
+  } finally {
+
+    if (button) {
+
+      button.textContent =
+        'Clear Roster';
+
+      button.disabled =
+        roster.length === 0;
+    }
   }
 }
 
