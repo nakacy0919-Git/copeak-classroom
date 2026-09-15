@@ -19,7 +19,50 @@
 
 </head>
 
+<div id="appModal" class="app-modal hidden">
+  <div class="app-modal-backdrop"></div>
 
+  <div
+    class="app-modal-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="appModalTitle">
+
+    <div class="app-modal-header">
+      <div id="appModalBadge" class="app-modal-badge danger">
+        Confirm
+      </div>
+
+      <h3 id="appModalTitle" class="app-modal-title">
+        Confirm action
+      </h3>
+    </div>
+
+    <div id="appModalBody" class="app-modal-body">
+      Are you sure?
+    </div>
+
+    <div class="app-modal-actions">
+      <button
+        id="appModalCancel"
+        type="button"
+        class="btn btn-light">
+
+        Cancel
+
+      </button>
+
+      <button
+        id="appModalConfirm"
+        type="button"
+        class="btn btn-danger">
+
+        Delete
+
+      </button>
+    </div>
+  </div>
+</div>
 <body>
 
 

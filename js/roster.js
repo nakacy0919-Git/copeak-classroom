@@ -8,6 +8,129 @@ const $ =
   selector =>
     document.querySelector(selector);
 
+  function closeAppModal() {
+
+  $('#appModal')
+    ?.classList
+    .add('hidden');
+}
+
+
+function showConfirmModal({
+  badge = 'Confirm',
+  badgeType = 'danger',
+  title = 'Confirm action',
+  message = '',
+  confirmText = 'OK',
+  cancelText = 'Cancel'
+}) {
+
+  return new Promise(resolve => {
+
+    const modal = $('#appModal');
+    const badgeEl = $('#appModalBadge');
+    const titleEl = $('#appModalTitle');
+    const bodyEl = $('#appModalBody');
+    const cancelBtn = $('#appModalCancel');
+    const confirmBtn = $('#appModalConfirm');
+
+    if (
+      !modal ||
+      !badgeEl ||
+      !titleEl ||
+      !bodyEl ||
+      !cancelBtn ||
+      !confirmBtn
+    ) {
+      resolve(window.confirm(message || title));
+      return;
+    }
+
+    badgeEl.textContent = badge;
+    badgeEl.className = `app-modal-badge ${badgeType}`;
+
+    titleEl.textContent = title;
+    bodyEl.textContent = message;
+
+    cancelBtn.textContent = cancelText;
+    confirmBtn.textContent = confirmText;
+
+    modal.classList.remove('hidden');
+
+    const cleanup = () => {
+      cancelBtn.onclick = null;
+      confirmBtn.onclick = null;
+    };
+
+    cancelBtn.onclick = () => {
+      cleanup();
+      closeAppModal();
+      resolve(false);
+    };
+
+    confirmBtn.onclick = () => {
+      cleanup();
+      closeAppModal();
+      resolve(true);
+    };
+  });
+}
+
+
+function showInfoModal({
+  badge = 'Done',
+  badgeType = 'info',
+  title = 'Completed',
+  message = '',
+  confirmText = 'OK'
+}) {
+
+  return new Promise(resolve => {
+
+    const modal = $('#appModal');
+    const badgeEl = $('#appModalBadge');
+    const titleEl = $('#appModalTitle');
+    const bodyEl = $('#appModalBody');
+    const cancelBtn = $('#appModalCancel');
+    const confirmBtn = $('#appModalConfirm');
+
+    if (
+      !modal ||
+      !badgeEl ||
+      !titleEl ||
+      !bodyEl ||
+      !cancelBtn ||
+      !confirmBtn
+    ) {
+      window.alert(message || title);
+      resolve(true);
+      return;
+    }
+
+    badgeEl.textContent = badge;
+    badgeEl.className = `app-modal-badge ${badgeType}`;
+
+    titleEl.textContent = title;
+    bodyEl.textContent = message;
+
+    cancelBtn.classList.add('hidden');
+    confirmBtn.textContent = confirmText;
+
+    modal.classList.remove('hidden');
+
+    const cleanup = () => {
+      cancelBtn.onclick = null;
+      confirmBtn.onclick = null;
+      cancelBtn.classList.remove('hidden');
+    };
+
+    confirmBtn.onclick = () => {
+      cleanup();
+      closeAppModal();
+      resolve(true);
+    };
+  });
+}
 
 let ctx = null;
 
@@ -918,9 +1041,26 @@ async function deleteRosterStudent(
 
 
   const ok =
-    confirm(
-      message
-    );
+    await showConfirmModal({
+
+      badge:
+        'Delete Student',
+
+      badgeType:
+        'danger',
+
+      title:
+        `${student.display_name} を削除しますか？`,
+
+      message,
+
+      confirmText:
+        'Delete',
+
+      cancelText:
+        'Cancel'
+
+    });
 
 
   if (!ok) {
@@ -937,10 +1077,8 @@ async function deleteRosterStudent(
       .rpc(
         'teacher_delete_roster_student',
         {
-
           p_roster_id:
             student.id
-
         }
       );
 
@@ -955,24 +1093,50 @@ async function deleteRosterStudent(
 
 
   const deletedSubmissions =
-    Number(
-      data || 0
-    );
+    Number(data || 0);
 
 
   if (joined) {
 
-    alert(
-      `${student.display_name} を削除しました。
+    await showInfoModal({
 
-提出データ ${deletedSubmissions}件を削除しました。`
-    );
+      badge:
+        'Deleted',
+
+      badgeType:
+        'info',
+
+      title:
+        '削除が完了しました',
+
+      message:
+        `${student.display_name} を削除しました。\n\n提出データ ${deletedSubmissions} 件を削除しました。`,
+
+      confirmText:
+        'OK'
+
+    });
 
   } else {
 
-    alert(
-      `${student.display_name} を削除しました。`
-    );
+    await showInfoModal({
+
+      badge:
+        'Deleted',
+
+      badgeType:
+        'info',
+
+      title:
+        '削除が完了しました',
+
+      message:
+        `${student.display_name} を削除しました。`,
+
+      confirmText:
+        'OK'
+
+    });
   }
 }
 
