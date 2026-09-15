@@ -12,6 +12,10 @@ import {
   cnnTasks
 } from './data.js';
 
+import {
+  showConfirmModal,
+  showInfoModal
+} from './ui.js';
 
 const $ =
   s => document.querySelector(s);
@@ -808,10 +812,27 @@ async function createFirstClass() {
       .trim();
 
 
-  if (
-    !school ||
-    !name
-  ) {
+  const msg =
+    $('#onboardMsg');
+
+
+  msg.textContent =
+    '';
+
+
+  if (!school) {
+
+    msg.textContent =
+      'Schoolを入力してください。';
+
+    return;
+  }
+
+
+  if (!name) {
+
+    msg.textContent =
+      'Classを入力してください。';
 
     return;
   }
@@ -821,89 +842,121 @@ async function createFirstClass() {
     getClient();
 
 
-  const {
-    data: schoolRow,
-    error: schoolError
-  } =
-    await sb
-      .from(
-        'schools'
-      )
-      .insert({
-        name: school
-      })
-      .select()
-      .single();
+  try {
+
+    /*
+     * 初回Teacherはschool_idを持っていない可能性があるため、
+     * 先にSchoolを作成してプロフィールへ設定する。
+     */
+
+    const {
+      data: schoolRow,
+      error: schoolError
+    } =
+      await sb
+        .from(
+          'schools'
+        )
+        .insert({
+          name: school
+        })
+        .select()
+        .single();
 
 
-  if (
-    schoolError
-  ) {
+    if (schoolError) {
 
-    throw schoolError;
-  }
+      throw schoolError;
+    }
 
 
-  const {
-    error: profileError
-  } =
-    await sb
-      .from(
-        'profiles'
-      )
-      .update({
-        school_id:
-          schoolRow.id
-      })
-      .eq(
-        'id',
-        ctx.user.id
+    const {
+      error: profileError
+    } =
+      await sb
+        .from(
+          'profiles'
+        )
+        .update({
+          school_id:
+            schoolRow.id
+        })
+        .eq(
+          'id',
+          ctx.user.id
+        );
+
+
+    if (profileError) {
+
+      throw profileError;
+    }
+
+
+    const {
+      data: classId,
+      error: classError
+    } =
+      await sb
+        .rpc(
+          'create_teacher_class',
+          {
+
+            p_name:
+              name,
+
+            p_academic_year:
+              new Date()
+                .getFullYear()
+
+          }
+        );
+
+
+    if (classError) {
+
+      throw classError;
+    }
+
+
+    if (classId) {
+
+      localStorage.setItem(
+        'copeak_teacher_class_id',
+        classId
       );
+    }
 
 
-  if (
-    profileError
-  ) {
+    location.reload();
 
-    throw profileError;
+
+  } catch (error) {
+
+    console.error(
+      '[Create First Class]',
+      error
+    );
+
+
+    await showInfoModal({
+
+      badge:
+        'Error',
+
+      badgeType:
+        'danger',
+
+      title:
+        'クラスを作成できませんでした',
+
+      message:
+        error.message ||
+        String(error)
+
+    });
   }
-
-
-  const {
-    error: classError
-  } =
-    await sb
-      .from(
-        'classes'
-      )
-      .insert({
-
-        school_id:
-          schoolRow.id,
-
-        teacher_id:
-          ctx.user.id,
-
-        name,
-
-        academic_year:
-          new Date()
-            .getFullYear()
-
-      });
-
-
-  if (
-    classError
-  ) {
-
-    throw classError;
-  }
-
-
-  location.reload();
 }
-
 
 // ==========================================
 // NEW ASSIGNMENT FORM
@@ -1247,11 +1300,34 @@ async function saveAssignment() {
     ) {
 
       const proceed =
-        confirm(
-          `この課題にはすでに${submissionCount}件の提出があります。\n\n` +
-          `教材内容を変更すると、過去の提出時の教材と内容が異なる可能性があります。\n\n` +
-          `変更を続けますか？`
-        );
+  await showConfirmModal({
+
+    badge:
+      'Edit Assignment',
+
+    badgeType:
+      'danger',
+
+    title:
+      '提出済みの課題を編集しますか？',
+
+    message:
+      `この課題にはすでに${submissionCount}件の提出があります。
+
+教材内容を変更すると、過去の提出時の教材と現在の教材内容が異なる可能性があります。
+
+変更を続けますか？`,
+
+    confirmText:
+      'Continue Editing',
+
+    cancelText:
+      'Cancel',
+
+    confirmVariant:
+      'danger'
+
+  });
 
 
       if (!proceed) {
@@ -1384,17 +1460,33 @@ async function saveAssignment() {
     closeAssignmentEditor();
 
 
-    alert(
-      isEditing
+    await showInfoModal({
 
-        ? '課題を更新しました！'
+  badge:
+    isEditing
+      ? 'Updated'
+      : published
+        ? 'Published'
+        : 'Draft Saved',
 
-        : published
+  badgeType:
+    'info',
 
-          ? '課題を公開しました！'
+  title:
+    isEditing
+      ? '課題を更新しました'
+      : published
+        ? '課題を公開しました'
+        : 'Draftとして保存しました',
 
-          : '課題をDraftとして保存しました。'
-    );
+  message:
+    isEditing
+      ? `「${title}」の変更を保存しました。`
+      : published
+        ? `「${title}」を生徒に公開しました。`
+        : `「${title}」をDraftとして保存しました。`
+
+});
 
 
   } catch (
@@ -1453,9 +1545,21 @@ async function toggleAssignmentPublish(
     ).trim()
   ) {
 
-    alert(
-      '本文が登録されていないためPublishできません。'
-    );
+    await showInfoModal({
+
+      badge:
+        'Cannot Publish',
+
+      badgeType:
+        'danger',
+
+      title:
+        'Publishできません',
+
+      message:
+        'English Textが登録されていません。Editから本文を登録してください。'
+
+    });
 
     return;
   }
@@ -1469,8 +1573,10 @@ async function toggleAssignmentPublish(
         'assignments'
       )
       .update({
+
         is_published:
           nextPublished
+
       })
       .eq(
         'id',
@@ -1479,6 +1585,7 @@ async function toggleAssignmentPublish(
 
 
   if (error) {
+
     throw error;
   }
 
@@ -1490,7 +1597,6 @@ async function toggleAssignmentPublish(
 
   render();
 }
-
 
 // ==========================================
 // DUPLICATE
@@ -1598,9 +1704,23 @@ async function duplicateAssignment(
   render();
 
 
-  alert(
-    `Week ${newWeek} にDraftとして複製しました。`
-  );
+  await showInfoModal({
+
+  badge:
+    'Duplicated',
+
+  badgeType:
+    'info',
+
+  title:
+    '課題を複製しました',
+
+  message:
+    `Week ${newWeek} にDraftとして複製しました。
+
+公開する前に内容と日付を確認してください。`
+
+});
 }
 
 
@@ -1624,24 +1744,61 @@ async function deleteAssignment(
     submissionCount > 0
   ) {
 
-    alert(
-      `この課題には${submissionCount}件の提出があります。\n` +
-      `成績データ保護のため削除できません。\n\n` +
-      `必要ならUnpublishしてください。`
-    );
+    await showInfoModal({
+
+      badge:
+        'Protected',
+
+      badgeType:
+        'danger',
+
+      title:
+        'この課題は削除できません',
+
+      message:
+        `この課題には${submissionCount}件の提出があります。
+
+成績データを保護するため削除できません。
+
+生徒から非表示にしたい場合はUnpublishしてください。`
+
+    });
 
     return;
   }
 
 
   const ok =
-    confirm(
-      `「${assignment.title}」を削除しますか？\n\n` +
-      `この操作は元に戻せません。`
-    );
+    await showConfirmModal({
+
+      badge:
+        'Delete Assignment',
+
+      badgeType:
+        'danger',
+
+      title:
+        '課題を削除しますか？',
+
+      message:
+        `「${assignment.title}」を削除します。
+
+この操作は元に戻せません。`,
+
+      confirmText:
+        'Delete',
+
+      cancelText:
+        'Cancel',
+
+      confirmVariant:
+        'danger'
+
+    });
 
 
   if (!ok) {
+
     return;
   }
 
@@ -1661,6 +1818,7 @@ async function deleteAssignment(
 
 
   if (error) {
+
     throw error;
   }
 
@@ -1671,6 +1829,23 @@ async function deleteAssignment(
 
 
   render();
+
+
+  await showInfoModal({
+
+    badge:
+      'Deleted',
+
+    badgeType:
+      'info',
+
+    title:
+      '課題を削除しました',
+
+    message:
+      `「${assignment.title}」を削除しました。`
+
+  });
 }
 
 // ==========================================
@@ -1680,11 +1855,22 @@ async function deleteAssignment(
 
 async function load30() {
 
-  alert(
-    'CNN 30の本文一括登録は次の工程で実装します。現在は「New Assignment」を使用してください。'
-  );
-}
+  await showInfoModal({
 
+    badge:
+      'Coming Soon',
+
+    badgeType:
+      'info',
+
+    title:
+      'CNN一括登録',
+
+    message:
+      'CNN本文の一括登録機能は現在準備中です。\n\n今は「New Assignment」から課題を作成してください。'
+
+  });
+}
 
 // ==========================================
 // LOAD CLASS
@@ -2034,10 +2220,22 @@ $('#load30').onclick =
         );
 
 
-        alert(
-          error.message ||
-          String(error)
-        );
+        await showInfoModal({
+
+  badge:
+    'Error',
+
+  badgeType:
+    'danger',
+
+  title:
+    '処理を完了できませんでした',
+
+  message:
+    error.message ||
+    String(error)
+
+});
       }
     }
   );
@@ -2135,15 +2333,28 @@ $('#load30').onclick =
 
 })()
 .catch(
-  error => {
+  async error => {
 
     console.error(
       error
     );
 
 
-    alert(
-      error.message
-    );
+    await showInfoModal({
+
+      badge:
+        'Error',
+
+      badgeType:
+        'danger',
+
+      title:
+        'Teacher Dashboardを読み込めませんでした',
+
+      message:
+        error.message ||
+        String(error)
+
+    });
   }
 );
