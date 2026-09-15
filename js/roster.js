@@ -6,9 +6,7 @@ import {
 
 const $ =
   selector =>
-    document.querySelector(
-      selector
-    );
+    document.querySelector(selector);
 
 
 let ctx = null;
@@ -19,92 +17,127 @@ let roster = [];
 
 
 // ==========================================
-// HTML ESCAPE
+// UTIL
 // ==========================================
 
-function esc(
-  value = ''
-) {
+function esc(value = '') {
 
-  return String(
-    value
-  ).replace(
-
+  return String(value).replace(
     /[&<>'"]/g,
-
     char => ({
-
       '&': '&amp;',
-
       '<': '&lt;',
-
       '>': '&gt;',
-
       "'": '&#39;',
-
       '"': '&quot;'
-
     })[char]
-
   );
 }
 
 
-// ==========================================
-// CREATE 6 DIGIT PIN
-// ==========================================
-
 function createPin() {
 
   const array =
-    new Uint32Array(
-      1
-    );
-
+    new Uint32Array(1);
 
   crypto.getRandomValues(
     array
   );
 
-
-  const number =
+  return String(
     100000 +
     (
       array[0] %
       900000
-    );
+    )
+  );
+}
 
 
-  return String(
-    number
+function sortRoster(rows) {
+
+  return [...rows].sort(
+    (a, b) =>
+      String(
+        a.student_number
+      ).localeCompare(
+        String(
+          b.student_number
+        ),
+        undefined,
+        {
+          numeric: true
+        }
+      )
   );
 }
 
 
 // ==========================================
-// SORT ROSTER
+// TOP ACTIONS
 // ==========================================
 
-function sortRoster(
-  rows
-) {
+function setupRosterToolbar() {
 
-  return [...rows]
-    .sort(
-      (a, b) =>
-        String(
-          a.student_number
-        )
-          .localeCompare(
-            String(
-              b.student_number
-            ),
-            undefined,
-            {
-              numeric: true
-            }
-          )
+  const addButton =
+    $('#toggleRosterImport');
+
+
+  if (
+    !addButton ||
+    $('#exportRoster')
+  ) {
+
+    return;
+  }
+
+
+  const wrapper =
+    document.createElement(
+      'div'
     );
+
+
+  wrapper.className =
+    'roster-top-actions';
+
+
+  addButton.parentNode.insertBefore(
+    wrapper,
+    addButton
+  );
+
+
+  wrapper.appendChild(
+    addButton
+  );
+
+
+  const exportButton =
+    document.createElement(
+      'button'
+    );
+
+
+  exportButton.id =
+    'exportRoster';
+
+
+  exportButton.className =
+    'btn btn-light';
+
+
+  exportButton.textContent =
+    'Export CSV';
+
+
+  wrapper.appendChild(
+    exportButton
+  );
+
+
+  exportButton.onclick =
+    exportRosterCsv;
 }
 
 
@@ -127,11 +160,6 @@ function renderRoster() {
     ).length;
 
 
-  const waiting =
-    total -
-    joined;
-
-
   $('#rosterTotal').textContent =
     total;
 
@@ -141,7 +169,7 @@ function renderRoster() {
 
 
   $('#rosterWaiting').textContent =
-    waiting;
+    total - joined;
 
 
   const body =
@@ -162,9 +190,7 @@ function renderRoster() {
         <td colspan="5">
 
           <div class="roster-empty">
-
             まだ名簿が登録されていません。
-
           </div>
 
         </td>
@@ -183,7 +209,7 @@ function renderRoster() {
       .map(
         student => {
 
-          const isJoined =
+          const joined =
             Boolean(
               student.linked_student_id
             );
@@ -231,14 +257,14 @@ function renderRoster() {
                   class="
                     roster-status
                     ${
-                      isJoined
+                      joined
                         ? 'joined'
                         : 'waiting'
                     }
                   ">
 
                   ${
-                    isJoined
+                    joined
                       ? '✓ Joined'
                       : 'Waiting'
                   }
@@ -252,7 +278,6 @@ function renderRoster() {
 
                 <div class="roster-actions">
 
-
                   <button
                     class="btn btn-sm btn-light"
                     data-roster-action="copy"
@@ -264,24 +289,38 @@ function renderRoster() {
 
 
                   <button
+                    class="btn btn-sm btn-light"
+                    data-roster-action="edit"
+                    data-roster-id="${student.id}">
+
+                    Edit
+
+                  </button>
+
+
+                  <button
+                    class="btn btn-sm btn-light"
+                    data-roster-action="pin"
+                    data-roster-id="${student.id}">
+
+                    New PIN
+
+                  </button>
+
+
+                  <button
                     class="btn btn-sm btn-danger"
                     data-roster-action="delete"
                     data-roster-id="${student.id}"
                     ${
-                      isJoined
+                      joined
                         ? 'disabled'
                         : ''
-                    }
-                    title="${
-                      isJoined
-                        ? 'Joined済みの生徒は削除できません'
-                        : 'Delete student'
-                    }">
+                    }>
 
                     Delete
 
                   </button>
-
 
                 </div>
 
@@ -296,7 +335,7 @@ function renderRoster() {
 
 
 // ==========================================
-// LOAD ROSTER
+// LOAD
 // ==========================================
 
 async function loadRoster() {
@@ -315,9 +354,7 @@ async function loadRoster() {
       .from(
         'class_roster'
       )
-      .select(
-        '*'
-      )
+      .select('*')
       .eq(
         'class_id',
         activeClass.id
@@ -331,8 +368,7 @@ async function loadRoster() {
 
 
   roster =
-    data ||
-    [];
+    data || [];
 
 
   renderRoster();
@@ -340,7 +376,7 @@ async function loadRoster() {
 
 
 // ==========================================
-// NEXT AUTO NUMBER
+// IMPORT PARSER
 // ==========================================
 
 function nextAutoNumber() {
@@ -354,48 +390,29 @@ function nextAutoNumber() {
           )
       )
       .filter(
-        number =>
-          Number.isFinite(
-            number
-          )
+        Number.isFinite
       );
 
 
-  if (!numbers.length) {
-
-    return 1;
-  }
-
-
-  return Math.max(
-    ...numbers
-  ) + 1;
+  return numbers.length
+    ? Math.max(...numbers) + 1
+    : 1;
 }
 
 
-// ==========================================
-// PARSE IMPORT TEXT
-// ==========================================
-
-function parseRosterText(
-  text
-) {
+function parseRosterText(text) {
 
   const lines =
     text
-      .split(
-        /\r?\n/
-      )
+      .split(/\r?\n/)
       .map(
         line =>
           line.trim()
       )
-      .filter(
-        Boolean
-      );
+      .filter(Boolean);
 
 
-  const existingNumbers =
+  const existing =
     new Set(
       roster.map(
         student =>
@@ -406,7 +423,7 @@ function parseRosterText(
     );
 
 
-  const usedNumbers =
+  const used =
     new Set();
 
 
@@ -414,8 +431,7 @@ function parseRosterText(
     nextAutoNumber();
 
 
-  const rows =
-    [];
+  const rows = [];
 
 
   for (
@@ -423,85 +439,50 @@ function parseRosterText(
     of lines
   ) {
 
-    let studentNumber =
-      '';
+    let studentNumber = '';
 
-    let displayName =
-      '';
+    let displayName = '';
 
-
-    // ======================================
-    // Excel / Google Sheets
-    // 1<TAB>山田 太郎
-    // ======================================
 
     if (
-      line.includes(
-        '\t'
-      )
+      line.includes('\t')
     ) {
 
       const parts =
-        line.split(
-          '\t'
-        );
+        line.split('\t');
 
 
       studentNumber =
         String(
-          parts.shift() ||
-          ''
+          parts.shift() || ''
         ).trim();
 
 
       displayName =
         parts
-          .join(
-            ' '
-          )
+          .join(' ')
           .trim();
-    }
 
-
-    // ======================================
-    // CSV
-    // 1,山田 太郎
-    // ======================================
-
-    else if (
-      line.includes(
-        ','
-      )
+    } else if (
+      line.includes(',')
     ) {
 
       const parts =
-        line.split(
-          ','
-        );
+        line.split(',');
 
 
       studentNumber =
         String(
-          parts.shift() ||
-          ''
+          parts.shift() || ''
         ).trim();
 
 
       displayName =
         parts
-          .join(
-            ','
-          )
+          .join(',')
           .trim();
-    }
 
-
-    // ======================================
-    // NAME ONLY
-    // 山田 太郎
-    // ======================================
-
-    else {
+    } else {
 
       studentNumber =
         String(
@@ -523,15 +504,11 @@ function parseRosterText(
     }
 
 
-    // ======================================
-    // DUPLICATE NUMBER CHECK
-    // ======================================
-
     if (
-      existingNumbers.has(
+      existing.has(
         studentNumber
       ) ||
-      usedNumbers.has(
+      used.has(
         studentNumber
       )
     ) {
@@ -540,7 +517,7 @@ function parseRosterText(
     }
 
 
-    usedNumbers.add(
+    used.add(
       studentNumber
     );
 
@@ -568,7 +545,7 @@ function parseRosterText(
 
 
 // ==========================================
-// IMPORT STUDENTS
+// IMPORT
 // ==========================================
 
 async function importRoster() {
@@ -581,26 +558,11 @@ async function importRoster() {
     $('#rosterImportMsg');
 
 
-  if (
-    !textarea ||
-    !message
-  ) {
-
-    return;
-  }
-
-
   const text =
-    textarea
-      .value
-      .trim();
+    textarea.value.trim();
 
 
-  message.textContent =
-    '';
-
-  message.style.color =
-    '#b91c1c';
+  message.textContent = '';
 
 
   if (!text) {
@@ -621,7 +583,7 @@ async function importRoster() {
   if (!rows.length) {
 
     message.textContent =
-      '新しく登録できる生徒がありません。出席番号の重複を確認してください。';
+      '新しく登録できる生徒がありません。';
 
     return;
   }
@@ -659,8 +621,7 @@ async function importRoster() {
     }
 
 
-    textarea.value =
-      '';
+    textarea.value = '';
 
 
     $('#rosterImportPanel')
@@ -674,25 +635,16 @@ async function importRoster() {
 
 
     alert(
-      `${rows.length}名を名簿に登録しました！`
+      `${rows.length}名を登録しました。`
     );
 
 
-  } catch (
-    error
-  ) {
-
-    console.error(
-      '[Roster Import]',
-      error
-    );
-
+  } catch (error) {
 
     message.textContent =
       error.message ||
-      String(
-        error
-      );
+      String(error);
+
 
   } finally {
 
@@ -707,7 +659,7 @@ async function importRoster() {
 
 
 // ==========================================
-// COPY JOIN INFORMATION
+// COPY
 // ==========================================
 
 async function copyJoinInfo(
@@ -739,15 +691,7 @@ https://cc.pic-speak-story.com`;
     );
 
 
-  } catch (
-    error
-  ) {
-
-    console.error(
-      '[Clipboard]',
-      error
-    );
-
+  } catch {
 
     prompt(
       '下記をコピーしてください。',
@@ -758,7 +702,164 @@ https://cc.pic-speak-story.com`;
 
 
 // ==========================================
-// DELETE WAITING STUDENT
+// EDIT STUDENT
+// ==========================================
+
+async function editRosterStudent(
+  student
+) {
+
+  const studentNumber =
+    prompt(
+      'Student No.',
+      student.student_number
+    );
+
+
+  if (
+    studentNumber === null
+  ) {
+
+    return;
+  }
+
+
+  const displayName =
+    prompt(
+      'Student Name',
+      student.display_name
+    );
+
+
+  if (
+    displayName === null
+  ) {
+
+    return;
+  }
+
+
+  const number =
+    studentNumber.trim();
+
+
+  const name =
+    displayName.trim();
+
+
+  if (
+    !number ||
+    !name
+  ) {
+
+    alert(
+      'Student No.とStudent Nameは必須です。'
+    );
+
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await getClient()
+      .rpc(
+        'teacher_update_roster_student',
+        {
+
+          p_roster_id:
+            student.id,
+
+          p_student_number:
+            number,
+
+          p_display_name:
+            name
+
+        }
+      );
+
+
+  if (error) {
+
+    throw error;
+  }
+
+
+  await loadRoster();
+
+
+  alert(
+    '生徒情報を更新しました。'
+  );
+}
+
+
+// ==========================================
+// REGENERATE PIN
+// ==========================================
+
+async function regeneratePin(
+  student
+) {
+
+  const ok =
+    confirm(
+      `「${student.display_name}」のJoin PINを再発行しますか？\n\n古いPINは使用できなくなります。`
+    );
+
+
+  if (!ok) {
+
+    return;
+  }
+
+
+  const newPin =
+    createPin();
+
+
+  const {
+    error
+  } =
+    await getClient()
+      .from(
+        'class_roster'
+      )
+      .update({
+
+        join_pin:
+          newPin
+
+      })
+      .eq(
+        'id',
+        student.id
+      )
+      .eq(
+        'class_id',
+        activeClass.id
+      );
+
+
+  if (error) {
+
+    throw error;
+  }
+
+
+  await loadRoster();
+
+
+  alert(
+    `${student.display_name} の新しいPINは ${newPin} です。`
+  );
+}
+
+
+// ==========================================
+// DELETE
 // ==========================================
 
 async function deleteRosterStudent(
@@ -814,7 +915,142 @@ async function deleteRosterStudent(
 
 
 // ==========================================
-// ROSTER ACTIONS
+// CSV EXPORT
+// ==========================================
+
+function csvValue(value) {
+
+  return `"${String(
+    value ?? ''
+  ).replace(
+    /"/g,
+    '""'
+  )}"`;
+}
+
+
+function exportRosterCsv() {
+
+  if (!roster.length) {
+
+    alert(
+      '名簿がありません。'
+    );
+
+    return;
+  }
+
+
+  const header = [
+
+    'Student No.',
+    'Student',
+    'Class Code',
+    'Join PIN',
+    'Status'
+
+  ];
+
+
+  const rows =
+    sortRoster(
+      roster
+    ).map(
+      student => [
+
+        student.student_number,
+
+        student.display_name,
+
+        activeClass.class_code,
+
+        student.join_pin,
+
+        student.linked_student_id
+          ? 'Joined'
+          : 'Waiting'
+
+      ]
+    );
+
+
+  const csv =
+    [
+      header,
+      ...rows
+    ]
+      .map(
+        row =>
+          row
+            .map(csvValue)
+            .join(',')
+      )
+      .join('\r\n');
+
+
+  // Excelで日本語文字化けしにくいUTF-8 BOM
+  const blob =
+    new Blob(
+      [
+        '\uFEFF',
+        csv
+      ],
+      {
+        type:
+          'text/csv;charset=utf-8'
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  const a =
+    document.createElement(
+      'a'
+    );
+
+
+  const safeClassName =
+    String(
+      activeClass.name ||
+      'class'
+    ).replace(
+      /[\\/:*?"<>|]/g,
+      '_'
+    );
+
+
+  a.href =
+    url;
+
+
+  a.download =
+    `${safeClassName}_roster.csv`;
+
+
+  document.body.appendChild(
+    a
+  );
+
+
+  a.click();
+
+
+  a.remove();
+
+
+  URL.revokeObjectURL(
+    url
+  );
+}
+
+
+// ==========================================
+// ACTION
 // ==========================================
 
 async function handleRosterAction(
@@ -847,26 +1083,38 @@ async function handleRosterAction(
   }
 
 
-  const action =
-    button.dataset.rosterAction;
-
-
   try {
 
+    const action =
+      button.dataset.rosterAction;
+
+
     if (
-      action ===
-      'copy'
+      action === 'copy'
     ) {
 
       await copyJoinInfo(
         student
       );
-    }
 
+    } else if (
+      action === 'edit'
+    ) {
 
-    if (
-      action ===
-      'delete'
+      await editRosterStudent(
+        student
+      );
+
+    } else if (
+      action === 'pin'
+    ) {
+
+      await regeneratePin(
+        student
+      );
+
+    } else if (
+      action === 'delete'
     ) {
 
       await deleteRosterStudent(
@@ -875,21 +1123,17 @@ async function handleRosterAction(
     }
 
 
-  } catch (
-    error
-  ) {
+  } catch (error) {
 
     console.error(
-      '[Roster Action]',
+      '[Roster]',
       error
     );
 
 
     alert(
       error.message ||
-      String(
-        error
-      )
+      String(error)
     );
   }
 }
@@ -901,64 +1145,39 @@ async function handleRosterAction(
 
 function bindEvents() {
 
-  const toggle =
-    $('#toggleRosterImport');
+  setupRosterToolbar();
 
 
-  const cancel =
-    $('#cancelRosterImport');
-
-
-  const importButton =
-    $('#importRoster');
-
-
-  const body =
-    $('#rosterBody');
-
-
-  if (
-    toggle
-  ) {
-
-    toggle.onclick =
+  $('#toggleRosterImport')
+    ?.addEventListener(
+      'click',
       () => {
 
         const panel =
           $('#rosterImportPanel');
 
 
-        panel
-          .classList
-          .toggle(
-            'hidden'
-          );
+        panel.classList.toggle(
+          'hidden'
+        );
 
 
         if (
-          !panel
-            .classList
-            .contains(
-              'hidden'
-            )
+          !panel.classList.contains(
+            'hidden'
+          )
         ) {
 
-          setTimeout(
-            () =>
-              $('#rosterPaste')
-                ?.focus(),
-            80
-          );
+          $('#rosterPaste')
+            ?.focus();
         }
-      };
-  }
+      }
+    );
 
 
-  if (
-    cancel
-  ) {
-
-    cancel.onclick =
+  $('#cancelRosterImport')
+    ?.addEventListener(
+      'click',
       () => {
 
         $('#rosterImportPanel')
@@ -969,35 +1188,28 @@ function bindEvents() {
 
 
         $('#rosterImportMsg')
-          .textContent =
-          '';
-      };
-  }
+          .textContent = '';
+      }
+    );
 
 
-  if (
-    importButton
-  ) {
-
-    importButton.onclick =
-      importRoster;
-  }
+  $('#importRoster')
+    ?.addEventListener(
+      'click',
+      importRoster
+    );
 
 
-  if (
-    body
-  ) {
-
-    body.addEventListener(
+  $('#rosterBody')
+    ?.addEventListener(
       'click',
       handleRosterAction
     );
-  }
 }
 
 
 // ==========================================
-// LOAD TEACHER CLASS
+// CLASS
 // ==========================================
 
 async function loadTeacherClass() {
@@ -1023,9 +1235,7 @@ async function loadTeacherClass() {
           ascending: true
         }
       )
-      .limit(
-        1
-      );
+      .limit(1);
 
 
   if (error) {
@@ -1075,7 +1285,6 @@ async function loadTeacherClass() {
 
   await loadRoster();
 
-
 })()
 .catch(
   error => {
@@ -1084,30 +1293,6 @@ async function loadTeacherClass() {
       '[Roster]',
       error
     );
-
-
-    const body =
-      $('#rosterBody');
-
-
-    if (body) {
-
-      body.innerHTML = `
-        <tr>
-
-          <td colspan="5">
-
-            <div class="roster-empty">
-
-              名簿の読み込みに失敗しました。
-
-            </div>
-
-          </td>
-
-        </tr>
-      `;
-    }
 
 
     alert(

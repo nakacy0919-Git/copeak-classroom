@@ -706,3 +706,25 @@ textarea {
   }
 
 }
+/* ==========================================
+   Roster Management Toolbar
+========================================== */
+
+.roster-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media(max-width:700px) {
+
+  .roster-top-actions {
+    width: 100%;
+  }
+
+  .roster-top-actions .btn {
+    flex: 1;
+  }
+
+}
