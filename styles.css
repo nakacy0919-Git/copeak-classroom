@@ -520,11 +520,53 @@ textarea {
 
 .roster-table {
   width: 100%;
+  min-width: 900px;
+  table-layout: fixed;
+}
+
+
+/* No. */
+.roster-table th:nth-child(1),
+.roster-table td:nth-child(1) {
+  width: 7%;
+  min-width: 60px;
+  max-width: 80px;
+  text-align: center;
+}
+
+
+/* Student */
+.roster-table th:nth-child(2),
+.roster-table td:nth-child(2) {
+  width: 32%;
+}
+
+
+/* Join PIN */
+.roster-table th:nth-child(3),
+.roster-table td:nth-child(3) {
+  width: 15%;
+}
+
+
+/* Status */
+.roster-table th:nth-child(4),
+.roster-table td:nth-child(4) {
+  width: 13%;
+}
+
+
+/* Action */
+.roster-table th:nth-child(5),
+.roster-table td:nth-child(5) {
+  width: 33%;
 }
 
 
 .roster-name {
   font-weight: 800;
+  font-size: 14px;
+  letter-spacing: .02em;
 }
 
 
