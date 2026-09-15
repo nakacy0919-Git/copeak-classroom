@@ -838,7 +838,9 @@ async function createFirstClass() {
 
 
   const sb =
-    getClient();
+    getClient(
+  'teacher'
+);
 
 
   try {
@@ -1381,7 +1383,9 @@ const due =
   try {
 
     const sb =
-      getClient();
+      getClient(
+  'teacher'
+);
 
 
     let error;
@@ -1583,7 +1587,9 @@ async function toggleAssignmentPublish(
   const {
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .from(
         'assignments'
       )
@@ -1663,7 +1669,9 @@ async function duplicateAssignment(
   const {
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .from(
         'assignments'
       )
@@ -1821,7 +1829,9 @@ async function deleteAssignment(
   const {
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .from(
         'assignments'
       )
@@ -1880,7 +1890,9 @@ async function loadClass(
 
 
   const sb =
-    getClient();
+    getClient(
+  'teacher'
+);
 
 
   const {
@@ -2007,7 +2019,9 @@ async function loadClass(
 async function loadLive() {
 
   const sb =
-    getClient();
+    getClient(
+  'teacher'
+);
 
 
   const {

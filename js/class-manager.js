@@ -104,7 +104,9 @@ async function loadClasses() {
     data,
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .from('classes')
       .select('*')
       .order('created_at');
@@ -211,7 +213,9 @@ async function createNewClass() {
     data,
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .rpc(
         'create_teacher_class',
         {
@@ -255,7 +259,9 @@ async function loadClassTeachers() {
     data,
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .rpc(
         'get_class_teachers',
         {
@@ -446,7 +452,9 @@ async function addTeacher() {
     const {
       error
     } =
-      await getClient()
+      await getClient(
+  'teacher'
+)
         .rpc(
           'add_class_teacher_by_email',
           {
@@ -517,7 +525,9 @@ async function removeTeacher(
   const {
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .rpc(
         'remove_class_teacher',
         {

@@ -429,7 +429,9 @@ async function loadRoster() {
     data,
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .from(
         'class_roster'
       )
@@ -685,7 +687,9 @@ async function importRoster() {
     const {
       error
     } =
-      await getClient()
+      await getClient(
+  'teacher'
+)
         .from(
           'class_roster'
         )
@@ -884,7 +888,9 @@ async function editRosterStudent(
   const {
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .rpc(
         'teacher_update_roster_student',
         {
@@ -978,7 +984,9 @@ async function regeneratePin(
   const {
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .from(
         'class_roster'
       )
@@ -1091,7 +1099,9 @@ async function deleteRosterStudent(
     data,
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .rpc(
         'teacher_delete_roster_student',
         {
@@ -1289,7 +1299,9 @@ Waiting: ${waiting}名
       data,
       error
     } =
-      await getClient()
+      await getClient(
+  'teacher'
+)
         .rpc(
           'teacher_clear_class_roster',
           {
@@ -1948,7 +1960,9 @@ async function loadTeacherClass() {
     data,
     error
   } =
-    await getClient()
+    await getClient(
+  'teacher'
+)
       .from(
         'classes'
       )

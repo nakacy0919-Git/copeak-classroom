@@ -840,7 +840,9 @@ async function saveCopeakResult(
       data: saved,
       error
     } =
-      await getClient()
+      await getClient(
+  'student'
+)
         .from(
           'submissions'
         )
@@ -1060,7 +1062,9 @@ async function joinClass() {
 
 
   const sb =
-    getClient();
+    getClient(
+  'student'
+);
 
 
   let error;
@@ -1137,7 +1141,9 @@ async function joinClass() {
 async function loadLive() {
 
   const sb =
-    getClient();
+    getClient(
+  'student'
+);
 
 
   // ========================================
