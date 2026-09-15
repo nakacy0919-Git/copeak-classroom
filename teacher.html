@@ -2,17 +2,29 @@
 <html lang="ja">
 
 <head>
+
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
 
-  <title>Teacher | Copeak Classroom</title>
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1">
 
-  <link rel="stylesheet" href="styles.css">
+  <title>
+    Teacher | Copeak Classroom
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="styles.css">
+
 </head>
+
 
 <body>
 
+
 <div class="app-shell">
+
 
   <!-- ======================================
        TOP BAR
@@ -27,6 +39,7 @@
       </div>
 
       <div>
+
         <div class="brand-title">
           Copeak Classroom
         </div>
@@ -34,6 +47,7 @@
         <div class="brand-sub">
           Teacher Dashboard
         </div>
+
       </div>
 
     </div>
@@ -49,7 +63,9 @@
       <button
         id="signOut"
         class="btn btn-sm btn-light">
+
         Sign out
+
       </button>
 
     </div>
@@ -190,7 +206,9 @@
         <div
           id="classCode"
           class="class-code">
+
           ------
+
         </div>
 
         <button
@@ -225,7 +243,9 @@
         <div
           id="studentCount"
           class="metric-value">
+
           0
+
         </div>
 
       </div>
@@ -240,7 +260,9 @@
         <div
           id="assignmentCount"
           class="metric-value blue">
+
           0
+
         </div>
 
       </div>
@@ -255,7 +277,9 @@
         <div
           id="submissionRate"
           class="metric-value emerald">
+
           —
+
         </div>
 
       </div>
@@ -270,7 +294,9 @@
         <div
           id="classAverage"
           class="metric-value amber">
+
           —
+
         </div>
 
       </div>
@@ -280,7 +306,249 @@
 
 
     <!-- ====================================
-         NEW ASSIGNMENT
+         STUDENT ROSTER
+    ===================================== -->
+
+    <section
+      id="rosterSection"
+      class="paper section"
+      style="margin-top:16px">
+
+
+      <div class="panel-title">
+
+        <div>
+
+          <div class="eyebrow">
+            Student Management
+          </div>
+
+          <h2>
+            Class Roster
+          </h2>
+
+        </div>
+
+
+        <button
+          id="toggleRosterImport"
+          class="btn btn-primary">
+
+          ＋ Add Students
+
+        </button>
+
+      </div>
+
+
+
+      <!-- SUMMARY -->
+
+      <div class="roster-summary">
+
+
+        <div>
+
+          <span
+            id="rosterTotal"
+            class="roster-summary-number">
+
+            0
+
+          </span>
+
+          <span>
+            Registered
+          </span>
+
+        </div>
+
+
+
+        <div>
+
+          <span
+            id="rosterJoined"
+            class="roster-summary-number emerald-text">
+
+            0
+
+          </span>
+
+          <span>
+            Joined
+          </span>
+
+        </div>
+
+
+
+        <div>
+
+          <span
+            id="rosterWaiting"
+            class="roster-summary-number amber-text">
+
+            0
+
+          </span>
+
+          <span>
+            Waiting
+          </span>
+
+        </div>
+
+
+      </div>
+
+
+
+      <!-- IMPORT PANEL -->
+
+      <div
+        id="rosterImportPanel"
+        class="roster-import-panel hidden">
+
+
+        <div class="field">
+
+          <label>
+            Paste Student List
+          </label>
+
+          <textarea
+            id="rosterPaste"
+            class="input roster-textarea"
+            placeholder="Excelからそのまま貼り付けできます。
+
+1	山田 太郎
+2	鈴木 花子
+3	田中 美咲"></textarea>
+
+        </div>
+
+
+        <div class="small muted">
+
+          Excelの
+          「出席番号・氏名」
+          2列をコピーして
+          そのまま貼り付けてください。
+
+        </div>
+
+
+        <div class="editor-actions">
+
+          <button
+            id="importRoster"
+            class="btn btn-primary">
+
+            Import Students
+
+          </button>
+
+
+          <button
+            id="cancelRosterImport"
+            class="btn btn-light">
+
+            Cancel
+
+          </button>
+
+        </div>
+
+
+        <div
+          id="rosterImportMsg"
+          class="small">
+        </div>
+
+
+      </div>
+
+
+
+      <!-- ROSTER TABLE -->
+
+      <div
+        class="table-wrap roster-table-wrap">
+
+
+        <table class="roster-table">
+
+
+          <thead>
+
+            <tr>
+
+              <th>
+                No.
+              </th>
+
+              <th>
+                Student
+              </th>
+
+              <th>
+                Join PIN
+              </th>
+
+              <th>
+                Status
+              </th>
+
+              <th>
+                Action
+              </th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody id="rosterBody">
+
+            <tr>
+
+              <td colspan="5">
+
+                <div class="roster-empty">
+                  Loading roster...
+                </div>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+
+        </table>
+
+
+      </div>
+
+
+      <div
+        class="tiny muted"
+        style="margin-top:10px">
+
+        生徒は
+        Class Code + Student No. + Join PIN
+        で本人確認して参加します。
+
+      </div>
+
+
+    </section>
+
+
+
+    <!-- ====================================
+         ASSIGNMENT MANAGER
     ===================================== -->
 
     <section
@@ -341,7 +609,6 @@
           </div>
 
 
-
           <div class="field">
 
             <label>
@@ -375,6 +642,7 @@
             </select>
 
           </div>
+
 
         </div>
 
@@ -442,7 +710,6 @@
           </div>
 
 
-
           <div class="field">
 
             <label>
@@ -455,6 +722,7 @@
               class="input">
 
           </div>
+
 
         </div>
 
@@ -490,7 +758,6 @@
           </div>
 
 
-
           <label class="publish-check">
 
             <input
@@ -511,6 +778,7 @@
             </span>
 
           </label>
+
 
         </div>
 
@@ -543,6 +811,7 @@
           class="small">
         </div>
 
+
       </div>
 
 
@@ -556,16 +825,20 @@
 
       </div>
 
+
+      <!-- ==================================
+           ASSIGNMENT MANAGEMENT LIST
+      =================================== -->
+
+      <div
+        id="assignmentManagementList"
+        class="teacher-assignment-list">
+      </div>
+
+
     </section>
 
-<!-- ====================================
-     ASSIGNMENT MANAGEMENT LIST
-===================================== -->
 
-<div
-  id="assignmentManagementList"
-  class="teacher-assignment-list">
-</div>
 
     <!-- ====================================
          CNN BULK SETUP
@@ -593,6 +866,7 @@
       </div>
 
 
+
       <div class="toolbar">
 
 
@@ -616,10 +890,15 @@
 
 
         <div class="tiny muted">
-          CNN一括登録は次の工程で本文データまで接続します。
+
+          CNN一括登録は次の工程で
+          本文データまで接続します。
+
         </div>
 
+
       </div>
+
 
     </section>
 
@@ -679,28 +958,53 @@
         style="margin-top:10px">
 
         セルはAccuracy。
-        マウスを置くとWPM / Comp.も確認できます。
+        マウスを置くと
+        WPM / Comp.も確認できます。
 
       </div>
 
+
     </section>
+
 
   </main>
 
 
+
+  <!-- ======================================
+       FOOTER
+  ======================================= -->
+
   <div class="footer-note">
+
     Copeak Classroom MVP
+
   </div>
+
 
 </div>
 
 
+
+<!-- ========================================
+     SCRIPTS
+========================================= -->
+
 <script src="js/config.js"></script>
+
 
 <script
   type="module"
   src="js/teacher.js">
 </script>
 
+
+<script
+  type="module"
+  src="js/roster.js">
+</script>
+
+
 </body>
+
 </html>

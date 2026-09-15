@@ -1,1 +1,535 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Student | Copeak Classroom</title><link rel="stylesheet" href="styles.css"></head><body><div class="app-shell"><header class="topbar"><div class="brand"><div class="brand-mark">C</div><div><div class="brand-title">Copeak Classroom</div><div class="brand-sub">Student Dashboard</div></div></div><div class="top-actions"><span class="user-label small" id="userName"></span><button id="signOut" class="btn btn-sm btn-light">Sign out</button></div></header><div id="demoBanner" class="alert info hidden" style="margin-top:14px">Demo mode：TEST Submitを押すと提出済みに変わります。</div><section id="joinPanel" class="onboarding hidden"><div class="paper"><div class="eyebrow">Join a class</div><h2 style="margin:6px 0 8px">先生からClass Codeを受け取ってください</h2><p class="muted">初回だけコードを入力します。参加後は自分の課題・締切・結果が自動表示されます。</p><div class="input-group"><input id="joinCode" class="input" style="text-transform:uppercase;letter-spacing:.15em" placeholder="例：AG32EN"><button id="joinBtn" class="btn btn-primary">Join</button></div><div id="joinMsg" class="small" style="color:#b91c1c;margin-top:8px"></div></div></section><main id="mainApp"><section class="hero paper"><div><div class="eyebrow" id="className">My Class</div><h1>My Reading Roadmap</h1><p class="muted">今週の1課題を着実に。提出すると自動で進捗に反映されます。</p></div><div style="min-width:260px"><div style="display:flex;justify-content:space-between;font-weight:800"><span>Progress</span><span id="progressPct">0%</span></div><div class="progress-track" style="margin:8px 0"><div id="progressBar" class="progress-fill" style="width:0"></div></div><div id="progressText" class="small muted">0 / 30</div></div></section><section class="grid grid-4" style="margin-top:16px"><div class="metric"><div class="metric-label">Completed</div><div id="completedMetric" class="metric-value emerald">0 / 30</div></div><div class="metric"><div class="metric-label">Avg. Accuracy</div><div id="avgAccuracy" class="metric-value emerald">—</div></div><div class="metric"><div class="metric-label">Best WPM</div><div id="bestWpm" class="metric-value blue">—</div></div><div class="metric"><div class="metric-label">Weekly Goal</div><div class="metric-value amber">1</div></div></section><section class="this-week" style="margin-top:16px"><div><div class="eyebrow" id="weekLabel">WEEK</div><h2 id="weekTitle">Loading...</h2><div id="weekMeta" class="muted small" style="margin-top:7px"></div></div><button id="weekStart" class="btn btn-primary" style="padding:13px 18px">Start Copeak →</button></section><section class="paper section" style="margin-top:16px"><div class="panel-title"><div><div class="eyebrow">30-week roadmap</div><h2>Assignments</h2></div></div><div id="assignmentList" class="assignment-list"></div></section></main><div class="footer-note">Copeak Classroom MVP</div></div><script src="js/config.js"></script><script type="module" src="js/student.js"></script></body></html>
+<!doctype html>
+<html lang="ja">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1">
+
+  <title>
+    Student | Copeak Classroom
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="styles.css">
+
+</head>
+
+
+<body>
+
+
+<div class="app-shell">
+
+
+  <!-- ======================================
+       TOP BAR
+  ======================================= -->
+
+  <header class="topbar">
+
+
+    <div class="brand">
+
+      <div class="brand-mark">
+        C
+      </div>
+
+      <div>
+
+        <div class="brand-title">
+          Copeak Classroom
+        </div>
+
+        <div class="brand-sub">
+          Student Dashboard
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="top-actions">
+
+      <span
+        class="user-label small"
+        id="userName">
+      </span>
+
+      <button
+        id="signOut"
+        class="btn btn-sm btn-light">
+
+        Sign out
+
+      </button>
+
+    </div>
+
+
+  </header>
+
+
+
+  <!-- ======================================
+       DEMO
+  ======================================= -->
+
+  <div
+    id="demoBanner"
+    class="alert info hidden"
+    style="margin-top:14px">
+
+    Demo mode：
+    TEST Submitを押すと提出済みに変わります。
+
+  </div>
+
+
+
+  <!-- ======================================
+       JOIN CLASS
+  ======================================= -->
+
+  <section
+    id="joinPanel"
+    class="onboarding hidden">
+
+
+    <div class="paper">
+
+
+      <div class="eyebrow">
+        Join a class
+      </div>
+
+
+      <h2 style="margin:6px 0 8px">
+        クラスに参加
+      </h2>
+
+
+      <p class="muted">
+
+        先生から受け取った
+        Class Code・Student No.・Join PIN
+        を入力してください。
+
+      </p>
+
+
+
+      <div class="form-stack">
+
+
+        <!-- CLASS CODE -->
+
+        <div class="field">
+
+          <label>
+            Class Code
+          </label>
+
+          <input
+            id="joinCode"
+            class="input"
+            style="
+              text-transform:uppercase;
+              letter-spacing:.15em
+            "
+            placeholder="例：108D75">
+
+        </div>
+
+
+
+        <!-- STUDENT NUMBER + PIN -->
+
+        <div class="grid grid-2">
+
+
+          <div class="field">
+
+            <label>
+              Student No.
+            </label>
+
+            <input
+              id="joinStudentNumber"
+              class="input"
+              autocomplete="off"
+              placeholder="例：12">
+
+          </div>
+
+
+
+          <div class="field">
+
+            <label>
+              Join PIN
+            </label>
+
+            <input
+              id="joinPin"
+              class="input"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              autocomplete="off"
+              maxlength="6"
+              placeholder="6-digit PIN">
+
+          </div>
+
+
+        </div>
+
+
+
+        <button
+          id="joinBtn"
+          class="btn btn-primary">
+
+          Join Class
+
+        </button>
+
+
+      </div>
+
+
+
+      <div
+        id="joinMsg"
+        class="small"
+        style="
+          color:#b91c1c;
+          margin-top:8px
+        ">
+      </div>
+
+
+
+      <div
+        class="tiny muted"
+        style="margin-top:12px">
+
+        初回だけ入力します。
+        参加後は自分の課題・締切・結果が
+        自動表示されます。
+
+      </div>
+
+
+    </div>
+
+
+  </section>
+
+
+
+  <!-- ======================================
+       MAIN APP
+  ======================================= -->
+
+  <main id="mainApp">
+
+
+    <!-- ====================================
+         HERO
+    ===================================== -->
+
+    <section class="hero paper">
+
+
+      <div>
+
+        <div
+          class="eyebrow"
+          id="className">
+
+          My Class
+
+        </div>
+
+
+        <h1>
+          My Reading Roadmap
+        </h1>
+
+
+        <p class="muted">
+
+          今週の1課題を着実に。
+          提出すると自動で進捗に反映されます。
+
+        </p>
+
+      </div>
+
+
+
+      <div style="min-width:260px">
+
+
+        <div
+          style="
+            display:flex;
+            justify-content:space-between;
+            font-weight:800
+          ">
+
+          <span>
+            Progress
+          </span>
+
+          <span id="progressPct">
+            0%
+          </span>
+
+        </div>
+
+
+
+        <div
+          class="progress-track"
+          style="margin:8px 0">
+
+          <div
+            id="progressBar"
+            class="progress-fill"
+            style="width:0">
+          </div>
+
+        </div>
+
+
+
+        <div
+          id="progressText"
+          class="small muted">
+
+          0 / 30
+
+        </div>
+
+
+      </div>
+
+
+    </section>
+
+
+
+    <!-- ====================================
+         METRICS
+    ===================================== -->
+
+    <section
+      class="grid grid-4"
+      style="margin-top:16px">
+
+
+      <div class="metric">
+
+        <div class="metric-label">
+          Completed
+        </div>
+
+        <div
+          id="completedMetric"
+          class="metric-value emerald">
+
+          0 / 30
+
+        </div>
+
+      </div>
+
+
+
+      <div class="metric">
+
+        <div class="metric-label">
+          Avg. Accuracy
+        </div>
+
+        <div
+          id="avgAccuracy"
+          class="metric-value emerald">
+
+          —
+
+        </div>
+
+      </div>
+
+
+
+      <div class="metric">
+
+        <div class="metric-label">
+          Best WPM
+        </div>
+
+        <div
+          id="bestWpm"
+          class="metric-value blue">
+
+          —
+
+        </div>
+
+      </div>
+
+
+
+      <div class="metric">
+
+        <div class="metric-label">
+          Weekly Goal
+        </div>
+
+        <div class="metric-value amber">
+
+          1
+
+        </div>
+
+      </div>
+
+
+    </section>
+
+
+
+    <!-- ====================================
+         THIS WEEK
+    ===================================== -->
+
+    <section
+      class="this-week"
+      style="margin-top:16px">
+
+
+      <div>
+
+        <div
+          class="eyebrow"
+          id="weekLabel">
+
+          WEEK
+
+        </div>
+
+
+        <h2 id="weekTitle">
+
+          Loading...
+
+        </h2>
+
+
+        <div
+          id="weekMeta"
+          class="muted small"
+          style="margin-top:7px">
+        </div>
+
+      </div>
+
+
+
+      <button
+        id="weekStart"
+        class="btn btn-primary"
+        style="padding:13px 18px">
+
+        Start Copeak →
+
+      </button>
+
+
+    </section>
+
+
+
+    <!-- ====================================
+         ASSIGNMENTS
+    ===================================== -->
+
+    <section
+      class="paper section"
+      style="margin-top:16px">
+
+
+      <div class="panel-title">
+
+
+        <div>
+
+          <div class="eyebrow">
+            30-week roadmap
+          </div>
+
+          <h2>
+            Assignments
+          </h2>
+
+        </div>
+
+
+      </div>
+
+
+
+      <div
+        id="assignmentList"
+        class="assignment-list">
+      </div>
+
+
+    </section>
+
+
+  </main>
+
+
+
+  <!-- ======================================
+       FOOTER
+  ======================================= -->
+
+  <div class="footer-note">
+
+    Copeak Classroom MVP
+
+  </div>
+
+
+</div>
+
+
+
+<!-- ========================================
+     SCRIPTS
+========================================= -->
+
+<script src="js/config.js"></script>
+
+<script
+  type="module"
+  src="js/student.js">
+</script>
+
+
+</body>
+
+</html>
