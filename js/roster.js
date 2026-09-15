@@ -343,18 +343,13 @@ function renderRoster() {
 
 
                   <button
-                    class="btn btn-sm btn-danger"
-                    data-roster-action="delete"
-                    data-roster-id="${student.id}"
-                    ${
-                      joined
-                        ? 'disabled'
-                        : ''
-                    }>
+  class="btn btn-sm btn-danger"
+  data-roster-action="delete"
+  data-roster-id="${student.id}">
 
-                    Delete
+  Delete
 
-                  </button>
+</button>
 
                 </div>
 
@@ -900,21 +895,31 @@ async function deleteRosterStudent(
   student
 ) {
 
-  if (
-    student.linked_student_id
-  ) {
-
-    alert(
-      'Joined済みの生徒は削除できません。'
+  const joined =
+    Boolean(
+      student.linked_student_id
     );
 
-    return;
-  }
+
+  const message =
+    joined
+      ? `「${student.display_name}」を削除しますか？
+
+この生徒はJoined済みです。
+
+・このクラスから生徒を削除
+・このクラスの提出データを削除
+・Rosterから削除
+
+この操作は元に戻せません。`
+      : `「${student.display_name}」を名簿から削除しますか？
+
+この操作は元に戻せません。`;
 
 
   const ok =
     confirm(
-      `「${student.display_name}」を名簿から削除しますか？`
+      message
     );
 
 
@@ -925,16 +930,18 @@ async function deleteRosterStudent(
 
 
   const {
+    data,
     error
   } =
     await getClient()
-      .from(
-        'class_roster'
-      )
-      .delete()
-      .eq(
-        'id',
-        student.id
+      .rpc(
+        'teacher_delete_roster_student',
+        {
+
+          p_roster_id:
+            student.id
+
+        }
       );
 
 
@@ -945,8 +952,29 @@ async function deleteRosterStudent(
 
 
   await loadRoster();
-}
 
+
+  const deletedSubmissions =
+    Number(
+      data || 0
+    );
+
+
+  if (joined) {
+
+    alert(
+      `${student.display_name} を削除しました。
+
+提出データ ${deletedSubmissions}件を削除しました。`
+    );
+
+  } else {
+
+    alert(
+      `${student.display_name} を削除しました。`
+    );
+  }
+}
 
 // ==========================================
 // CSV EXPORT
