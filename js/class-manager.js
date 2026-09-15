@@ -3,6 +3,12 @@ import {
   getClient
 } from './supabase.js';
 
+import {
+  showConfirmModal,
+  showInfoModal,
+  showFormModal
+} from './ui.js';
+
 
 const $ =
   selector =>
@@ -67,9 +73,29 @@ function moveToClass(classId) {
 }
 
 
+async function showClassManagerError(
+  title,
+  error
+) {
+
+  console.error(
+    '[Class Manager]',
+    error
+  );
+
+  await showInfoModal({
+    badge: 'Error',
+    badgeType: 'danger',
+    title,
+    message:
+      error?.message ||
+      String(error)
+  });
+}
+
+
 // ==========================================
 // LOAD CLASSES
-// RLS returns owner + shared classes
 // ==========================================
 
 async function loadClasses() {
@@ -85,7 +111,6 @@ async function loadClasses() {
 
 
   if (error) {
-
     throw error;
   }
 
@@ -95,7 +120,6 @@ async function loadClasses() {
 
 
   if (!classes.length) {
-
     return;
   }
 
@@ -126,52 +150,58 @@ async function loadClasses() {
 
 async function createNewClass() {
 
-  const name =
-    prompt(
-      '新しいクラス名を入力してください。',
-      ''
-    );
+  const values =
+    await showFormModal({
+      badge: 'New Class',
+      badgeType: 'info',
+      title: '新しいクラスを作成',
+      confirmText: 'Create Class',
+      cancelText: 'Cancel',
+      fields: [
+        {
+          name: 'className',
+          label: 'Class Name',
+          placeholder: '例：3年1組',
+          required: true
+        },
+        {
+          name: 'academicYear',
+          label: 'Academic Year',
+          value: String(
+            new Date().getFullYear()
+          ),
+          required: true
+        }
+      ]
+    });
 
 
-  if (
-    name === null ||
-    !name.trim()
-  ) {
-
-    return;
-  }
-
-
-  const yearText =
-    prompt(
-      '年度を入力してください。',
-      String(
-        new Date().getFullYear()
-      )
-    );
-
-
-  if (
-    yearText === null
-  ) {
-
+  if (!values) {
     return;
   }
 
 
   const academicYear =
-    Number(yearText);
+    Number(
+      values.academicYear
+    );
 
 
   if (
     !Number.isInteger(
       academicYear
-    )
+    ) ||
+    academicYear < 2000 ||
+    academicYear > 2100
   ) {
 
-    alert(
-      '年度を正しく入力してください。'
-    );
+    await showInfoModal({
+      badge: 'Check',
+      badgeType: 'danger',
+      title: '年度を確認してください',
+      message:
+        'Academic Yearは4桁の西暦で入力してください。'
+    });
 
     return;
   }
@@ -185,35 +215,30 @@ async function createNewClass() {
       .rpc(
         'create_teacher_class',
         {
-
           p_name:
-            name.trim(),
+            values.className,
 
           p_academic_year:
             academicYear
-
         }
       );
 
 
   if (error) {
-
     throw error;
   }
 
 
   if (!data) {
-
     throw new Error(
       'クラスを作成できませんでした。'
     );
   }
 
 
-  moveToClass(
-    data
-  );
+  moveToClass(data);
 }
+
 
 // ==========================================
 // LOAD TEACHERS
@@ -222,7 +247,6 @@ async function createNewClass() {
 async function loadClassTeachers() {
 
   if (!activeClass) {
-
     return;
   }
 
@@ -242,7 +266,6 @@ async function loadClassTeachers() {
 
 
   if (error) {
-
     throw error;
   }
 
@@ -264,7 +287,6 @@ function renderTeacherList(rows) {
 
 
   if (!body) {
-
     return;
   }
 
@@ -346,11 +368,23 @@ function renderTeacherList(rows) {
       button => {
 
         button.onclick =
-          () =>
-            removeTeacher(
-              button.dataset
-                .removeTeacher
-            );
+          async () => {
+
+            try {
+
+              await removeTeacher(
+                button.dataset
+                  .removeTeacher
+              );
+
+            } catch (error) {
+
+              await showClassManagerError(
+                '教員を削除できませんでした',
+                error
+              );
+            }
+          };
       }
     );
 }
@@ -367,9 +401,13 @@ async function addTeacher() {
     ctx.user.id
   ) {
 
-    alert(
-      '共同担当教員を追加できるのはClass Ownerだけです。'
-    );
+    await showInfoModal({
+      badge: 'Owner Only',
+      badgeType: 'danger',
+      title: 'Ownerのみ操作できます',
+      message:
+        '共同担当教員を追加できるのはClass Ownerだけです。'
+    });
 
     return;
   }
@@ -383,9 +421,13 @@ async function addTeacher() {
 
   if (!email) {
 
-    alert(
-      'Teacher Emailを入力してください。'
-    );
+    await showInfoModal({
+      badge: 'Check',
+      badgeType: 'danger',
+      title: 'Teacher Emailを入力してください',
+      message:
+        '追加する先生の登録済みメールアドレスを入力してください。'
+    });
 
     return;
   }
@@ -408,19 +450,16 @@ async function addTeacher() {
         .rpc(
           'add_class_teacher_by_email',
           {
-
             p_class_id:
               activeClass.id,
 
             p_email:
               email
-
           }
         );
 
 
     if (error) {
-
       throw error;
     }
 
@@ -432,9 +471,13 @@ async function addTeacher() {
     await loadClassTeachers();
 
 
-    alert(
-      '共同担当教員を追加しました。'
-    );
+    await showInfoModal({
+      badge: 'Added',
+      badgeType: 'info',
+      title: '共同担当教員を追加しました',
+      message:
+        `${email} をこのクラスのCo-Teacherに追加しました。`
+    });
 
 
   } finally {
@@ -454,13 +497,19 @@ async function removeTeacher(
 ) {
 
   const ok =
-    confirm(
-      'この共同担当教員をクラスから外しますか？'
-    );
+    await showConfirmModal({
+      badge: 'Remove Teacher',
+      badgeType: 'danger',
+      title: '共同担当教員を外しますか？',
+      message:
+        'この先生は、このクラスのRoster・Assignments・Gradebookへアクセスできなくなります。',
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      confirmVariant: 'danger'
+    });
 
 
   if (!ok) {
-
     return;
   }
 
@@ -472,24 +521,30 @@ async function removeTeacher(
       .rpc(
         'remove_class_teacher',
         {
-
           p_class_id:
             activeClass.id,
 
           p_teacher_id:
             teacherId
-
         }
       );
 
 
   if (error) {
-
     throw error;
   }
 
 
   await loadClassTeachers();
+
+
+  await showInfoModal({
+    badge: 'Removed',
+    badgeType: 'info',
+    title: '共同担当教員を外しました',
+    message:
+      'このクラスへの共同担当アクセスを解除しました。'
+  });
 }
 
 
@@ -508,7 +563,6 @@ function buildClassManager() {
     !activeClass ||
     $('#classManagerBar')
   ) {
-
     return;
   }
 
@@ -682,18 +736,19 @@ function buildClassManager() {
 
   $('#newClassButton')
     .onclick =
-      () => {
+      async () => {
 
-        createNewClass()
-          .catch(
-            error => {
+        try {
 
-              alert(
-                error.message ||
-                String(error)
-              );
-            }
+          await createNewClass();
+
+        } catch (error) {
+
+          await showClassManagerError(
+            'クラスを作成できませんでした',
+            error
           );
+        }
       };
 
 
@@ -722,9 +777,9 @@ function buildClassManager() {
 
           } catch (error) {
 
-            alert(
-              error.message ||
-              String(error)
+            await showClassManagerError(
+              'Teacher一覧を読み込めませんでした',
+              error
             );
           }
         }
@@ -737,18 +792,19 @@ function buildClassManager() {
 
     $('#addSharedTeacher')
       .onclick =
-        () => {
+        async () => {
 
-          addTeacher()
-            .catch(
-              error => {
+          try {
 
-                alert(
-                  error.message ||
-                  String(error)
-                );
-              }
+            await addTeacher();
+
+          } catch (error) {
+
+            await showClassManagerError(
+              '共同担当教員を追加できませんでした',
+              error
             );
+          }
         };
   }
 }
@@ -770,7 +826,6 @@ function buildClassManager() {
     !ctx ||
     ctx.demo
   ) {
-
     return;
   }
 
@@ -779,7 +834,6 @@ function buildClassManager() {
 
 
   if (!activeClass) {
-
     return;
   }
 
@@ -788,19 +842,11 @@ function buildClassManager() {
 
 })()
 .catch(
-  error => {
+  async error => {
 
-    console.error(
-      '[Class Manager]',
+    await showClassManagerError(
+      'Class Managerを読み込めませんでした',
       error
-    );
-
-
-    alert(
-      `Class Manager Error: ${
-        error.message ||
-        error
-      }`
     );
   }
 );
