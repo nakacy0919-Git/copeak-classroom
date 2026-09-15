@@ -8,8 +8,7 @@ import {
 import {
   demoAssignments,
   demoStudents,
-  demoSubmissions,
-  cnnTasks
+  demoSubmissions  
 } from './data.js';
 
 import {
@@ -1865,30 +1864,6 @@ async function deleteAssignment(
 }
 
 // ==========================================
-// CNN 30
-// 今はタイトルのみなので誤登録を防止
-// ==========================================
-
-async function load30() {
-
-  await showInfoModal({
-
-    badge:
-      'Coming Soon',
-
-    badgeType:
-      'info',
-
-    title:
-      'CNN一括登録',
-
-    message:
-      'CNN本文の一括登録機能は現在準備中です。\n\n今は「New Assignment」から課題を作成してください。'
-
-  });
-}
-
-// ==========================================
 // LOAD CLASS
 // ==========================================
 
@@ -2151,9 +2126,6 @@ $('#assignmentRelease').onchange =
   updateDueDate;
 
 
-$('#load30').onclick =
-  load30;
-
   $('#assignmentManagementList')
   ?.addEventListener(
     'click',
@@ -2281,17 +2253,7 @@ $('#load30').onclick =
       ?.display_name ||
     'Teacher';
 
-
-  const now =
-    new Date();
-
-
-  $('#startDate').value =
-    localDateValue(
-      now
-    );
-
-
+  
   if (
     ctx.demo
   ) {
