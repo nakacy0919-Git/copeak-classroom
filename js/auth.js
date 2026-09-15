@@ -207,7 +207,9 @@ $('#studentForm').onsubmit =
 
 
     const sb =
-      getClient();
+  getClient(
+    'student'
+  );
 
 
     try {
@@ -440,7 +442,9 @@ $('#teacherForm').onsubmit =
 
 
     const sb =
-      getClient();
+  getClient(
+    'teacher'
+  );
 
 
     try {
