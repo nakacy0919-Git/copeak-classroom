@@ -113,6 +113,41 @@ function setupRosterToolbar() {
   );
 
 
+  // -----------------------------------------
+  // PRINT LOGIN CARDS
+  // -----------------------------------------
+
+  const printButton =
+    document.createElement(
+      'button'
+    );
+
+
+  printButton.id =
+    'printRosterCards';
+
+
+  printButton.className =
+    'btn btn-light';
+
+
+  printButton.textContent =
+    'Print Login Cards';
+
+
+  wrapper.appendChild(
+    printButton
+  );
+
+
+  printButton.onclick =
+    printLoginCards;
+
+
+  // -----------------------------------------
+  // EXPORT CSV
+  // -----------------------------------------
+
   const exportButton =
     document.createElement(
       'button'
@@ -139,7 +174,6 @@ function setupRosterToolbar() {
   exportButton.onclick =
     exportRosterCsv;
 }
-
 
 // ==========================================
 // RENDER
@@ -928,6 +962,227 @@ function csvValue(value) {
   )}"`;
 }
 
+// ==========================================
+// PRINT LOGIN CARDS
+// ==========================================
+
+function printLoginCards() {
+
+  if (!roster.length) {
+
+    alert(
+      '名簿がありません。'
+    );
+
+    return;
+  }
+
+
+  const students =
+    sortRoster(
+      roster
+    );
+
+
+  const cards =
+    students
+      .map(
+        student => `
+          <div class="login-card">
+
+            <div class="brand">
+              Copeak Classroom
+            </div>
+
+            <div class="class-name">
+              ${esc(activeClass.name || '')}
+            </div>
+
+            <div class="student-name">
+              ${esc(student.display_name)}
+            </div>
+
+            <div class="login-row">
+              <span>Student No.</span>
+              <strong>
+                ${esc(student.student_number)}
+              </strong>
+            </div>
+
+            <div class="login-row">
+              <span>Class Code</span>
+              <strong>
+                ${esc(activeClass.class_code)}
+              </strong>
+            </div>
+
+            <div class="login-row pin-row">
+              <span>Join PIN</span>
+              <strong>
+                ${esc(student.join_pin)}
+              </strong>
+            </div>
+
+            <div class="url">
+              cc.pic-speak-story.com
+            </div>
+
+          </div>
+        `
+      )
+      .join('');
+
+
+  const printWindow =
+    window.open(
+      '',
+      '_blank'
+    );
+
+
+  if (!printWindow) {
+
+    alert(
+      '印刷画面を開けませんでした。ポップアップを許可してください。'
+    );
+
+    return;
+  }
+
+
+  printWindow.document.write(`
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>
+  ${esc(activeClass.name || 'Class')}
+  - Login Cards
+</title>
+
+<style>
+
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    Arial,
+    "Noto Sans JP",
+    sans-serif;
+  color: #111827;
+}
+
+.page {
+  display: grid;
+  grid-template-columns:
+    repeat(2, 1fr);
+  gap: 8mm;
+}
+
+.login-card {
+  min-height: 60mm;
+  border: 2px solid #d1d5db;
+  border-radius: 14px;
+  padding: 8mm;
+  break-inside: avoid;
+  position: relative;
+}
+
+.brand {
+  font-size: 15px;
+  font-weight: 800;
+  color: #2563eb;
+  margin-bottom: 4px;
+}
+
+.class-name {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.student-name {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.login-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e5e7eb;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.login-row strong {
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+.pin-row strong {
+  font-size: 24px;
+  letter-spacing: 3px;
+}
+
+.url {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+@media print {
+
+  .page {
+    gap: 6mm;
+  }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="page">
+
+  ${cards}
+
+</div>
+
+<script>
+
+window.onload = () => {
+
+  window.print();
+
+};
+
+<\/script>
+
+</body>
+
+</html>
+  `);
+
+
+  printWindow.document.close();
+}
 
 function exportRosterCsv() {
 
