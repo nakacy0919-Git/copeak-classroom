@@ -126,18 +126,6 @@ async function loadClasses() {
 
 async function createNewClass() {
 
-  if (
-    !ctx.profile?.school_id
-  ) {
-
-    alert(
-      '学校情報が登録されていません。'
-    );
-
-    return;
-  }
-
-
   const name =
     prompt(
       '新しいクラス名を入力してください。',
@@ -194,24 +182,18 @@ async function createNewClass() {
     error
   } =
     await getClient()
-      .from('classes')
-      .insert({
+      .rpc(
+        'create_teacher_class',
+        {
 
-        school_id:
-          ctx.profile.school_id,
+          p_name:
+            name.trim(),
 
-        teacher_id:
-          ctx.user.id,
+          p_academic_year:
+            academicYear
 
-        name:
-          name.trim(),
-
-        academic_year:
-          academicYear
-
-      })
-      .select()
-      .single();
+        }
+      );
 
 
   if (error) {
@@ -220,11 +202,18 @@ async function createNewClass() {
   }
 
 
+  if (!data) {
+
+    throw new Error(
+      'クラスを作成できませんでした。'
+    );
+  }
+
+
   moveToClass(
-    data.id
+    data
   );
 }
-
 
 // ==========================================
 // LOAD TEACHERS
