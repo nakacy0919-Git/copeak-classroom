@@ -1841,34 +1841,25 @@ async function loadLive() {
       .from(
         'classes'
       )
-      .select(
-        '*'
-      )
-      .eq(
-        'teacher_id',
-        ctx.user.id
-      )
+      .select('*')
       .order(
         'created_at'
       );
 
 
-  if (
-    error
-  ) {
+  if (error) {
 
     throw error;
   }
 
 
+  // RLSによって
+  // Ownerクラス + Sharedクラスだけ返る
   classes =
-    classRows ||
-    [];
+    classRows || [];
 
 
-  if (
-    !classes.length
-  ) {
+  if (!classes.length) {
 
     $('#mainApp')
       .classList
@@ -1902,14 +1893,41 @@ async function loadLive() {
   }
 
 
+  const requestedId =
+    new URLSearchParams(
+      location.search
+    ).get(
+      'class'
+    )
+    ||
+    localStorage.getItem(
+      'copeak_teacher_class_id'
+    );
+
+
+  const initialClass =
+    classes.find(
+      item =>
+        item.id ===
+        requestedId
+    )
+    ||
+    classes[0];
+
+
+  localStorage.setItem(
+    'copeak_teacher_class_id',
+    initialClass.id
+  );
+
+
   await loadClass(
-    classes[0].id
+    initialClass.id
   );
 
 
   return true;
 }
-
 
 // ==========================================
 // EVENTS

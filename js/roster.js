@@ -1223,19 +1223,14 @@ async function loadTeacherClass() {
         'classes'
       )
       .select(
-        'id,name,class_code,created_at'
-      )
-      .eq(
-        'teacher_id',
-        ctx.user.id
+        'id,name,class_code,teacher_id,created_at'
       )
       .order(
         'created_at',
         {
           ascending: true
         }
-      )
-      .limit(1);
+      );
 
 
   if (error) {
@@ -1244,11 +1239,33 @@ async function loadTeacherClass() {
   }
 
 
+  const availableClasses =
+    data || [];
+
+
+  const requestedId =
+    new URLSearchParams(
+      location.search
+    ).get(
+      'class'
+    )
+    ||
+    localStorage.getItem(
+      'copeak_teacher_class_id'
+    );
+
+
   activeClass =
-    data?.[0] ||
+    availableClasses.find(
+      item =>
+        item.id ===
+        requestedId
+    )
+    ||
+    availableClasses[0]
+    ||
     null;
 }
-
 
 // ==========================================
 // START

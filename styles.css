@@ -728,3 +728,126 @@ textarea {
   }
 
 }
+/* ==========================================
+   Multi Class Manager
+========================================== */
+
+.class-manager {
+  margin-top: 16px;
+  padding: 18px 20px;
+}
+
+.class-manager-main {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.class-selector-area {
+  flex: 1;
+  min-width: 280px;
+}
+
+.class-selector {
+  margin-top: 7px;
+  max-width: 480px;
+  font-weight: 800;
+}
+
+.class-manager-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.class-teacher-panel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #d6d3d1;
+}
+
+.class-share-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin: 14px 0;
+  max-width: 620px;
+}
+
+.class-teacher-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.class-teacher-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+
+  padding: 11px 12px;
+
+  background: #fafaf9;
+  border: 1px solid #e7e5e4;
+}
+
+.class-teacher-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.teacher-owner-badge,
+.teacher-shared-badge {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.teacher-owner-badge {
+  color: #047857;
+  background: #ecfdf5;
+}
+
+.teacher-shared-badge {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+@media(max-width:700px) {
+
+  .class-manager-main {
+    align-items: stretch;
+  }
+
+  .class-selector-area {
+    min-width: 100%;
+  }
+
+  .class-selector {
+    max-width: none;
+  }
+
+  .class-manager-actions {
+    width: 100%;
+  }
+
+  .class-manager-actions .btn {
+    flex: 1;
+  }
+
+  .class-share-form {
+    grid-template-columns: 1fr;
+  }
+
+  .class-teacher-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+}
