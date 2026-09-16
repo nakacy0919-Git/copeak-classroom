@@ -588,62 +588,39 @@
         id="assignmentEditor"
         class="assignment-editor hidden">
 
+<div class="field">
 
-        <div class="grid grid-2">
+  <label>
+    Category
+  </label>
 
+  <select
+    id="assignmentCategory"
+    class="input">
 
-          <div class="field">
+    <option value="Reading">
+      Reading
+    </option>
 
-            <label>
-              Week
-            </label>
+    <option value="Grammar">
+      Grammar
+    </option>
 
-            <input
-              id="assignmentWeek"
-              type="number"
-              min="1"
-              max="99"
-              class="input">
+    <option value="Speech">
+      Speech
+    </option>
 
-          </div>
+    <option value="Textbook">
+      Textbook
+    </option>
 
+    <option value="Other">
+      Other
+    </option>
 
-          <div class="field">
+  </select>
 
-            <label>
-              Category
-            </label>
-
-            <select
-              id="assignmentCategory"
-              class="input">
-
-              <option value="Reading">
-                Reading
-              </option>
-
-              <option value="Grammar">
-                Grammar
-              </option>
-
-              <option value="Speech">
-                Speech
-              </option>
-
-              <option value="Textbook">
-                Textbook
-              </option>
-
-              <option value="Other">
-                Other
-              </option>
-
-            </select>
-
-          </div>
-
-
-        </div>
+</div>
 
 
 
@@ -694,36 +671,44 @@
 
         <div class="grid grid-2">
 
+  <div class="field">
 
-          <div class="field">
+    <label>
+      Release Date & Time
+    </label>
 
-            <label>
-              Release Date
-            </label>
+    <input
+      id="assignmentRelease"
+      type="datetime-local"
+      step="1"
+      class="input">
 
-            <input
-              id="assignmentRelease"
-              type="date"
-              class="input">
+    <div class="tiny muted" style="margin-top:5px">
+      生徒に課題を公開する日時
+    </div>
 
-          </div>
-
-
-          <div class="field">
-
-            <label>
-              Due Date
-            </label>
-
-            <input
-              id="assignmentDue"
-              type="date"
-              class="input">
-
-          </div>
+  </div>
 
 
-        </div>
+  <div class="field">
+
+    <label>
+      Deadline
+    </label>
+
+    <input
+      id="assignmentDue"
+      type="datetime-local"
+      step="1"
+      class="input">
+
+    <div class="tiny muted" style="margin-top:5px">
+      この時刻を過ぎると提出できません
+    </div>
+
+  </div>
+
+</div>
 
 
 

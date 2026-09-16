@@ -64,6 +64,145 @@ function localDateValue(
   return `${y}-${m}-${d}`;
 }
 
+// ==========================================
+// LOCAL DATE + TIME
+// datetime-local用
+// ==========================================
+
+function localDateTimeValue(
+  date = new Date()
+) {
+
+  const y =
+    date.getFullYear();
+
+  const m =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, '0');
+
+  const d =
+    String(
+      date.getDate()
+    ).padStart(2, '0');
+
+  const h =
+    String(
+      date.getHours()
+    ).padStart(2, '0');
+
+  const min =
+    String(
+      date.getMinutes()
+    ).padStart(2, '0');
+
+  const sec =
+    String(
+      date.getSeconds()
+    ).padStart(2, '0');
+
+
+  return (
+    `${y}-${m}-${d}` +
+    `T${h}:${min}:${sec}`
+  );
+}
+
+
+function parseLocalDateTime(
+  value
+) {
+
+  if (!value) {
+    return null;
+  }
+
+
+  const [
+    datePart,
+    timePart = '00:00:00'
+  ] =
+    value.split('T');
+
+
+  const [
+    year,
+    month,
+    day
+  ] =
+    datePart
+      .split('-')
+      .map(Number);
+
+
+  const [
+    hour = 0,
+    minute = 0,
+    second = 0
+  ] =
+    timePart
+      .split(':')
+      .map(Number);
+
+
+  return new Date(
+    year,
+    month - 1,
+    day,
+    hour,
+    minute,
+    second
+  );
+}
+
+
+function assignmentDateTimeLabel(
+  value
+) {
+
+  if (!value) {
+    return '—';
+  }
+
+
+  const date =
+    new Date(value);
+
+
+  const y =
+    date.getFullYear();
+
+  const m =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, '0');
+
+  const d =
+    String(
+      date.getDate()
+    ).padStart(2, '0');
+
+  const h =
+    String(
+      date.getHours()
+    ).padStart(2, '0');
+
+  const min =
+    String(
+      date.getMinutes()
+    ).padStart(2, '0');
+
+  const sec =
+    String(
+      date.getSeconds()
+    ).padStart(2, '0');
+
+
+  return (
+    `${y}/${m}/${d} ` +
+    `${h}:${min}:${sec}`
+  );
+}
 
 function addDays(
   date,
@@ -332,8 +471,8 @@ function renderAssignmentManager() {
               <div class="teacher-assignment-week">
 
                 <span>
-                  WEEK
-                </span>
+  NO.
+</span>
 
                 <strong>
                   ${assignment.week_no}
@@ -361,13 +500,13 @@ function renderAssignmentManager() {
 
                       ・
 
-                      ${assignmentDateLabel(
+                      ${assignmentDateTimeLabel(
                         assignment.release_at
                       )}
 
                       →
 
-                      ${assignmentDateLabel(
+                      ${assignmentDateTimeLabel(
                         assignment.due_at
                       )}
 
@@ -479,10 +618,10 @@ function renderAssignmentManager() {
 
 function renderSummary() {
 
-  const latest =
-    latestMap(
-      submissions
-    );
+  const best =
+  bestSubmissionMap(
+    submissions
+  );
 
 
   const activeAssignments =
@@ -509,7 +648,7 @@ function renderSummary() {
     0;
 
 
-  latest.forEach(
+  best.forEach(
     submission => {
 
       if (
@@ -548,7 +687,7 @@ function renderSummary() {
 
 
   const values =
-    [...latest.values()]
+    [...best.values()]
       .filter(
         row =>
           activeAssignments.some(
@@ -646,7 +785,7 @@ function renderTable() {
                     title="${esc(
                       assignment.title
                     )}">
-                    W${assignment.week_no}
+                    #${assignment.week_no}
                   </th>
                 `
             )
@@ -1138,12 +1277,7 @@ function openAssignmentEditor(
         );
 
 
-  $('#assignmentWeek').value =
-    assignment
-      ? assignment.week_no
-      : nextWeekNumber();
-
-
+ 
   $('#assignmentCategory').value =
     assignment?.category ||
     'Reading';
@@ -1170,15 +1304,15 @@ function openAssignmentEditor(
 
 
   $('#assignmentRelease').value =
-    localDateValue(
-      release
-    );
+  localDateTimeValue(
+    release
+  );
 
 
-  $('#assignmentDue').value =
-    localDateValue(
-      due
-    );
+$('#assignmentDue').value =
+  localDateTimeValue(
+    due
+  );
 
 
   $('#assignmentPublished').checked =
@@ -1272,18 +1406,20 @@ function updateDueDate() {
       .value;
 
 
-  if (
-    !releaseValue
-  ) {
-
+  if (!releaseValue) {
     return;
   }
 
 
   const release =
-    new Date(
-      `${releaseValue}T00:00:00`
+    parseLocalDateTime(
+      releaseValue
     );
+
+
+  if (!release) {
+    return;
+  }
 
 
   const due =
@@ -1294,11 +1430,10 @@ function updateDueDate() {
 
 
   $('#assignmentDue').value =
-    localDateValue(
+    localDateTimeValue(
       due
     );
 }
-
 
 // ==========================================
 // CREATE ASSIGNMENT
@@ -1311,11 +1446,26 @@ async function saveAssignment() {
   }
 
 
-  const week =
-    Number(
-      $('#assignmentWeek').value
-    );
+  const existingAssignment =
+  editingAssignmentId
 
+    ? assignments.find(
+        assignment =>
+          assignment.id ===
+          editingAssignmentId
+      )
+
+    : null;
+
+
+const week =
+  existingAssignment
+
+    ? Number(
+        existingAssignment.week_no
+      )
+
+    : nextWeekNumber();
 
   const category =
     $('#assignmentCategory').value;
@@ -1363,15 +1513,7 @@ async function saveAssignment() {
     '#b91c1c';
 
 
-  if (!week || week < 1) {
-
-    msg.textContent =
-      'Weekを入力してください。';
-
-    return;
-  }
-
-
+ 
   if (!title) {
 
     msg.textContent =
@@ -1403,16 +1545,32 @@ async function saveAssignment() {
 
 
   const release =
-  new Date(
-    `${releaseValue}T00:00:00+09:00`
+  parseLocalDateTime(
+    releaseValue
   );
 
 
 const due =
-  new Date(
-    `${dueValue}T23:59:00+09:00`
+  parseLocalDateTime(
+    dueValue
   );
 
+  if (
+  !release ||
+  !due ||
+  Number.isNaN(
+    release.getTime()
+  ) ||
+  Number.isNaN(
+    due.getTime()
+  )
+) {
+
+  msg.textContent =
+    'ReleaseとDeadlineの日時を確認してください。';
+
+  return;
+}
 
   if (due < release) {
 
@@ -1602,7 +1760,7 @@ if (
       ) {
 
         throw new Error(
-          `Week ${week} はすでに登録されています。`
+          `No. ${week} はすでに登録されています。`
         );
       }
 
@@ -1882,7 +2040,7 @@ async function duplicateAssignment(
     '課題を複製しました',
 
   message:
-    `Week ${newWeek} にDraftとして複製しました。
+    `No. ${newWeek} としてDraftに複製しました。
 
 公開する前に内容と日付を確認してください。`
 
