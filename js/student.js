@@ -23,6 +23,220 @@ const savingAssignments = new Set();
 
 $('#signOut').onclick = signOut;
 
+// ==========================================
+// DEADLINE / COUNTDOWN
+// ==========================================
+
+function formatDateTime(
+  value
+) {
+
+  if (!value) {
+    return '—';
+  }
+
+
+  const date =
+    new Date(value);
+
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return '—';
+  }
+
+
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, '0');
+
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, '0');
+
+  const hour =
+    String(
+      date.getHours()
+    ).padStart(2, '0');
+
+  const minute =
+    String(
+      date.getMinutes()
+    ).padStart(2, '0');
+
+  const second =
+    String(
+      date.getSeconds()
+    ).padStart(2, '0');
+
+
+  return (
+    `${month}/${day} ` +
+    `${hour}:${minute}:${second}`
+  );
+}
+
+
+function formatCountdown(
+  milliseconds
+) {
+
+  const totalSeconds =
+    Math.max(
+      0,
+      Math.floor(
+        milliseconds / 1000
+      )
+    );
+
+
+  const days =
+    Math.floor(
+      totalSeconds / 86400
+    );
+
+
+  const hours =
+    Math.floor(
+      (
+        totalSeconds % 86400
+      ) / 3600
+    );
+
+
+  const minutes =
+    Math.floor(
+      (
+        totalSeconds % 3600
+      ) / 60
+    );
+
+
+  const seconds =
+    totalSeconds % 60;
+
+
+  const hh =
+    String(
+      hours
+    ).padStart(2, '0');
+
+  const mm =
+    String(
+      minutes
+    ).padStart(2, '0');
+
+  const ss =
+    String(
+      seconds
+    ).padStart(2, '0');
+
+
+  if (days > 0) {
+
+    return (
+      `${days}d ` +
+      `${hh}:${mm}:${ss}`
+    );
+  }
+
+
+  return `${hh}:${mm}:${ss}`;
+}
+
+
+function countdownInfo(
+  assignment
+) {
+
+  const now =
+    Date.now();
+
+
+  const release =
+    new Date(
+      assignment.release_at
+    ).getTime();
+
+
+  const due =
+    new Date(
+      assignment.due_at
+    ).getTime();
+
+
+  if (now < release) {
+
+    return {
+
+      text:
+        `Opens in ${formatCountdown(
+          release - now
+        )}`,
+
+      className:
+        'upcoming'
+
+    };
+  }
+
+
+  if (now >= due) {
+
+    return {
+
+      text:
+        'Closed',
+
+      className:
+        'closed'
+
+    };
+  }
+
+
+  const remaining =
+    due - now;
+
+
+  let className =
+    'normal';
+
+
+  if (
+    remaining <=
+    60 * 60 * 1000
+  ) {
+
+    className =
+      'danger';
+
+  } else if (
+    remaining <=
+    24 * 60 * 60 * 1000
+  ) {
+
+    className =
+      'warning';
+  }
+
+
+  return {
+
+    text:
+      `${formatCountdown(
+        remaining
+      )} remaining`,
+
+    className
+
+  };
+}
 
 // ==========================================
 // 最新提出結果
@@ -53,51 +267,60 @@ function latestMap(rows) {
 // ==========================================
 // 課題ステータス
 // ==========================================
+
 function assignmentStatus(
   assignment,
   submission
 ) {
 
-  if (submission) {
-    return [
-      'done',
-      '✓ Completed'
-    ];
-  }
-
   const now =
     new Date();
+
 
   const release =
     new Date(
       assignment.release_at
     );
 
+
   const due =
     new Date(
       assignment.due_at
     );
 
+
   if (now < release) {
+
     return [
       'upcoming',
       'Upcoming'
     ];
   }
 
-  if (now > due) {
+
+  if (now >= due) {
+
     return [
       'late',
-      'Overdue'
+      'Closed'
     ];
   }
 
+
+  if (submission) {
+
+    return [
+      'done',
+      '✓ Completed'
+    ];
+  }
+
+
   return [
     'due',
-    'This Week'
+    'Open'
   ];
 }
-
 
 // ==========================================
 // Dashboard描画
@@ -186,23 +409,41 @@ function render() {
   // ========================================
   // 今週の課題
   // ========================================
-  const target =
-    assignments.find(
-      assignment =>
-        !map.has(
-          assignment.id
-        ) &&
+  const now =
+  new Date();
+
+
+const target =
+  assignments.find(
+    assignment =>
+
+      !map.has(
+        assignment.id
+      ) &&
+
+      now >=
         new Date(
           assignment.release_at
-        ) <=
-        new Date()
-    ) ||
-    assignments.find(
-      assignment =>
-        !map.has(
-          assignment.id
+        ) &&
+
+      now <
+        new Date(
+          assignment.due_at
         )
-    );
+  )
+  ||
+  assignments.find(
+    assignment =>
+
+      !map.has(
+        assignment.id
+      ) &&
+
+      now <
+        new Date(
+          assignment.release_at
+        )
+  );
 
 
   if (target) {
@@ -214,35 +455,74 @@ function render() {
       );
 
     $('#weekLabel').textContent =
-      `WEEK ${
-        String(
-          target.week_no
-        )
-        .padStart(
-          2,
-          '0'
-        )
-      }`;
+  `ASSIGNMENT #${
+    String(
+      target.week_no
+    )
+    .padStart(
+      2,
+      '0'
+    )
+  }`;
 
     $('#weekTitle').textContent =
       target.title;
 
-    $('#weekMeta').textContent =
-      `${
+    const countdown =
+  countdownInfo(
+    target
+  );
+
+
+$('#weekMeta').innerHTML =
+  `
+    ${
+      escapeHtml(
         target.category ||
         'Reading'
-      } • Due ${
-        fmtDate(
-          target.due_at
-        )
-      }`;
+      )
+    }
+
+    ・ Deadline
+    ${formatDateTime(
+      target.due_at
+    )}
+
+    ・
+
+    <span
+      class="deadline-countdown ${countdown.className}">
+
+      ${escapeHtml(
+        countdown.text
+      )}
+
+    </span>
+  `;
 
     const button =
       $('#weekStart');
 
     button.disabled =
-      statusClass ===
-      'upcoming';
+  statusClass ===
+    'upcoming'
+  ||
+  statusClass ===
+    'late';
+  
+    button.textContent =
+
+  statusClass ===
+    'upcoming'
+
+    ? 'Not Open Yet'
+
+    : statusClass ===
+        'late'
+
+      ? 'Closed'
+
+      : 'Start Copeak →';
 
     button.onclick =
       () =>
@@ -285,18 +565,30 @@ function render() {
               submission
             );
 
-          const disabled =
-            statusClass ===
-            'upcoming'
-              ? 'disabled'
-              : '';
+          const countdown =
+  countdownInfo(
+    assignment
+  );
+
+
+const disabled =
+  (
+    statusClass ===
+      'upcoming'
+    ||
+    statusClass ===
+      'late'
+  )
+
+    ? 'disabled'
+    : '';
 
 
           return `
             <div class="assignment">
 
               <div class="weekbox">
-                <span>WEEK</span>
+  <span>NO.</span>
                 <strong>
                   ${
                     String(
@@ -332,11 +624,21 @@ function render() {
 
                   ・
 
-                  ${
-                    fmtDate(
-                      assignment.due_at
-                    )
-                  }
+                  Deadline
+${formatDateTime(
+  assignment.due_at
+)}
+
+・
+
+<span
+  class="deadline-countdown ${countdown.className}">
+
+  ${escapeHtml(
+    countdown.text
+  )}
+
+</span>
 
                   ・
 
@@ -402,10 +704,22 @@ function render() {
                     ${disabled}
                   >
                     ${
-                      submission
-                        ? 'Practice Again'
-                        : 'Start Copeak'
-                    }
+  statusClass ===
+    'upcoming'
+
+    ? 'Not Open'
+
+    : statusClass ===
+        'late'
+
+      ? 'Closed'
+
+      : submission
+
+        ? 'Practice Again'
+
+        : 'Start Copeak'
+}
                   </button>
 
 
@@ -515,23 +829,76 @@ function openCopeak(assignment) {
     return;
   }
 
-  // 教材本文がない場合はCopeakを開かない
-  const lessonText =
-    String(
-      assignment.lesson_text || ''
-    ).trim();
 
-  if (!lessonText) {
-    alert(
-      'この課題には音読教材が登録されていません。先生に確認してください。'
+  // ========================================
+  // Release / Deadline Check
+  // ========================================
+
+  const now =
+    new Date();
+
+
+  const release =
+    new Date(
+      assignment.release_at
     );
+
+
+  const due =
+    new Date(
+      assignment.due_at
+    );
+
+
+  if (now < release) {
+
+    alert(
+      'この課題はまだ公開時刻になっていません。'
+    );
+
     return;
   }
 
 
+  if (now >= due) {
+
+    alert(
+      'この課題の提出期限は終了しました。'
+    );
+
+    return;
+  }
+
+
+  // ========================================
+  // 教材本文
+  // ========================================
+
+  const lessonText =
+    String(
+      assignment.lesson_text ||
+      ''
+    ).trim();
+
+
+  if (!lessonText) {
+
+    alert(
+      'この課題には音読教材が登録されていません。先生に確認してください。'
+    );
+
+    return;
+  }
+
+
+  // ========================================
+  // Copeak URL
+  // ========================================
+
   const base =
     assignment.copeak_url ||
-    window.COPEAK_CONFIG.copeakBaseUrl;
+    window.COPEAK_CONFIG
+      .copeakBaseUrl;
 
 
   const url =
@@ -542,7 +909,7 @@ function openCopeak(assignment) {
 
 
   // ========================================
-  // Copeak Classroom情報
+  // Classroom情報
   // ========================================
 
   url.searchParams.set(
@@ -550,10 +917,12 @@ function openCopeak(assignment) {
     assignment.id
   );
 
+
   url.searchParams.set(
     'source',
     'copeak-classroom'
   );
+
 
   url.searchParams.set(
     'classroom_origin',
@@ -562,25 +931,28 @@ function openCopeak(assignment) {
 
 
   // ========================================
-  // Copeakへ教材を渡す
+  // 教材情報
   // ========================================
 
   url.searchParams.set(
     'title',
     assignment.title ||
-    `Week ${assignment.week_no}`
+    `#${assignment.week_no}`
   );
+
 
   url.searchParams.set(
     'eng',
     lessonText
   );
 
+
   url.searchParams.set(
     'jpn',
     assignment.lesson_translation ||
     ''
   );
+
 
   url.searchParams.set(
     'lang',
@@ -590,7 +962,7 @@ function openCopeak(assignment) {
 
 
   // ========================================
-  // Copeakを開く
+  // Copeakを新しいタブで開く
   // ========================================
 
   const popup =
@@ -608,6 +980,7 @@ function openCopeak(assignment) {
   }
 }
 
+  // 教材本文がない場合はCopeakを開かない
 // ==========================================
 // Demo提出
 // ==========================================
@@ -686,6 +1059,40 @@ async function saveCopeakResult(
     return;
   }
 
+const now =
+  new Date();
+
+
+const release =
+  new Date(
+    assignment.release_at
+  );
+
+
+const due =
+  new Date(
+    assignment.due_at
+  );
+
+
+if (now < release) {
+
+  alert(
+    'この課題はまだ公開されていません。'
+  );
+
+  return;
+}
+
+
+if (now >= due) {
+
+  alert(
+    '提出期限を過ぎたため、今回の結果はClassroomには保存されませんでした。'
+  );
+
+  return;
+}
 
   const resultId =
     String(
@@ -1352,6 +1759,21 @@ async function loadLive() {
 
 
   render();
+
+
+// ==========================================
+// COUNTDOWN CLOCK
+// Supabase通信は発生しない
+// ==========================================
+
+setInterval(
+  () => {
+
+    render();
+
+  },
+  1000
+);
 
 
 })()

@@ -1031,3 +1031,42 @@ textarea {
   font-size: 12px;
   font-weight: 800;
 }
+/* ==========================================
+   Deadline Countdown
+========================================== */
+
+.deadline-countdown {
+  display: inline-block;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .03em;
+}
+
+.deadline-countdown.normal {
+  color: #047857;
+}
+
+.deadline-countdown.warning {
+  color: #d97706;
+}
+
+.deadline-countdown.danger {
+  color: #b91c1c;
+  animation: deadlinePulse 1s ease-in-out infinite;
+}
+
+.deadline-countdown.closed {
+  color: #78716c;
+}
+
+@keyframes deadlinePulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: .55;
+  }
+}
