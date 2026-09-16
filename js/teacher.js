@@ -120,6 +120,88 @@ function latestMap(
   return map;
 }
 
+// ==========================================
+// BEST SUBMISSION
+// Accuracy最高記録
+// ==========================================
+
+function bestSubmissionMap(
+  rows
+) {
+
+  const map =
+    new Map();
+
+
+  rows.forEach(
+    row => {
+
+      const key =
+        `${row.student_id}|${row.assignment_id}`;
+
+
+      const current =
+        map.get(
+          key
+        );
+
+
+      if (
+        !current ||
+        Number(
+          row.accuracy || 0
+        ) >
+        Number(
+          current.accuracy || 0
+        )
+      ) {
+
+        map.set(
+          key,
+          row
+        );
+      }
+    }
+  );
+
+
+  return map;
+}
+
+
+// ==========================================
+// ATTEMPT COUNT
+// 音読回数
+// ==========================================
+
+function attemptCountMap(
+  rows
+) {
+
+  const map =
+    new Map();
+
+
+  rows.forEach(
+    row => {
+
+      const key =
+        `${row.student_id}|${row.assignment_id}`;
+
+
+      map.set(
+        key,
+        (
+          map.get(key) ||
+          0
+        ) + 1
+      );
+    }
+  );
+
+
+  return map;
+}
 
 // ==========================================
 // PUBLISHED ASSIGNMENTS
@@ -509,8 +591,14 @@ function renderTable() {
     visibleAssignments();
 
 
-  const latest =
-    latestMap(
+  const best =
+    bestSubmissionMap(
+      submissions
+    );
+
+
+  const attempts =
+    attemptCountMap(
       submissions
     );
 
@@ -531,6 +619,13 @@ function renderTable() {
           .includes(
             query
           )
+        ||
+        String(
+          student.student_number ||
+          ''
+        ).includes(
+          query
+        )
     );
 
 
@@ -559,6 +654,10 @@ function renderTable() {
         }
 
         <th>
+          Reads
+        </th>
+
+        <th>
           Done
         </th>
 
@@ -584,25 +683,48 @@ function renderTable() {
           let sum =
             0;
 
+          let totalReads =
+            0;
+
 
           const cells =
             activeAssignments
               .map(
                 assignment => {
 
+                  const key =
+                    `${student.id}|${assignment.id}`;
+
+
                   const result =
-                    latest.get(
-                      `${student.id}|${assignment.id}`
+                    best.get(
+                      key
                     );
+
+
+                  const readCount =
+                    attempts.get(
+                      key
+                    ) || 0;
+
+
+                  totalReads +=
+                    readCount;
 
 
                   if (!result) {
 
                     return `
                       <td>
+
                         <span class="grade missing">
                           —
                         </span>
+
+                        <div class="tiny muted">
+                          0 reads
+                        </div>
+
                       </td>
                     `;
                   }
@@ -638,7 +760,7 @@ function renderTable() {
 
                   return `
                     <td
-                      title="WPM ${Math.round(
+                      title="Best Accuracy ${value}% / ${readCount} reads / WPM ${Math.round(
                         result.wpm || 0
                       )} / Comp ${pct(
                         result.comprehension
@@ -651,6 +773,11 @@ function renderTable() {
 
                       </span>
 
+                      <div class="tiny muted">
+                        ${readCount}
+                        read${readCount === 1 ? '' : 's'}
+                      </div>
+
                     </td>
                   `;
                 }
@@ -662,12 +789,29 @@ function renderTable() {
             <tr>
 
               <td>
-                ${esc(
-                  student.display_name
-                )}
+
+                <span class="gradebook-student-number">
+                  ${esc(
+                    student.student_number ||
+                    '—'
+                  )}
+                </span>
+
+                <strong>
+                  ${esc(
+                    student.display_name
+                  )}
+                </strong>
+
               </td>
 
               ${cells}
+
+              <td>
+                <strong>
+                  ${totalReads}
+                </strong>
+              </td>
 
               <td>
                 <strong>
@@ -705,7 +849,6 @@ function renderTable() {
       )
       .join('');
 }
-
 
 // ==========================================
 // MAIN RENDER
@@ -1920,16 +2063,105 @@ async function loadClass(
   }
 
 
-  students =
-    (members || [])
-      .map(
-        item =>
-          item.profiles
-      )
-      .filter(
-        Boolean
-      );
+  const {
+  data: rosterRows,
+  error: rosterError
+} =
+  await sb
+    .from(
+      'class_roster'
+    )
+    .select(
+      'linked_student_id, student_number'
+    )
+    .eq(
+      'class_id',
+      selectedClass.id
+    );
 
+
+if (rosterError) {
+
+  throw rosterError;
+}
+
+
+const studentNumberMap =
+  new Map(
+    (rosterRows || [])
+      .filter(
+        row =>
+          row.linked_student_id
+      )
+      .map(
+        row => [
+          row.linked_student_id,
+          row.student_number
+        ]
+      )
+  );
+
+
+students =
+  (members || [])
+    .map(
+      item => {
+
+        if (!item.profiles) {
+
+          return null;
+        }
+
+
+        return {
+
+          ...item.profiles,
+
+          student_number:
+            studentNumberMap.get(
+              item.student_id
+            ) || ''
+
+        };
+      }
+    )
+    .filter(
+      Boolean
+    )
+    .sort(
+      (a, b) => {
+
+        const aNo =
+          String(
+            a.student_number || ''
+          );
+
+        const bNo =
+          String(
+            b.student_number || ''
+          );
+
+
+        if (!aNo && bNo) {
+          return 1;
+        }
+
+
+        if (aNo && !bNo) {
+          return -1;
+        }
+
+
+        return aNo.localeCompare(
+          bNo,
+          undefined,
+          {
+            numeric:
+              true
+          }
+        );
+      }
+    );
 
   const {
     data: assignmentRows,

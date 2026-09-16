@@ -1023,3 +1023,11 @@ textarea {
   font-size: 13px;
   font-weight: 600;
 }
+.gradebook-student-number {
+  display: inline-flex;
+  min-width: 30px;
+  margin-right: 8px;
+  color: #78716c;
+  font-size: 12px;
+  font-weight: 800;
+}
