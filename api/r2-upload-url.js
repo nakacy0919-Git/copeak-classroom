@@ -73,29 +73,54 @@ async function authenticateTeacher(
   }
 
 
-  const authorization =
-    req.headers.authorization ||
-    '';
+  const customToken =
+  req.headers[
+    'x-supabase-access-token'
+  ] ||
+  '';
 
 
-  if (
-    !authorization
-      .startsWith(
-        'Bearer '
-      )
-  ) {
-
-    return {
-      status: 401,
-      user: null
-    };
-  }
+const authorization =
+  req.headers.authorization ||
+  '';
 
 
-  const token =
+let token =
+  '';
+
+
+if (
+  customToken
+) {
+
+  token =
+    String(
+      customToken
+    ).trim();
+
+} else if (
+  authorization
+    .startsWith(
+      'Bearer '
+    )
+) {
+
+  token =
     authorization
       .slice(7)
       .trim();
+}
+
+
+if (
+  !token
+) {
+
+  return {
+    status: 401,
+    user: null
+  };
+}
 
 
   // ========================================
