@@ -1,0 +1,25 @@
+{
+  "name": "copeak-classroom-mvp",
+  "version": "1.0.0",
+  "description": "Copeakのデザイン言語を継承した、音読課題・提出状況・成績管理プラットフォームのMVPです。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nakacy0919-Git/copeak-classroom.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nakacy0919-Git/copeak-classroom/issues"
+  },
+  "homepage": "https://github.com/nakacy0919-Git/copeak-classroom#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1142.0",
+    "@aws-sdk/s3-request-presigner": "^3.1142.0"
+  }
+}
