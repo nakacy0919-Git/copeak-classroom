@@ -1,7 +1,9 @@
 import {
   getClient,
   isConfigured,
-  clearDemo
+  clearDemo,
+  getStudentRememberLogin,
+  setStudentRememberLogin
 } from './supabase.js';
 
 
@@ -136,6 +138,15 @@ $('#studentForm').onsubmit =
     event.preventDefault();
 
     clearDemo();
+
+        const rememberLogin =
+      $('#studentRememberLogin')
+        ?.checked ??
+      true;
+
+    setStudentRememberLogin(
+      rememberLogin
+    );
 
     if (!isConfigured()) {
 
@@ -621,4 +632,108 @@ $('#teacherForm').onsubmit =
 // INITIAL
 // ==========================================
 
-showStudent();
+// ==========================================
+// INITIAL
+// ==========================================
+
+async function initializeAuthPage() {
+
+  showStudent();
+
+
+  // ----------------------------------------
+  // 保存している設定を
+  // チェックボックスへ反映
+  // ----------------------------------------
+
+  const rememberCheckbox =
+    $('#studentRememberLogin');
+
+  if (rememberCheckbox) {
+
+    rememberCheckbox.checked =
+      getStudentRememberLogin();
+  }
+
+
+  if (!isConfigured()) {
+
+    return;
+  }
+
+
+  // ----------------------------------------
+  // Student Sessionが残っていれば
+  // ログイン画面を飛ばす
+  // ----------------------------------------
+
+  const sb =
+    getClient(
+      'student'
+    );
+
+  if (!sb) {
+
+    return;
+  }
+
+
+  try {
+
+    const {
+      data: {
+        session
+      },
+      error
+    } =
+      await sb.auth
+        .getSession();
+
+
+    if (error) {
+
+      throw error;
+    }
+
+
+    if (!session) {
+
+      return;
+    }
+
+
+    // Sessionが本当に有効か確認
+    const {
+      data: {
+        user
+      },
+      error: userError
+    } =
+      await sb.auth
+        .getUser();
+
+
+    if (
+      userError ||
+      !user
+    ) {
+
+      return;
+    }
+
+
+    location.href =
+      'student.html';
+
+
+  } catch (error) {
+
+    console.warn(
+      '[Student Auto Login]',
+      error
+    );
+  }
+}
+
+
+initializeAuthPage();

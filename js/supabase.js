@@ -79,6 +79,133 @@ function pageRole() {
 const clients =
   new Map();
 
+  // ==========================================
+// STUDENT LOGIN PERSISTENCE
+//
+// ON  : localStorage
+//       → Safariを閉じてもログインを保持
+//
+// OFF : sessionStorage
+//       → タブを閉じるまでだけ保持
+//
+// Join PINそのものは保存しない。
+// ==========================================
+
+const STUDENT_REMEMBER_KEY =
+  'copeak-classroom-student-remember';
+
+const STUDENT_AUTH_STORAGE_KEY =
+  'copeak-classroom-student-auth';
+
+
+function studentShouldRemember() {
+
+  const value =
+    localStorage.getItem(
+      STUDENT_REMEMBER_KEY
+    );
+
+  // 初回は「保持する」を標準にする
+  if (value === null) {
+    return true;
+  }
+
+  return value === '1';
+}
+
+
+export function getStudentRememberLogin() {
+
+  return studentShouldRemember();
+}
+
+
+export function setStudentRememberLogin(
+  remember
+) {
+
+  localStorage.setItem(
+    STUDENT_REMEMBER_KEY,
+    remember
+      ? '1'
+      : '0'
+  );
+}
+
+
+export function clearStudentAuthStorage() {
+
+  localStorage.removeItem(
+    STUDENT_AUTH_STORAGE_KEY
+  );
+
+  sessionStorage.removeItem(
+    STUDENT_AUTH_STORAGE_KEY
+  );
+}
+
+
+// Student専用Storage Adapter
+const studentAuthStorage = {
+
+  getItem(key) {
+
+    if (studentShouldRemember()) {
+
+      return localStorage.getItem(
+        key
+      );
+    }
+
+    return sessionStorage.getItem(
+      key
+    );
+  },
+
+
+  setItem(
+    key,
+    value
+  ) {
+
+    if (studentShouldRemember()) {
+
+      localStorage.setItem(
+        key,
+        value
+      );
+
+      sessionStorage.removeItem(
+        key
+      );
+
+    } else {
+
+      sessionStorage.setItem(
+        key,
+        value
+      );
+
+      localStorage.removeItem(
+        key
+      );
+    }
+  },
+
+
+  removeItem(key) {
+
+    // 古いSessionが別Storageに
+    // 残らないよう両方削除する
+    localStorage.removeItem(
+      key
+    );
+
+    sessionStorage.removeItem(
+      key
+    );
+  }
+};
 
 export function getClient(
   role = null
@@ -123,18 +250,23 @@ export function getClient(
       {
         auth: {
 
-          persistSession:
-            true,
+  persistSession:
+    true,
 
-          autoRefreshToken:
-            true,
+  autoRefreshToken:
+    true,
 
-          detectSessionInUrl:
-            true,
+  detectSessionInUrl:
+    true,
 
-          storageKey
+  storageKey,
 
-        }
+  storage:
+    clientRole === 'student'
+      ? studentAuthStorage
+      : localStorage
+
+}
       }
     );
 
