@@ -818,12 +818,112 @@ function escapeHtml(
     );
 }
 
+async function getAssignmentAudioUrl(
+  assignment
+) {
 
+  if (
+    !assignment?.audio_object_key
+  ) {
+
+    return null;
+  }
+
+
+  try {
+
+    const sb =
+      getClient(
+        'student'
+      );
+
+
+    const {
+      data: {
+        session
+      }
+    } =
+      await sb
+        .auth
+        .getSession();
+
+
+    if (
+      !session?.access_token
+    ) {
+
+      return null;
+    }
+
+
+    const response =
+      await fetch(
+        '/api/r2-download-url',
+        {
+          method:
+            'POST',
+
+          headers: {
+
+            'Content-Type':
+              'application/json',
+
+            'X-Supabase-Access-Token':
+              session.access_token
+
+          },
+
+          body:
+            JSON.stringify({
+
+              assignmentId:
+                assignment.id
+
+            })
+        }
+      );
+
+
+    if (
+      !response.ok
+    ) {
+
+      console.warn(
+        '[Copeak Classroom] audio URL unavailable:',
+        response.status
+      );
+
+      return null;
+    }
+
+
+    const data =
+      await response.json();
+
+
+    return (
+      data.downloadUrl ||
+      null
+    );
+
+
+  } catch (
+    error
+  ) {
+
+    console.warn(
+      '[Copeak Classroom] audio download URL failed:',
+      error
+    );
+
+    return null;
+  }
+}
 // ==========================================
 // Copeakを開く
 // Classroom課題の英文を自動で渡す
 // ==========================================
-function openCopeak(assignment) {
+async function openCopeak(assignment) {
 
   if (!assignment) {
     return;
@@ -960,6 +1060,19 @@ function openCopeak(assignment) {
     'en-US'
   );
 
+const audioUrl =
+  await getAssignmentAudioUrl(
+    assignment
+  );
+
+
+if (audioUrl) {
+
+  url.searchParams.set(
+    'audioUrl',
+    audioUrl
+  );
+}
 
   // ========================================
   // Copeakを新しいタブで開く
