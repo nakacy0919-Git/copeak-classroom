@@ -1,1248 +1,2484 @@
 <!doctype html>
+
 <html lang="ja">
+
+
 
 <head>
 
+
+
   <meta charset="utf-8">
 
+
+
   <meta
+
     name="viewport"
+
     content="width=device-width,initial-scale=1">
 
+
+
   <title>
+
     Teacher | Copeak Classroom
+
   </title>
 
+
+
   <link
+
     rel="stylesheet"
+
     href="styles.css">
 
+
+
 </head>
+
+
 
 <body>
 
 
+
+
+
 <div class="app-shell platform-layout">
 
+
+
   <!-- ======================================
+
        PLATFORM SIDEBAR
+
   ======================================= -->
+
+
 
   <aside class="platform-sidebar">
 
+
+
     <div class="platform-sidebar-brand">
 
+
+
       <div class="brand-mark">
+
         C
+
       </div>
+
+
 
       <div>
+
         <div class="platform-brand-title">
+
           Copeak
+
         </div>
+
+
 
         <div class="platform-brand-sub">
+
           Classroom
+
         </div>
+
       </div>
 
+
+
     </div>
+
+
+
 
 
     <div class="platform-sidebar-label">
+
       CLASSROOM
+
     </div>
+
+
+
 
 
     <nav class="platform-nav">
 
+
+
       <button
+
         type="button"
+
         class="platform-nav-item active"
+
         data-platform-target="overview">
 
+
+
         <span class="platform-nav-icon">
+
           ◫
+
         </span>
 
+
+
         <span>
+
           <strong>Overview</strong>
+
           <small>クラス全体</small>
+
         </span>
+
+
 
       </button>
 
 
+
+
+
       <button
+
         type="button"
+
         class="platform-nav-item"
+
         data-platform-target="assignments">
 
+
+
         <span class="platform-nav-icon">
+
           ▤
+
         </span>
 
+
+
         <span>
+
           <strong>Assignments</strong>
+
           <small>課題の作成・管理</small>
+
         </span>
+
+
 
       </button>
 
 
+
+
+
       <button
+
         type="button"
+
         class="platform-nav-item"
+
         data-platform-target="students">
 
+
+
         <span class="platform-nav-icon">
+
           ◉
+
         </span>
+
+
 
         <span>
+
           <strong>Students</strong>
+
           <small>生徒・参加管理</small>
+
         </span>
 
+
+
       </button>
+
+
+
 
 
       <button
+
         type="button"
+
         class="platform-nav-item"
+
         data-platform-target="gradebook">
 
+
+
         <span class="platform-nav-icon">
+
           ▦
+
         </span>
+
+
 
         <span>
+
           <strong>Gradebook</strong>
+
           <small>音読結果・成績</small>
+
         </span>
 
+
+
       </button>
+
+
 
     </nav>
 
 
+
+
+
     <div class="platform-sidebar-footer">
 
+
+
       <div class="platform-product-badge">
+
         COPEAK
+
       </div>
+
+
 
       <div>
+
         Read · Practice · Grow
+
       </div>
 
+
+
     </div>
+
+
 
   </aside>
 
 
+
+
+
   <!-- ======================================
+
        TOP BAR
+
   ======================================= -->
+
+
 
   <header class="topbar">
 
+
+
     <div class="brand">
 
+
+
       <div class="brand-mark">
+
         C
+
       </div>
+
+
 
       <div>
 
+
+
         <div class="brand-title">
+
           Copeak Classroom
+
         </div>
 
+
+
         <div class="brand-sub">
+
           Teacher Dashboard
+
         </div>
+
+
 
       </div>
 
+
+
     </div>
+
+
+
 
 
     <div class="top-actions">
 
+
+
       <span
+
         class="user-label small"
+
         id="userName">
+
       </span>
 
+
+
       <button
+
         id="signOut"
+
         class="btn btn-sm btn-light">
+
+
 
         Sign out
 
+
+
       </button>
 
+
+
     </div>
+
+
 
   </header>
 
 
 
+
+
+
+
   <!-- ======================================
+
        DEMO
+
   ======================================= -->
 
+
+
   <div
+
     id="demoBanner"
+
     class="alert info hidden"
+
     style="margin-top:14px">
 
+
+
     Demo mode
+
+
 
   </div>
 
 
 
+
+
+
+
   <!-- ======================================
+
        FIRST SETUP
+
   ======================================= -->
 
+
+
   <section
+
     id="onboard"
+
     class="onboarding hidden">
+
+
 
     <div class="paper">
 
+
+
       <div class="eyebrow">
+
         First setup
+
       </div>
 
+
+
       <h2 style="margin:6px 0 8px">
+
         最初のクラスを作成
+
       </h2>
 
+
+
       <p class="muted">
+
         学校名とクラス名を登録すると
+
         Class Codeが自動発行されます。
+
       </p>
+
+
+
 
 
       <div class="form-stack">
 
+
+
         <div class="field">
 
+
+
           <label>
+
             School
+
           </label>
 
+
+
           <input
+
             id="schoolName"
+
             class="input"
+
             placeholder="Anjo Gakuen High School">
 
+
+
         </div>
+
+
+
 
 
         <div class="field">
 
+
+
           <label>
+
             Class
+
           </label>
 
+
+
           <input
+
             id="newClassName"
+
             class="input"
+
             placeholder="3年2組 English Course">
 
+
+
         </div>
+
+
+
 
 
         <button
+
           id="createClass"
+
           class="btn btn-primary">
 
+
+
           Create Class
+
+
 
         </button>
 
 
+
+
+
         <div
+
           id="onboardMsg"
+
           class="small"
+
           style="color:#b91c1c">
+
         </div>
+
+
 
       </div>
 
+
+
     </div>
+
+
 
   </section>
 
 
 
+
+
+
+
   <!-- ======================================
+
        MAIN
+
   ======================================= -->
+
+
 
   <main id="mainApp">
 
 
+
+
+
+    <div class="platform-page" data-platform-page="overview">
+
     <!-- ====================================
+
          HERO
+
     ===================================== -->
 
-    <section
-  class="hero paper"
-  data-platform-page="overview">
+
+
+    <section class="hero paper">
+
+
 
       <div>
 
+
+
         <div class="eyebrow">
+
           Teacher Dashboard
+
         </div>
 
+
+
         <h1 id="classTitle">
+
           Class
+
         </h1>
 
+
+
         <p class="muted">
+
           課題配信・提出率・Accuracyを
+
           1画面で確認できます。
+
         </p>
+
+
 
       </div>
 
 
+
+
+
       <div>
 
+
+
         <div class="tiny muted">
+
           CLASS CODE
+
         </div>
 
+
+
         <div
+
           id="classCode"
+
           class="class-code">
+
+
 
           ------
 
+
+
         </div>
 
+
+
         <button
+
           id="copyCode"
+
           class="btn btn-sm btn-light">
+
+
 
           Copy
 
+
+
         </button>
 
+
+
       </div>
+
+
 
     </section>
 
 
 
+
+
+
+
     <!-- ====================================
+
          METRICS
+
     ===================================== -->
 
+
+
     <section
-  class="grid grid-4"
-  data-platform-page="overview"
-  style="margin-top:16px">
+        class="grid grid-4"
+        style="margin-top:16px">
+
+
+
 
 
       <div class="metric">
 
+
+
         <div class="metric-label">
+
           Students
+
         </div>
 
+
+
         <div
+
           id="studentCount"
+
           class="metric-value">
 
+
+
           0
 
+
+
         </div>
+
+
 
       </div>
 
 
+
+
+
       <div class="metric">
 
+
+
         <div class="metric-label">
+
           Assignments
+
         </div>
 
+
+
         <div
+
           id="assignmentCount"
+
           class="metric-value blue">
 
+
+
           0
 
+
+
         </div>
+
+
 
       </div>
 
 
+
+
+
       <div class="metric">
 
+
+
         <div class="metric-label">
+
           Submission Rate
+
         </div>
 
+
+
         <div
+
           id="submissionRate"
+
           class="metric-value emerald">
 
+
+
           —
+
+
 
         </div>
 
+
+
       </div>
+
+
+
 
 
       <div class="metric">
 
+
+
         <div class="metric-label">
+
           Class Accuracy
+
         </div>
 
+
+
         <div
+
           id="classAverage"
+
           class="metric-value amber">
+
+
 
           —
 
+
+
         </div>
 
+
+
       </div>
+
+
 
     </section>
 
+
+
     <!-- ====================================
+
          OVERVIEW QUICK ACTIONS
+
     ===================================== -->
 
-    <section
-      class="platform-overview-actions"
-      data-platform-page="overview">
+
+
+    <section class="platform-overview-actions">
+
+
 
       <div class="paper section">
 
+
+
         <div class="panel-title">
+
+
 
           <div>
 
+
+
             <div class="eyebrow">
+
               Quick Actions
+
             </div>
 
+
+
             <h2>
+
               What would you like to do?
+
             </h2>
+
+
 
           </div>
 
+
+
         </div>
+
+
+
 
 
         <div class="platform-quick-grid">
 
+
+
           <button
+
             type="button"
+
             class="platform-quick-card"
+
             data-platform-open="assignments">
 
+
+
             <span class="platform-quick-icon">
+
               ＋
+
             </span>
+
+
 
             <span>
 
+
+
               <strong>
+
                 Create Assignment
+
               </strong>
 
+
+
               <small>
+
                 新しい音読課題を作成
+
               </small>
 
+
+
             </span>
 
+
+
             <span class="platform-quick-arrow">
+
               →
+
             </span>
+
+
 
           </button>
 
 
+
+
+
           <button
+
             type="button"
+
             class="platform-quick-card"
+
             data-platform-open="students">
 
+
+
             <span class="platform-quick-icon">
+
               ◉
+
             </span>
+
+
 
             <span>
 
+
+
               <strong>
+
                 Manage Students
+
               </strong>
 
+
+
               <small>
+
                 生徒登録・参加状況を確認
+
               </small>
 
+
+
             </span>
+
+
 
             <span class="platform-quick-arrow">
+
               →
+
             </span>
 
+
+
           </button>
+
+
+
 
 
           <button
+
             type="button"
+
             class="platform-quick-card"
+
             data-platform-open="gradebook">
 
+
+
             <span class="platform-quick-icon">
+
               ▦
+
             </span>
+
+
 
             <span>
 
+
+
               <strong>
+
                 Open Gradebook
+
               </strong>
 
+
+
               <small>
+
                 Accuracy・WPM・提出状況
+
               </small>
 
+
+
             </span>
+
+
 
             <span class="platform-quick-arrow">
+
               →
+
             </span>
 
+
+
           </button>
+
+
 
         </div>
 
+
+
       </div>
+
+
 
     </section>
 
+
+
+    </div>
+
+    <div class="platform-page" data-platform-page="students">
+
     <!-- ====================================
+
          STUDENT ROSTER
+
     ===================================== -->
 
-    <section
-  id="rosterSection"
-  class="paper section"
-  data-platform-page="students"
 
+
+    <section
+        id="rosterSection"
+        class="paper section"
+        style="margin-top:16px">
 
       <div class="panel-title">
 
+
+
         <div>
 
+
+
           <div class="eyebrow">
+
             Student Management
+
           </div>
 
+
+
           <h2>
+
             Class Roster
+
           </h2>
+
+
 
         </div>
 
 
+
+
+
         <button
+
           id="toggleRosterImport"
+
           class="btn btn-primary">
+
+
 
           ＋ Add Students
 
+
+
         </button>
 
+
+
       </div>
+
+
+
+
 
 
 
       <!-- SUMMARY -->
 
+
+
       <div class="roster-summary">
 
 
+
+
+
         <div>
 
+
+
           <span
+
             id="rosterTotal"
+
             class="roster-summary-number">
 
+
+
             0
 
+
+
           </span>
 
+
+
           <span>
+
             Registered
+
           </span>
+
+
 
         </div>
 
 
 
+
+
+
+
         <div>
 
+
+
           <span
+
             id="rosterJoined"
+
             class="roster-summary-number emerald-text">
 
+
+
             0
 
+
+
           </span>
+
+
 
           <span>
+
             Joined
+
           </span>
 
+
+
         </div>
+
+
+
+
 
 
 
         <div>
 
+
+
           <span
+
             id="rosterWaiting"
+
             class="roster-summary-number amber-text">
+
+
 
             0
 
+
+
           </span>
+
+
 
           <span>
+
             Waiting
+
           </span>
 
+
+
         </div>
+
+
+
 
 
       </div>
+
+
+
+
 
 
 
       <!-- IMPORT PANEL -->
 
+
+
       <div
+
         id="rosterImportPanel"
+
         class="roster-import-panel hidden">
+
+
+
 
 
         <div class="field">
 
+
+
           <label>
+
             Paste Student List
+
           </label>
 
+
+
           <textarea
+
             id="rosterPaste"
+
             class="input roster-textarea"
+
             placeholder="Excelからそのまま貼り付けできます。
 
-1	山田 太郎
-2	鈴木 花子
-3	田中 美咲"></textarea>
+
+
+1 山田 太郎
+
+2 鈴木 花子
+
+3 田中 美咲"></textarea>
+
+
 
         </div>
+
+
+
 
 
         <div class="small muted">
 
+
+
           Excelの
+
           「出席番号・氏名」
+
           2列をコピーして
+
           そのまま貼り付けてください。
 
+
+
         </div>
+
+
+
 
 
         <div class="editor-actions">
 
+
+
           <button
+
             id="importRoster"
+
             class="btn btn-primary">
+
+
 
             Import Students
 
+
+
           </button>
+
+
+
 
 
           <button
+
             id="cancelRosterImport"
+
             class="btn btn-light">
+
+
 
             Cancel
 
+
+
           </button>
 
+
+
         </div>
+
+
+
 
 
         <div
+
           id="rosterImportMsg"
+
           class="small">
+
         </div>
 
 
+
+
+
       </div>
+
+
+
+
 
 
 
       <!-- ROSTER TABLE -->
 
+
+
       <div
+
         class="table-wrap roster-table-wrap">
+
+
+
 
 
         <table class="roster-table">
 
 
+
+
+
           <thead>
+
+
 
             <tr>
 
+
+
               <th>
+
                 No.
+
               </th>
 
+
+
               <th>
+
                 Student
+
               </th>
 
+
+
               <th>
+
                 Join PIN
+
               </th>
 
+
+
               <th>
+
                 Status
+
               </th>
 
+
+
               <th>
+
                 Action
+
               </th>
+
+
 
             </tr>
+
+
 
           </thead>
 
 
+
+
+
           <tbody id="rosterBody">
+
+
 
             <tr>
 
+
+
               <td colspan="5">
 
+
+
                 <div class="roster-empty">
+
                   Loading roster...
+
                 </div>
+
+
 
               </td>
 
+
+
             </tr>
 
+
+
           </tbody>
+
+
+
 
 
         </table>
 
 
+
+
+
       </div>
+
+
+
 
 
       <div
+
         class="tiny muted"
+
         style="margin-top:10px">
 
+
+
         生徒は
+
         Class Code + Student No. + Join PIN
+
         で本人確認して参加します。
 
+
+
       </div>
+
+
+
 
 
     </section>
 
 
 
+
+
+
+
+    </div>
+
+    <div class="platform-page" data-platform-page="assignments">
+
     <!-- ====================================
+
          ASSIGNMENT MANAGER
+
     ===================================== -->
 
+
+
     <section
-  class="paper section"
-  data-platform-page="assignments"
-  style="margin-top:16px">
+        class="paper section"
+        style="margin-top:16px">
+
+
+
 
 
       <div class="panel-title">
 
+
+
         <div>
 
+
+
           <div class="eyebrow">
+
             Assignment Manager
+
           </div>
 
+
+
           <h2>
+
             Reading Assignments
+
           </h2>
+
+
 
         </div>
 
 
+
+
+
         <button
+
           id="newAssignment"
+
           class="btn btn-primary">
+
+
 
           ＋ New Assignment
 
+
+
         </button>
 
+
+
       </div>
+
+
+
+
 
 
 
       <!-- EDITOR -->
 
+
+
       <div
+
         id="assignmentEditor"
+
         class="assignment-editor hidden">
+
+
 
 <div class="field">
 
+
+
   <label>
+
     Category
+
   </label>
 
+
+
   <select
+
     id="assignmentCategory"
+
     class="input">
 
+
+
     <option value="Reading">
+
       Reading
+
     </option>
+
+
 
     <option value="Grammar">
+
       Grammar
+
     </option>
+
+
 
     <option value="Speech">
+
       Speech
+
     </option>
+
+
 
     <option value="Textbook">
+
       Textbook
+
     </option>
 
+
+
     <option value="Other">
+
       Other
+
     </option>
+
+
 
   </select>
 
+
+
 </div>
 
 
 
+
+
+
+
         <div class="field">
 
+
+
           <label>
+
             Title
+
           </label>
+
+
 
           <input
+
             id="assignmentTitle"
+
             class="input"
+
             placeholder="例：CNN News 1 - Now Free for Everyone">
 
+
+
         </div>
+
+
+
+
 
 
 
         <div class="field">
 
+
+
           <label>
+
             English Text
+
           </label>
 
+
+
           <textarea
+
             id="assignmentText"
+
             class="input assignment-textarea"
+
             placeholder="Copeakで音読させる英文を貼り付けてください。"></textarea>
 
+
+
         </div>
+
+
+
+
 
 
 
         <div class="field">
 
+
+
           <label>
+
             Japanese Translation / Note
+
           </label>
 
+
+
           <textarea
+
             id="assignmentTranslation"
+
             class="input assignment-textarea assignment-textarea-sm"
+
             placeholder="日本語訳・補足説明（任意）"></textarea>
 
+
+
         </div>
+
 <div class="field">
 
+
+
   <label>
+
     🎧 MP3 Audio
+
     <span class="tiny muted">
+
       (Optional)
+
     </span>
+
   </label>
 
+
+
   <input
+
     id="assignmentAudio"
+
     type="file"
+
     accept=".mp3,audio/mpeg"
+
     class="input">
 
+
+
   <div
+
     id="assignmentAudioStatus"
+
     class="tiny muted"
+
     style="margin-top:6px">
+
+
 
     MP3 only · Max 5 MB · Cloud copy expires after 14 days
 
+
+
   </div>
+
+
 
 </div>
 
 
+
+
+
         <div class="grid grid-2">
+
+
 
   <div class="field">
 
+
+
     <label>
+
       Release Date & Time
+
     </label>
 
+
+
     <input
+
       id="assignmentRelease"
+
       type="datetime-local"
+
       step="1"
+
       class="input">
 
+
+
     <div class="tiny muted" style="margin-top:5px">
+
       生徒に課題を公開する日時
+
     </div>
 
+
+
   </div>
+
+
+
 
 
   <div class="field">
 
+
+
     <label>
+
       Deadline
+
     </label>
 
+
+
     <input
+
       id="assignmentDue"
+
       type="datetime-local"
+
       step="1"
+
       class="input">
 
+
+
     <div class="tiny muted" style="margin-top:5px">
+
       この時刻を過ぎると提出できません
+
     </div>
 
+
+
   </div>
+
+
 
 </div>
 
 
 
+
+
+
+
         <div class="grid grid-2">
+
+
+
 
 
           <div class="field">
 
+
+
             <label>
+
               English
+
             </label>
 
+
+
             <select
+
               id="assignmentLang"
+
               class="input">
 
+
+
               <option value="en-US">
+
                 English (US)
+
               </option>
+
+
 
               <option value="en-GB">
+
                 English (UK)
+
               </option>
+
+
 
               <option value="en-AU">
+
                 English (Australia)
+
               </option>
 
+
+
             </select>
+
+
 
           </div>
 
 
+
+
+
           <label class="publish-check">
 
+
+
             <input
+
               id="assignmentPublished"
+
               type="checkbox"
+
               checked>
+
+
 
             <span>
 
+
+
               <strong>
+
                 Publish now
+
               </strong>
 
+
+
               <small>
+
                 ONなら生徒にすぐ表示
+
               </small>
 
+
+
             </span>
+
+
 
           </label>
 
 
+
+
+
         </div>
+
+
+
+
 
 
 
         <div class="editor-actions">
 
+
+
           <button
+
             id="publishAssignment"
+
             class="btn btn-primary">
+
+
 
             Publish Assignment
 
+
+
           </button>
+
+
+
 
 
           <button
+
             id="cancelAssignment"
+
             class="btn btn-light">
+
+
 
             Cancel
 
+
+
           </button>
 
+
+
         </div>
+
+
+
 
 
         <div
+
           id="assignmentMsg"
+
           class="small">
+
         </div>
 
 
+
+
+
       </div>
+
+
+
+
 
 
 
       <div
+
         id="assignmentHint"
+
         class="muted small">
 
+
+
         ＋ New Assignment から英文を登録すると、
+
         生徒はRoadmapからそのままCopeakへ進めます。
 
+
+
       </div>
+
+
+
 
 
       <!-- ==================================
+
            ASSIGNMENT MANAGEMENT LIST
+
       =================================== -->
 
+
+
       <div
+
         id="assignmentManagementList"
+
         class="teacher-assignment-list">
+
       </div>
+
+
+
 
 
     </section>
 
 
 
-   
+
+
+
+
+
+
+    </div>
+
+    <div class="platform-page" data-platform-page="gradebook">
+
     <!-- ====================================
+
          GRADEBOOK
+
     ===================================== -->
 
+
+
     <section
-  class="paper section"
-  data-platform-page="gradebook"
-  style="margin-top:16px">
+        class="paper section"
+        style="margin-top:16px">
+
+
+
 
 
       <div class="panel-title">
 
+
+
         <div>
 
+
+
           <div class="eyebrow">
+
             Gradebook
+
           </div>
 
+
+
           <h2>
+
             Student × Assignment
+
           </h2>
+
+
 
         </div>
 
 
+
+
+
         <input
+
           id="studentSearch"
+
           class="input"
+
           style="max-width:260px"
+
           placeholder="Search student">
 
+
+
       </div>
+
+
+
+
 
 
 
       <div class="table-wrap">
 
+
+
         <table>
 
+
+
           <thead id="gradeHead">
+
           </thead>
 
+
+
           <tbody id="gradeBody">
+
           </tbody>
+
+
 
         </table>
 
+
+
       </div>
+
+
+
 
 
       <div
+
         class="tiny muted"
+
         style="margin-top:10px">
 
+
+
         セルはAccuracy。
+
         マウスを置くと
+
         WPM / Comp.も確認できます。
 
+
+
       </div>
+
+
+
 
 
     </section>
 
 
+
+
+
+    </div>
+
   </main>
 
 
 
+
+
+
+
   <!-- ======================================
+
        FOOTER
+
   ======================================= -->
+
+
 
   <div class="footer-note">
 
+
+
   Copeak Classroom
+
   <span style="opacity:.55">
+
     · Powered by Copeak
+
   </span>
 
-</div>
 
 
 </div>
+
+
+
+
+
+</div>
+
+
 
 <div id="appModal" class="app-modal hidden">
+
   <div class="app-modal-backdrop"></div>
 
+
+
   <div
+
     class="app-modal-dialog"
+
     role="dialog"
+
     aria-modal="true"
+
     aria-labelledby="appModalTitle">
 
+
+
     <div class="app-modal-header">
+
       <div id="appModalBadge" class="app-modal-badge danger">
+
         Confirm
+
       </div>
 
+
+
       <h3 id="appModalTitle" class="app-modal-title">
+
         Confirm action
+
       </h3>
+
     </div>
+
+
 
     <div id="appModalBody" class="app-modal-body">
+
       Are you sure?
+
     </div>
 
+
+
     <div class="app-modal-actions">
+
       <button
+
         id="appModalCancel"
+
         type="button"
+
         class="btn btn-light">
+
+
 
         Cancel
 
+
+
       </button>
 
+
+
       <button
+
         id="appModalConfirm"
+
         type="button"
+
         class="btn btn-danger">
+
+
 
         Delete
 
+
+
       </button>
+
     </div>
+
   </div>
+
 </div>
 
 
+
+
+
 <!-- ========================================
+
      SCRIPTS
-========================================= -->
+
+\========================================= -->
+
+
 
 <script src="js/config.js"></script>
 
 
+
+
+
 <script
+
   type="module"
+
   src="js/teacher.js">
+
 </script>
 
 
+
+
+
 <script
+
   type="module"
+
   src="js/roster.js">
+
 </script>
 
+
+
 <script
+
   type="module"
+
   src="js/class-manager.js">
+
 </script>
 
+
+
 <script
+
   type="module"
+
   src="js/platform-ui.js">
+
 </script>
+
+
 
 </body>
+
+
 
 </html>
