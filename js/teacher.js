@@ -1436,6 +1436,214 @@ function updateDueDate() {
 }
 
 // ==========================================
+// ASSIGNMENT AUDIO
+// MP3 → R2
+// ==========================================
+
+const MAX_ASSIGNMENT_AUDIO_SIZE =
+  5 * 1024 * 1024;
+
+
+function getSelectedAssignmentAudio() {
+
+  return (
+    $('#assignmentAudio')
+      ?.files?.[0] ||
+    null
+  );
+}
+
+
+function validateAssignmentAudio(
+  file
+) {
+
+  if (!file) {
+    return;
+  }
+
+
+  const fileName =
+    String(
+      file.name || ''
+    )
+      .trim()
+      .toLowerCase();
+
+
+  if (
+    !fileName.endsWith(
+      '.mp3'
+    )
+  ) {
+
+    throw new Error(
+      'MP3ファイルを選択してください。'
+    );
+  }
+
+
+  if (
+    file.size >
+    MAX_ASSIGNMENT_AUDIO_SIZE
+  ) {
+
+    throw new Error(
+      'MP3は5 MB以下にしてください。'
+    );
+  }
+}
+
+
+async function uploadAssignmentAudio(
+  file
+) {
+
+  validateAssignmentAudio(
+    file
+  );
+
+
+  const sb =
+    getClient(
+      'teacher'
+    );
+
+
+  const {
+    data: {
+      session
+    },
+    error:
+      sessionError
+  } =
+    await sb
+      .auth
+      .getSession();
+
+
+  if (
+    sessionError ||
+    !session?.access_token
+  ) {
+
+    throw new Error(
+      'Teacherのログイン情報を確認できません。'
+    );
+  }
+
+
+  const signResponse =
+    await fetch(
+      '/api/r2-upload-url',
+      {
+        method:
+          'POST',
+
+        headers: {
+
+          'Content-Type':
+            'application/json',
+
+          'X-Supabase-Access-Token':
+            session.access_token
+
+        },
+
+        body:
+          JSON.stringify({
+
+            fileName:
+              file.name,
+
+            contentType:
+              'audio/mpeg',
+
+            fileSize:
+              file.size
+
+          })
+      }
+    );
+
+
+  let signed = {};
+
+  try {
+
+    signed =
+      await signResponse.json();
+
+  } catch {
+
+    signed = {};
+
+  }
+
+
+  if (
+    !signResponse.ok ||
+    !signed.uploadUrl ||
+    !signed.objectKey
+  ) {
+
+    throw new Error(
+      signed.error ||
+      'MP3のアップロード準備に失敗しました。'
+    );
+  }
+
+
+  const uploadResponse =
+    await fetch(
+      signed.uploadUrl,
+      {
+        method:
+          'PUT',
+
+        headers: {
+          'Content-Type':
+            'audio/mpeg'
+        },
+
+        body:
+          file
+      }
+    );
+
+
+  if (
+    !uploadResponse.ok
+  ) {
+
+    throw new Error(
+      `MP3 upload failed (${uploadResponse.status}).`
+    );
+  }
+
+
+  return {
+
+    objectKey:
+      signed.objectKey,
+
+    audioExpiresAt:
+      signed.audioExpiresAt,
+
+    contentType:
+      signed.contentType ||
+      'audio/mpeg',
+
+    fileName:
+      file.name,
+
+    fileSize:
+      file.size
+
+  };
+}
+
+// ==========================================
 // CREATE ASSIGNMENT
 // ==========================================
 
@@ -1487,7 +1695,8 @@ const week =
     $('#assignmentTranslation')
       .value
       .trim();
-
+const audioFile =
+  getSelectedAssignmentAudio();
 
   const language =
     $('#assignmentLang').value;
@@ -1511,7 +1720,22 @@ const week =
 
   msg.style.color =
     '#b91c1c';
+try {
 
+  validateAssignmentAudio(
+    audioFile
+  );
+
+} catch (
+  error
+) {
+
+  msg.textContent =
+    error.message ||
+    'MP3ファイルを確認してください。';
+
+  return;
+}
 
  
   if (!title) {
@@ -1650,6 +1874,12 @@ const due =
   button.textContent =
     'Saving...';
 
+const audioStatus =
+  $('#assignmentAudioStatus');
+
+
+let uploadedAudio =
+  null;
 
   const row = {
 
@@ -1682,7 +1912,64 @@ const due =
 
 
   try {
+if (audioFile) {
 
+  if (audioStatus) {
+
+    audioStatus.style.color =
+      '#2563eb';
+
+    audioStatus.textContent =
+      `Uploading ${audioFile.name}...`;
+  }
+
+
+  button.textContent =
+    'Uploading audio...';
+
+
+  uploadedAudio =
+    await uploadAssignmentAudio(
+      audioFile
+    );
+
+
+  Object.assign(
+    row,
+    {
+
+      audio_object_key:
+        uploadedAudio.objectKey,
+
+      audio_expires_at:
+        uploadedAudio.audioExpiresAt,
+
+      audio_file_name:
+        uploadedAudio.fileName,
+
+      audio_size_bytes:
+        uploadedAudio.fileSize,
+
+      audio_url:
+        null
+
+    }
+  );
+
+
+  if (audioStatus) {
+
+    audioStatus.style.color =
+      '#15803d';
+
+    audioStatus.textContent =
+      `✓ ${uploadedAudio.fileName} uploaded`;
+  }
+
+
+  button.textContent =
+    'Saving...';
+}
     const sb =
       getClient(
   'teacher'
