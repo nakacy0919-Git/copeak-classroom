@@ -3017,3 +3017,2452 @@ table {
   margin-top:
     9px;
 }
+/* =========================================================
+   COPEAK CLASSROOM
+   STUDENT UI v2
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   STUDENT SHELL
+--------------------------------------------------------- */
+
+.student-platform {
+
+  width:
+    100%;
+
+  max-width:
+    none;
+
+  min-height:
+    100vh;
+
+  margin:
+    0;
+
+  padding:
+    0;
+
+  background:
+    linear-gradient(
+      180deg,
+      #f5f8f7 0%,
+      #eef4f1 100%
+    );
+
+  color:
+    #1f2d29;
+}
+
+
+/* ---------------------------------------------------------
+   TOP BAR
+--------------------------------------------------------- */
+
+.student-platform
+.student-topbar {
+
+  position:
+    sticky;
+
+  top:
+    0;
+
+  z-index:
+    50;
+
+  width:
+    100%;
+
+  min-height:
+    72px;
+
+  padding:
+    13px
+    28px;
+
+  border:
+    0;
+
+  border-bottom:
+    1px solid
+    #dfe8e4;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      .94
+    );
+
+  color:
+    #17211f;
+
+  box-shadow:
+    0 2px 14px
+    rgba(
+      15,
+      23,
+      42,
+      .04
+    );
+
+  backdrop-filter:
+    blur(
+      18px
+    );
+
+  -webkit-backdrop-filter:
+    blur(
+      18px
+    );
+}
+
+
+.student-platform
+.student-topbar
+.brand-mark {
+
+  width:
+    42px;
+
+  height:
+    42px;
+
+  border:
+    0;
+
+  border-radius:
+    11px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #065f46,
+      #059669
+    );
+
+  color:
+    #ffffff;
+
+  box-shadow:
+    0 7px 18px
+    rgba(
+      5,
+      150,
+      105,
+      .18
+    );
+}
+
+
+.student-platform
+.student-topbar
+.brand-title {
+
+  color:
+    #17211f;
+
+  font-family:
+    'Noto Sans JP',
+    sans-serif;
+
+  font-size:
+    17px;
+
+  font-weight:
+    800;
+}
+
+
+.student-platform
+.student-topbar
+.brand-sub {
+
+  margin-top:
+    2px;
+
+  color:
+    #7a8984;
+
+  font-size:
+    9px;
+
+  letter-spacing:
+    .13em;
+}
+
+
+.student-platform
+.student-top-actions {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+}
+
+
+.student-platform
+.user-label {
+
+  color:
+    #3c4e48;
+
+  font-weight:
+    700;
+}
+
+
+/* ---------------------------------------------------------
+   LANGUAGE SWITCH
+--------------------------------------------------------- */
+
+.student-language-switch {
+
+  display:
+    inline-grid;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
+  padding:
+    3px;
+
+  border:
+    1px solid
+    #d9e5e0;
+
+  border-radius:
+    9px;
+
+  background:
+    #f3f7f5;
+}
+
+
+.student-language-btn {
+
+  min-width:
+    67px;
+
+  padding:
+    7px
+    10px;
+
+  border:
+    0;
+
+  border-radius:
+    7px;
+
+  background:
+    transparent;
+
+  color:
+    #7a8984;
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+
+  cursor:
+    pointer;
+
+  transition:
+    .15s ease;
+}
+
+
+.student-language-btn:hover {
+
+  color:
+    #047857;
+}
+
+
+.student-language-btn.active {
+
+  background:
+    #ffffff;
+
+  color:
+    #047857;
+
+  box-shadow:
+    0 2px 8px
+    rgba(
+      15,
+      23,
+      42,
+      .08
+    );
+}
+
+
+/* ---------------------------------------------------------
+   MAIN
+--------------------------------------------------------- */
+
+.student-platform
+.student-main {
+
+  width:
+    min(
+      1180px,
+      calc(
+        100% - 40px
+      )
+    );
+
+  margin:
+    0 auto;
+
+  padding:
+    28px
+    0
+    56px;
+}
+
+
+/* ---------------------------------------------------------
+   COMMON PAPER
+--------------------------------------------------------- */
+
+.student-platform
+.paper {
+
+  border:
+    1px solid
+    #e0e8e5;
+
+  border-radius:
+    16px;
+
+  background:
+    #ffffff;
+
+  box-shadow:
+    0 8px 30px
+    rgba(
+      15,
+      23,
+      42,
+      .045
+    );
+}
+
+
+.student-platform
+.paper::before {
+
+  display:
+    none;
+}
+
+
+.student-platform
+h1,
+.student-platform
+h2,
+.student-platform
+h3 {
+
+  font-family:
+    'Noto Sans JP',
+    sans-serif;
+}
+
+
+.student-platform
+.eyebrow {
+
+  color:
+    #059669;
+
+  font-size:
+    10px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .12em;
+}
+
+
+/* ---------------------------------------------------------
+   PROGRESS HERO
+--------------------------------------------------------- */
+
+.student-progress-hero {
+
+  display:
+    grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      1fr
+    )
+    minmax(
+      280px,
+      390px
+    );
+
+  align-items:
+    center;
+
+  gap:
+    34px;
+
+  padding:
+    27px
+    30px;
+
+  overflow:
+    hidden;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff 0%,
+      #fbfdfc 60%,
+      #f0faf6 100%
+    ) !important;
+}
+
+
+.student-progress-copy
+h1 {
+
+  margin-top:
+    5px;
+
+  color:
+    #17211f;
+
+  font-size:
+    clamp(
+      27px,
+      4vw,
+      38px
+    );
+
+  font-weight:
+    850;
+
+  letter-spacing:
+    -.04em;
+}
+
+
+.student-progress-copy
+p {
+
+  margin:
+    9px
+    0
+    0;
+
+  font-size:
+    13px;
+
+  line-height:
+    1.7;
+}
+
+
+.student-progress-summary {
+
+  padding:
+    18px
+    20px;
+
+  border:
+    1px solid
+    #dce8e3;
+
+  border-radius:
+    13px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      .78
+    );
+}
+
+
+.student-progress-heading {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    16px;
+
+  color:
+    #42544e;
+
+  font-size:
+    12px;
+
+  font-weight:
+    800;
+}
+
+
+.student-progress-heading
+strong {
+
+  color:
+    #047857;
+
+  font-size:
+    22px;
+
+  font-weight:
+    900;
+}
+
+
+.student-progress-track {
+
+  height:
+    13px;
+
+  margin:
+    10px
+    0
+    7px;
+
+  overflow:
+    hidden;
+
+  border:
+    0;
+
+  border-radius:
+    999px;
+
+  background:
+    #e3ece8;
+}
+
+
+.student-progress-track
+.progress-fill {
+
+  border-radius:
+    999px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #059669,
+      #10b981
+    );
+}
+
+
+/* ---------------------------------------------------------
+   NEXT ASSIGNMENT
+--------------------------------------------------------- */
+
+.student-next-assignment {
+
+  position:
+    relative;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      1fr
+    )
+    auto;
+
+  align-items:
+    center;
+
+  gap:
+    28px;
+
+  margin-top:
+    18px;
+
+  padding:
+    28px
+    30px;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid
+    #214139;
+
+  border-radius:
+    17px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #142823,
+      #18342d
+    );
+
+  color:
+    #ffffff;
+
+  box-shadow:
+    0 14px 35px
+    rgba(
+      15,
+      46,
+      39,
+      .14
+    );
+}
+
+
+.student-next-assignment::after {
+
+  content:
+    "";
+
+  position:
+    absolute;
+
+  width:
+    250px;
+
+  height:
+    250px;
+
+  right:
+    -100px;
+
+  top:
+    -125px;
+
+  border-radius:
+    50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(
+        52,
+        211,
+        153,
+        .13
+      ),
+      transparent
+        68%
+    );
+
+  pointer-events:
+    none;
+}
+
+
+.student-next-main {
+
+  position:
+    relative;
+
+  z-index:
+    1;
+
+  min-width:
+    0;
+}
+
+
+.student-next-heading {
+
+  display:
+    flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap:
+    16px;
+}
+
+
+.student-next-assignment
+.eyebrow {
+
+  color:
+    #6ee7b7;
+}
+
+
+.student-assignment-number {
+
+  margin-top:
+    5px;
+
+  color:
+    #9db8af;
+
+  font-size:
+    11px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    .06em;
+}
+
+
+.student-next-assignment
+h2 {
+
+  margin-top:
+    13px;
+
+  color:
+    #ffffff;
+
+  font-size:
+    clamp(
+      22px,
+      3vw,
+      31px
+    );
+
+  font-weight:
+    800;
+
+  line-height:
+    1.35;
+
+  letter-spacing:
+    -.035em;
+}
+
+
+.student-week-meta {
+
+  margin-top:
+    12px;
+}
+
+
+/* ---------------------------------------------------------
+   CATEGORY CHIP
+--------------------------------------------------------- */
+
+.student-category-chip {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  padding:
+    5px
+    9px;
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(
+      16,
+      185,
+      129,
+      .11
+    );
+
+  color:
+    #047857;
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+}
+
+
+.student-next-assignment
+.student-category-chip {
+
+  background:
+    rgba(
+      110,
+      231,
+      183,
+      .12
+    );
+
+  color:
+    #a7f3d0;
+}
+
+
+/* ---------------------------------------------------------
+   STATUS BADGES
+--------------------------------------------------------- */
+
+.student-status-badge {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  width:
+    fit-content;
+
+  padding:
+    6px
+    10px;
+
+  border:
+    1px solid;
+
+  border-radius:
+    999px;
+
+  font-size:
+    11px;
+
+  font-weight:
+    900;
+
+  line-height:
+    1.2;
+
+  white-space:
+    nowrap;
+}
+
+
+.student-status-badge.done {
+
+  border-color:
+    #a7f3d0;
+
+  background:
+    #ecfdf5;
+
+  color:
+    #047857;
+}
+
+
+.student-status-badge.due {
+
+  border-color:
+    #fcd34d;
+
+  background:
+    #fffbeb;
+
+  color:
+    #b45309;
+}
+
+
+.student-status-badge.upcoming {
+
+  border-color:
+    #cbd5e1;
+
+  background:
+    #f8fafc;
+
+  color:
+    #64748b;
+}
+
+
+.student-status-badge.late {
+
+  border-color:
+    #fecaca;
+
+  background:
+    #fef2f2;
+
+  color:
+    #b91c1c;
+}
+
+
+.student-next-assignment
+.student-status-badge.done {
+
+  border-color:
+    rgba(
+      110,
+      231,
+      183,
+      .35
+    );
+
+  background:
+    rgba(
+      16,
+      185,
+      129,
+      .16
+    );
+
+  color:
+    #a7f3d0;
+}
+
+
+.student-next-assignment
+.student-status-badge.due {
+
+  border-color:
+    rgba(
+      251,
+      191,
+      36,
+      .35
+    );
+
+  background:
+    rgba(
+      245,
+      158,
+      11,
+      .14
+    );
+
+  color:
+    #fde68a;
+}
+
+
+.student-next-assignment
+.student-status-badge.upcoming {
+
+  border-color:
+    rgba(
+      203,
+      213,
+      225,
+      .28
+    );
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      .08
+    );
+
+  color:
+    #d7e1dd;
+}
+
+
+/* ---------------------------------------------------------
+   DEADLINE VISUAL
+--------------------------------------------------------- */
+
+.student-deadline-visual {
+
+  max-width:
+    570px;
+
+  margin-top:
+    20px;
+
+  padding:
+    17px
+    19px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      .13
+    );
+
+  border-radius:
+    13px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      .06
+    );
+}
+
+
+.student-deadline-top {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    13px;
+}
+
+
+.student-deadline-icon {
+
+  width:
+    43px;
+
+  height:
+    43px;
+
+  flex:
+    none;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    50%;
+
+  background:
+    rgba(
+      16,
+      185,
+      129,
+      .16
+    );
+
+  color:
+    #6ee7b7;
+
+  font-size:
+    24px;
+}
+
+
+.student-deadline-label {
+
+  color:
+    #a7bbb4;
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    .08em;
+}
+
+
+.student-deadline-countdown {
+
+  margin-top:
+    2px;
+
+  color:
+    #ffffff;
+
+  font-size:
+    clamp(
+      24px,
+      4vw,
+      34px
+    );
+
+  font-weight:
+    900;
+
+  line-height:
+    1.2;
+
+  letter-spacing:
+    -.035em;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+.student-deadline-track {
+
+  height:
+    11px;
+
+  margin-top:
+    15px;
+
+  overflow:
+    hidden;
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      .13
+    );
+}
+
+
+.student-deadline-fill {
+
+  height:
+    100%;
+
+  border-radius:
+    999px;
+
+  background:
+    #34d399;
+
+  transition:
+    width
+      .5s
+      linear;
+}
+
+
+.student-deadline-date {
+
+  margin-top:
+    8px;
+
+  color:
+    #d3ded9;
+
+  font-size:
+    12px;
+
+  font-weight:
+    700;
+}
+
+
+/* deadline warning */
+
+.student-deadline-visual.warning
+.student-deadline-icon {
+
+  background:
+    rgba(
+      245,
+      158,
+      11,
+      .17
+    );
+
+  color:
+    #fbbf24;
+}
+
+
+.student-deadline-visual.warning
+.student-deadline-fill {
+
+  background:
+    #f59e0b;
+}
+
+
+.student-deadline-visual.warning
+.student-deadline-countdown {
+
+  color:
+    #fde68a;
+}
+
+
+/* deadline danger */
+
+.student-deadline-visual.danger {
+
+  border-color:
+    rgba(
+      248,
+      113,
+      113,
+      .28
+    );
+
+  background:
+    rgba(
+      127,
+      29,
+      29,
+      .19
+    );
+}
+
+
+.student-deadline-visual.danger
+.student-deadline-icon {
+
+  background:
+    rgba(
+      239,
+      68,
+      68,
+      .16
+    );
+
+  color:
+    #fca5a5;
+}
+
+
+.student-deadline-visual.danger
+.student-deadline-fill {
+
+  background:
+    #ef4444;
+}
+
+
+.student-deadline-visual.danger
+.student-deadline-countdown {
+
+  color:
+    #fecaca;
+}
+
+
+/* upcoming */
+
+.student-deadline-visual.upcoming
+.student-deadline-fill {
+
+  background:
+    #94a3b8;
+}
+
+
+/* ---------------------------------------------------------
+   NEXT ACTION
+--------------------------------------------------------- */
+
+.student-next-action {
+
+  position:
+    relative;
+
+  z-index:
+    1;
+}
+
+
+.student-start-button {
+
+  min-width:
+    190px;
+
+  padding:
+    14px
+    20px;
+
+  border-radius:
+    10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #10b981,
+      #059669
+    );
+
+  color:
+    #ffffff;
+
+  font-size:
+    13px;
+
+  box-shadow:
+    0 8px 22px
+    rgba(
+      5,
+      150,
+      105,
+      .25
+    );
+}
+
+
+/* ---------------------------------------------------------
+   METRICS
+--------------------------------------------------------- */
+
+.student-metrics {
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap:
+    14px;
+
+  margin-top:
+    18px;
+}
+
+
+.student-metric-card {
+
+  min-height:
+    112px;
+
+  padding:
+    18px
+    20px;
+
+  border:
+    1px solid
+    #e1e9e6;
+
+  border-radius:
+    14px;
+
+  background:
+    #ffffff;
+
+  box-shadow:
+    0 5px 20px
+    rgba(
+      15,
+      23,
+      42,
+      .035
+    );
+}
+
+
+.student-platform
+.student-metric-card
+.metric-label {
+
+  color:
+    #76847f;
+
+  font-size:
+    10px;
+
+  letter-spacing:
+    .08em;
+}
+
+
+.student-platform
+.student-metric-card
+.metric-value {
+
+  margin-top:
+    8px;
+
+  font-family:
+    'Noto Sans JP',
+    sans-serif;
+
+  font-size:
+    30px;
+
+  font-weight:
+    850;
+}
+
+
+/* ---------------------------------------------------------
+   ROADMAP
+--------------------------------------------------------- */
+
+.student-roadmap {
+
+  margin-top:
+    18px;
+
+  padding:
+    24px;
+}
+
+
+.student-roadmap-title {
+
+  margin-bottom:
+    14px;
+}
+
+
+.student-roadmap-title
+h2 {
+
+  margin-top:
+    3px;
+
+  color:
+    #17211f;
+
+  font-size:
+    25px;
+
+  font-weight:
+    850;
+
+  letter-spacing:
+    -.035em;
+}
+
+
+/* ---------------------------------------------------------
+   FILTERS
+--------------------------------------------------------- */
+
+.student-assignment-filters {
+
+  display:
+    flex;
+
+  gap:
+    7px;
+
+  margin-bottom:
+    18px;
+
+  overflow-x:
+    auto;
+
+  padding-bottom:
+    2px;
+}
+
+
+.student-filter-btn {
+
+  flex:
+    none;
+
+  padding:
+    8px
+    14px;
+
+  border:
+    1px solid
+    #dce6e2;
+
+  border-radius:
+    999px;
+
+  background:
+    #ffffff;
+
+  color:
+    #65746f;
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+
+  cursor:
+    pointer;
+
+  transition:
+    .15s ease;
+}
+
+
+.student-filter-btn:hover {
+
+  border-color:
+    #a7d5c4;
+
+  color:
+    #047857;
+}
+
+
+.student-filter-btn.active {
+
+  border-color:
+    #047857;
+
+  background:
+    #047857;
+
+  color:
+    #ffffff;
+}
+
+
+/* ---------------------------------------------------------
+   ASSIGNMENT CARDS
+--------------------------------------------------------- */
+
+.student-platform
+.student-assignment-list {
+
+  display:
+    grid;
+
+  gap:
+    11px;
+}
+
+
+.student-platform
+.student-assignment-card {
+
+  display:
+    grid;
+
+  grid-template-columns:
+    68px
+    minmax(
+      0,
+      1fr
+    )
+    minmax(
+      150px,
+      auto
+    );
+
+  align-items:
+    center;
+
+  gap:
+    17px;
+
+  padding:
+    15px
+    16px;
+
+  border:
+    1px solid
+    #e1e9e6;
+
+  border-radius:
+    13px;
+
+  background:
+    #ffffff;
+
+  box-shadow:
+    none;
+}
+
+
+.student-platform
+.student-assignment-card:hover {
+
+  border-color:
+    #bcd2ca;
+
+  box-shadow:
+    0 7px 22px
+    rgba(
+      15,
+      23,
+      42,
+      .055
+    );
+}
+
+
+.student-platform
+.student-assignment-card[data-status="due"] {
+
+  border-left:
+    4px solid
+    #f59e0b;
+}
+
+
+.student-platform
+.student-assignment-card[data-status="done"] {
+
+  border-left:
+    4px solid
+    #10b981;
+}
+
+
+.student-platform
+.student-assignment-card[data-status="upcoming"] {
+
+  border-left:
+    4px solid
+    #94a3b8;
+}
+
+
+.student-platform
+.student-assignment-card[data-status="late"] {
+
+  border-left:
+    4px solid
+    #ef4444;
+}
+
+
+.student-platform
+.weekbox {
+
+  border:
+    1px solid
+    #dde7e3;
+
+  border-radius:
+    10px;
+
+  background:
+    #f4f8f6;
+}
+
+
+.student-platform
+.weekbox strong {
+
+  font-family:
+    'Noto Sans JP',
+    sans-serif;
+
+  color:
+    #1f302b;
+
+  font-size:
+    21px;
+
+  font-weight:
+    850;
+}
+
+
+.student-assignment-content {
+
+  min-width:
+    0;
+}
+
+
+.student-assignment-title-row {
+
+  display:
+    flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+}
+
+
+.student-platform
+.assignment-title {
+
+  color:
+    #1e2d29;
+
+  font-size:
+    14px;
+
+  font-weight:
+    800;
+
+  line-height:
+    1.5;
+}
+
+
+.student-assignment-meta-row {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    9px;
+
+  flex-wrap:
+    wrap;
+
+  margin-top:
+    8px;
+}
+
+
+.student-deadline-inline {
+
+  color:
+    #5f706a;
+
+  font-size:
+    11px;
+
+  font-weight:
+    700;
+}
+
+
+/* ---------------------------------------------------------
+   MINI DEADLINE BAR
+--------------------------------------------------------- */
+
+.student-mini-deadline {
+
+  max-width:
+    440px;
+
+  margin-top:
+    11px;
+}
+
+
+.student-mini-deadline-copy {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+
+  color:
+    #52635d;
+
+  font-size:
+    11px;
+}
+
+
+.student-mini-deadline-copy
+strong {
+
+  font-size:
+    12px;
+
+  font-weight:
+    850;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+.student-mini-deadline-track {
+
+  height:
+    6px;
+
+  margin-top:
+    5px;
+
+  overflow:
+    hidden;
+
+  border-radius:
+    999px;
+
+  background:
+    #e6ece9;
+}
+
+
+.student-mini-deadline-fill {
+
+  height:
+    100%;
+
+  border-radius:
+    999px;
+
+  background:
+    #10b981;
+
+  transition:
+    width
+      .5s
+      linear;
+}
+
+
+.student-mini-deadline.warning
+.student-mini-deadline-fill {
+
+  background:
+    #f59e0b;
+}
+
+
+.student-mini-deadline.warning
+.student-mini-deadline-copy
+strong {
+
+  color:
+    #b45309;
+}
+
+
+.student-mini-deadline.danger
+.student-mini-deadline-fill {
+
+  background:
+    #ef4444;
+}
+
+
+.student-mini-deadline.danger
+.student-mini-deadline-copy
+strong {
+
+  color:
+    #b91c1c;
+}
+
+
+.student-mini-deadline.upcoming
+.student-mini-deadline-fill {
+
+  background:
+    #94a3b8;
+}
+
+
+.student-mini-deadline.closed
+.student-mini-deadline-fill {
+
+  background:
+    #cbd5e1;
+}
+
+
+/* ---------------------------------------------------------
+   RESULT AREA
+--------------------------------------------------------- */
+
+.student-platform
+.student-assignment-result {
+
+  min-width:
+    155px;
+
+  text-align:
+    right;
+}
+
+
+.student-platform
+.student-assignment-result
+> strong {
+
+  color:
+    #047857;
+
+  font-family:
+    'Noto Sans JP',
+    sans-serif;
+
+  font-size:
+    22px;
+
+  font-weight:
+    850;
+}
+
+
+.student-no-score {
+
+  color:
+    #b3beb9 !important;
+}
+
+
+.student-platform
+.assignment-actions {
+
+  margin-top:
+    8px;
+
+  gap:
+    7px;
+}
+
+
+.student-platform
+.assignment-actions
+.btn {
+
+  border-radius:
+    8px;
+
+  font-size:
+    11px;
+}
+
+
+/* ---------------------------------------------------------
+   EMPTY STATE
+--------------------------------------------------------- */
+
+.student-empty-state {
+
+  padding:
+    38px
+    20px;
+
+  border:
+    1px dashed
+    #ccd9d4;
+
+  border-radius:
+    12px;
+
+  background:
+    #f8fbfa;
+
+  color:
+    #778680;
+
+  text-align:
+    center;
+
+  font-size:
+    13px;
+
+  font-weight:
+    700;
+}
+
+
+/* ---------------------------------------------------------
+   JOIN CLASS
+--------------------------------------------------------- */
+
+.student-platform
+.student-join {
+
+  width:
+    min(
+      680px,
+      calc(
+        100% - 32px
+      )
+    );
+
+  margin:
+    40px auto;
+}
+
+
+.student-platform
+.student-join-card {
+
+  padding:
+    30px;
+
+  border-radius:
+    16px;
+}
+
+
+/* ---------------------------------------------------------
+   FOOTER
+--------------------------------------------------------- */
+
+.student-platform
+.student-footer {
+
+  padding:
+    20px
+    20px
+    30px;
+
+  color:
+    #82908b;
+
+  background:
+    transparent;
+}
+
+
+/* =========================================================
+   TABLET / iPAD
+   ========================================================= */
+
+@media (
+  max-width: 900px
+) {
+
+  .student-platform
+  .student-main {
+
+    width:
+      min(
+        100% - 28px,
+        900px
+      );
+
+    padding-top:
+      20px;
+  }
+
+
+  .student-progress-hero {
+
+    grid-template-columns:
+      1fr;
+
+    gap:
+      20px;
+  }
+
+
+  .student-progress-summary {
+
+    width:
+      100%;
+  }
+
+
+  .student-next-assignment {
+
+    grid-template-columns:
+      1fr;
+
+    gap:
+      20px;
+  }
+
+
+  .student-next-action {
+
+    width:
+      100%;
+  }
+
+
+  .student-start-button {
+
+    width:
+      100%;
+  }
+
+
+  .student-metrics {
+
+    grid-template-columns:
+      repeat(
+        3,
+        1fr
+      );
+  }
+
+
+  .student-platform
+  .student-assignment-card {
+
+    grid-template-columns:
+      62px
+      minmax(
+        0,
+        1fr
+      );
+  }
+
+
+  .student-platform
+  .student-assignment-result {
+
+    grid-column:
+      1 /
+      -1;
+
+    display:
+      flex;
+
+    align-items:
+      center;
+
+    justify-content:
+      space-between;
+
+    gap:
+      16px;
+
+    min-width:
+      0;
+
+    padding-top:
+      12px;
+
+    border-top:
+      1px solid
+      #edf1ef;
+
+    text-align:
+      left;
+  }
+
+
+  .student-platform
+  .assignment-actions {
+
+    margin-top:
+      0;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (
+  max-width: 620px
+) {
+
+  .student-platform
+  .student-topbar {
+
+    align-items:
+      flex-start;
+
+    gap:
+      12px;
+
+    padding:
+      11px
+      13px;
+  }
+
+
+  .student-platform
+  .student-topbar
+  .brand-mark {
+
+    width:
+      36px;
+
+    height:
+      36px;
+  }
+
+
+  .student-platform
+  .student-topbar
+  .brand-title {
+
+    font-size:
+      14px;
+  }
+
+
+  .student-platform
+  .student-topbar
+  .brand-sub {
+
+    display:
+      none;
+  }
+
+
+  .student-platform
+  .student-top-actions {
+
+    gap:
+      6px;
+  }
+
+
+  .student-platform
+  .top-actions
+  .user-label {
+
+    display:
+      inline-block;
+
+    max-width:
+      90px;
+
+    overflow:
+      hidden;
+
+    text-overflow:
+      ellipsis;
+
+    white-space:
+      nowrap;
+
+    font-size:
+      10px;
+  }
+
+
+  .student-language-btn {
+
+    min-width:
+      47px;
+
+    padding:
+      6px
+      7px;
+
+    font-size:
+      9px;
+  }
+
+
+  .student-platform
+  .topbar
+  .btn-light {
+
+    padding:
+      6px
+      8px;
+
+    font-size:
+      9px;
+  }
+
+
+  .student-platform
+  .student-main {
+
+    width:
+      calc(
+        100% - 20px
+      );
+
+    padding:
+      14px
+      0
+      36px;
+  }
+
+
+  .student-progress-hero {
+
+    padding:
+      20px;
+  }
+
+
+  .student-progress-copy
+  h1 {
+
+    font-size:
+      26px;
+  }
+
+
+  .student-next-assignment {
+
+    padding:
+      22px
+      19px;
+  }
+
+
+  .student-next-assignment
+  h2 {
+
+    font-size:
+      22px;
+  }
+
+
+  .student-next-heading {
+
+    flex-direction:
+      column;
+
+    gap:
+      10px;
+  }
+
+
+  .student-deadline-visual {
+
+    padding:
+      15px;
+  }
+
+
+  .student-deadline-countdown {
+
+    font-size:
+      26px;
+  }
+
+
+  .student-metrics {
+
+    grid-template-columns:
+      1fr
+      1fr;
+
+    gap:
+      9px;
+  }
+
+
+  .student-metric-card {
+
+    min-height:
+      96px;
+
+    padding:
+      14px;
+  }
+
+
+  .student-platform
+  .student-metric-card
+  .metric-value {
+
+    font-size:
+      25px;
+  }
+
+
+  .student-metrics
+  .student-metric-card:first-child {
+
+    grid-column:
+      1 /
+      -1;
+  }
+
+
+  .student-roadmap {
+
+    padding:
+      17px;
+  }
+
+
+  .student-platform
+  .student-assignment-card {
+
+    grid-template-columns:
+      52px
+      minmax(
+        0,
+        1fr
+      );
+
+    gap:
+      11px;
+
+    padding:
+      13px;
+  }
+
+
+  .student-assignment-title-row {
+
+    flex-direction:
+      column;
+
+    gap:
+      7px;
+  }
+
+
+  .student-platform
+  .student-assignment-result {
+
+    grid-column:
+      1 /
+      -1;
+
+    display:
+      block;
+  }
+
+
+  .student-platform
+  .assignment-actions {
+
+    width:
+      100%;
+
+    margin-top:
+      10px;
+  }
+
+
+  .student-platform
+  .assignment-actions
+  .btn {
+
+    width:
+      100%;
+  }
+
+}

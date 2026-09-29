@@ -2,60 +2,53 @@
 <html lang="ja">
 
 <head>
-
   <meta charset="utf-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1">
-
-  <title>
-    Student | Copeak Classroom
-  </title>
-
-  <link
-    rel="stylesheet"
-    href="styles.css">
-
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Student | Copeak Classroom</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-
 
 <body>
 
+<div class="app-shell student-platform">
 
-<div class="app-shell">
-
-
-  <!-- ======================================
-       TOP BAR
-  ======================================= -->
-
-  <header class="topbar">
-
-
+  <header class="topbar student-topbar">
     <div class="brand">
-
-      <div class="brand-mark">
-        C
-      </div>
-
+      <div class="brand-mark">C</div>
       <div>
-
-        <div class="brand-title">
-          Copeak Classroom
-        </div>
-
-        <div class="brand-sub">
+        <div class="brand-title">Copeak Classroom</div>
+        <div class="brand-sub" data-i18n="studentDashboard">
           Student Dashboard
         </div>
-
       </div>
-
     </div>
 
+    <div class="top-actions student-top-actions">
 
+      <div
+        id="studentLangSwitch"
+        class="student-language-switch"
+        role="group"
+        aria-label="Language">
 
-    <div class="top-actions">
+        <button
+          type="button"
+          id="langJa"
+          class="student-language-btn active"
+          data-lang="ja"
+          aria-pressed="true">
+          日本語
+        </button>
+
+        <button
+          type="button"
+          id="langEn"
+          class="student-language-btn"
+          data-lang="en"
+          aria-pressed="false">
+          English
+        </button>
+      </div>
 
       <span
         class="user-label small"
@@ -64,99 +57,65 @@
 
       <button
         id="signOut"
-        class="btn btn-sm btn-light">
-
+        class="btn btn-sm btn-light"
+        data-i18n="signOut">
         Sign out
-
       </button>
-
     </div>
-
-
   </header>
 
-
-
-  <!-- ======================================
-       DEMO
-  ======================================= -->
 
   <div
     id="demoBanner"
     class="alert info hidden"
     style="margin-top:14px">
-
     Demo mode：
     TEST Submitを押すと提出済みに変わります。
-
   </div>
 
 
-
-  <!-- ======================================
-       JOIN CLASS
-  ======================================= -->
-
   <section
     id="joinPanel"
-    class="onboarding hidden">
+    class="onboarding student-join hidden">
 
+    <div class="paper student-join-card">
 
-    <div class="paper">
-
-
-      <div class="eyebrow">
-        Join a class
+      <div
+        class="eyebrow"
+        data-i18n="joinClassEyebrow">
+        JOIN A CLASS
       </div>
 
-
-      <h2 style="margin:6px 0 8px">
+      <h2
+        style="margin:6px 0 8px"
+        data-i18n="joinClassTitle">
         クラスに参加
       </h2>
 
-
-      <p class="muted">
-
-        先生から受け取った
-        Class Code・Student No.・Join PIN
-        を入力してください。
-
+      <p
+        class="muted"
+        data-i18n="joinClassInstruction">
+        先生から受け取ったClass Code・Student No.・Join PINを入力してください。
       </p>
-
-
 
       <div class="form-stack">
 
-
-        <!-- CLASS CODE -->
-
         <div class="field">
-
-          <label>
+          <label data-i18n="classCode">
             Class Code
           </label>
 
           <input
             id="joinCode"
             class="input"
-            style="
-              text-transform:uppercase;
-              letter-spacing:.15em
-            "
+            style="text-transform:uppercase;letter-spacing:.15em"
             placeholder="例：108D75">
-
         </div>
-
-
-
-        <!-- STUDENT NUMBER + PIN -->
 
         <div class="grid grid-2">
 
-
           <div class="field">
-
-            <label>
+            <label data-i18n="studentNumber">
               Student No.
             </label>
 
@@ -165,14 +124,10 @@
               class="input"
               autocomplete="off"
               placeholder="例：12">
-
           </div>
 
-
-
           <div class="field">
-
-            <label>
+            <label data-i18n="joinPin">
               Join PIN
             </label>
 
@@ -185,342 +140,319 @@
               autocomplete="off"
               maxlength="6"
               placeholder="6-digit PIN">
-
           </div>
-
 
         </div>
 
-
-
         <button
           id="joinBtn"
-          class="btn btn-primary">
-
+          class="btn btn-primary"
+          data-i18n="joinClassButton">
           Join Class
-
         </button>
-
-
       </div>
-
-
 
       <div
         id="joinMsg"
         class="small"
-        style="
-          color:#b91c1c;
-          margin-top:8px
-        ">
+        style="color:#b91c1c;margin-top:8px">
       </div>
-
-
 
       <div
         class="tiny muted"
-        style="margin-top:12px">
-
-        初回だけ入力します。
-        参加後は自分の課題・締切・結果が
-        自動表示されます。
-
+        style="margin-top:12px"
+        data-i18n="joinClassNote">
+        初回だけ入力します。参加後は自分の課題・締切・結果が自動表示されます。
       </div>
 
-
     </div>
-
-
   </section>
 
 
+  <main
+    id="mainApp"
+    class="student-main">
 
-  <!-- ======================================
-       MAIN APP
-  ======================================= -->
+    <section class="paper student-progress-hero">
 
-  <main id="mainApp">
-
-
-    <!-- ====================================
-         HERO
-    ===================================== -->
-
-    <section class="hero paper">
-
-
-      <div>
+      <div class="student-progress-copy">
 
         <div
           class="eyebrow"
           id="className">
-
           My Class
-
         </div>
 
-
-        <h1>
-          My Reading Roadmap
+        <h1 data-i18n="learningProgressTitle">
+          学習の進み具合
         </h1>
 
-
-        <p class="muted">
-
-          今週の1課題を着実に。
-          提出すると自動で進捗に反映されます。
-
+        <p
+          class="muted"
+          data-i18n="learningProgressLead">
+          音読課題の進み具合を確認できます。
         </p>
 
       </div>
 
+      <div class="student-progress-summary">
 
-
-      <div style="min-width:260px">
-
-
-        <div
-          style="
-            display:flex;
-            justify-content:space-between;
-            font-weight:800
-          ">
-
-          <span>
-            Progress
+        <div class="student-progress-heading">
+          <span data-i18n="progress">
+            進捗
           </span>
 
-          <span id="progressPct">
+          <strong id="progressPct">
             0%
-          </span>
-
+          </strong>
         </div>
 
-
-
-        <div
-          class="progress-track"
-          style="margin:8px 0">
-
+        <div class="progress-track student-progress-track">
           <div
             id="progressBar"
             class="progress-fill"
             style="width:0">
           </div>
-
         </div>
-
-
 
         <div
           id="progressText"
           class="small muted">
-
           0 / 30
+        </div>
+
+      </div>
+    </section>
+
+
+    <section class="student-next-assignment">
+
+      <div class="student-next-main">
+
+        <div class="student-next-heading">
+
+          <div>
+            <div
+              class="eyebrow"
+              data-i18n="nextAssignment">
+              次の課題
+            </div>
+
+            <div
+              id="weekLabel"
+              class="student-assignment-number">
+              課題
+            </div>
+          </div>
+
+          <div
+            id="weekStatus"
+            class="student-status-badge hidden"
+            aria-live="polite">
+          </div>
 
         </div>
 
+        <h2 id="weekTitle">
+          Loading...
+        </h2>
 
+        <div
+          id="weekMeta"
+          class="student-week-meta">
+        </div>
+
+        <div
+          id="weekDeadlineVisual"
+          class="student-deadline-visual hidden"
+          aria-live="polite">
+
+          <div class="student-deadline-top">
+
+            <div
+              class="student-deadline-icon"
+              aria-hidden="true">
+              ◷
+            </div>
+
+            <div>
+              <div
+                id="weekDeadlineLabel"
+                class="student-deadline-label"
+                data-i18n="timeRemaining">
+                残り時間
+              </div>
+
+              <div
+                id="weekCountdown"
+                class="student-deadline-countdown">
+                —
+              </div>
+            </div>
+
+          </div>
+
+          <div class="student-deadline-track">
+            <div
+              id="weekTimeBar"
+              class="student-deadline-fill"
+              style="width:0">
+            </div>
+          </div>
+
+          <div
+            id="weekDeadlineDate"
+            class="student-deadline-date">
+          </div>
+
+        </div>
       </div>
 
+      <div class="student-next-action">
+        <button
+          id="weekStart"
+          class="btn btn-primary student-start-button"
+          data-i18n="startCopeak">
+          Copeakで始める →
+        </button>
+      </div>
 
     </section>
 
 
+    <section class="student-metrics">
 
-    <!-- ====================================
-         METRICS
-    ===================================== -->
-
-    <section
-      class="grid grid-4"
-      style="margin-top:16px">
-
-
-      <div class="metric">
-
-        <div class="metric-label">
-          Completed
+      <div class="metric student-metric-card">
+        <div
+          class="metric-label"
+          data-i18n="completed">
+          完了した課題
         </div>
 
         <div
           id="completedMetric"
           class="metric-value emerald">
-
           0 / 30
-
         </div>
-
       </div>
 
-
-
-      <div class="metric">
-
-        <div class="metric-label">
-          Avg. Accuracy
+      <div class="metric student-metric-card">
+        <div
+          class="metric-label"
+          data-i18n="averageAccuracy">
+          平均正確率
         </div>
 
         <div
           id="avgAccuracy"
           class="metric-value emerald">
-
           —
-
         </div>
-
       </div>
 
-
-
-      <div class="metric">
-
-        <div class="metric-label">
-          Best WPM
+      <div class="metric student-metric-card">
+        <div
+          class="metric-label"
+          data-i18n="bestWpm">
+          最高WPM
         </div>
 
         <div
           id="bestWpm"
           class="metric-value blue">
-
           —
-
         </div>
-
       </div>
-
-
-
-      <div class="metric">
-
-        <div class="metric-label">
-          Weekly Goal
-        </div>
-
-        <div class="metric-value amber">
-
-          1
-
-        </div>
-
-      </div>
-
 
     </section>
 
 
+    <section class="paper section student-roadmap">
 
-    <!-- ====================================
-         THIS WEEK
-    ===================================== -->
-
-    <section
-      class="this-week"
-      style="margin-top:16px">
-
-
-      <div>
-
-        <div
-          class="eyebrow"
-          id="weekLabel">
-
-          WEEK
-
-        </div>
-
-
-        <h2 id="weekTitle">
-
-          Loading...
-
-        </h2>
-
-
-        <div
-          id="weekMeta"
-          class="muted small"
-          style="margin-top:7px">
-        </div>
-
-      </div>
-
-
-
-      <button
-        id="weekStart"
-        class="btn btn-primary"
-        style="padding:13px 18px">
-
-        Start Copeak →
-
-      </button>
-
-
-    </section>
-
-
-
-    <!-- ====================================
-         ASSIGNMENTS
-    ===================================== -->
-
-    <section
-      class="paper section"
-      style="margin-top:16px">
-
-
-      <div class="panel-title">
-
+      <div class="panel-title student-roadmap-title">
 
         <div>
-
-          <div class="eyebrow">
-            30-week roadmap
+          <div
+            class="eyebrow"
+            data-i18n="assignmentListEyebrow">
+            YOUR ASSIGNMENTS
           </div>
 
-          <h2>
-            Assignments
+          <h2 data-i18n="assignmentListTitle">
+            課題一覧
           </h2>
-
         </div>
-
 
       </div>
 
+
+      <div
+        id="assignmentFilters"
+        class="student-assignment-filters"
+        role="group"
+        aria-label="Assignment filters">
+
+        <button
+          type="button"
+          class="student-filter-btn active"
+          data-assignment-filter="all"
+          aria-pressed="true"
+          data-i18n="filterAll">
+          すべて
+        </button>
+
+        <button
+          type="button"
+          class="student-filter-btn"
+          data-assignment-filter="todo"
+          aria-pressed="false"
+          data-i18n="filterTodo">
+          未完了
+        </button>
+
+        <button
+          type="button"
+          class="student-filter-btn"
+          data-assignment-filter="done"
+          aria-pressed="false"
+          data-i18n="filterCompleted">
+          完了
+        </button>
+
+        <button
+          type="button"
+          class="student-filter-btn"
+          data-assignment-filter="upcoming"
+          aria-pressed="false"
+          data-i18n="filterUpcoming">
+          公開前
+        </button>
+
+      </div>
 
 
       <div
         id="assignmentList"
-        class="assignment-list">
+        class="assignment-list student-assignment-list">
       </div>
 
-
     </section>
-
 
   </main>
 
 
+  <div class="footer-note student-footer">
 
-  <!-- ======================================
-       FOOTER
-  ======================================= -->
+    Copeak Classroom
 
-  <div class="footer-note">
-
-    Copeak Classroom MVP
+    <span style="opacity:.55">
+      · Powered by Copeak
+    </span>
 
   </div>
 
-
 </div>
 
-
-
-<!-- ========================================
-     SCRIPTS
-========================================= -->
 
 <script src="js/config.js"></script>
 
@@ -529,7 +461,5 @@
   src="js/student.js">
 </script>
 
-
 </body>
-
 </html>

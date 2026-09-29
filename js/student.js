@@ -2,7 +2,6 @@ import {
   requireUser,
   getClient,
   signOut,
-  fmtDate,
   pct
 } from './supabase.js';
 
@@ -11,78 +10,636 @@ import {
   demoSubmissions
 } from './data.js';
 
-const $ = s => document.querySelector(s);
+const $ = selector => document.querySelector(selector);
 
 let ctx;
 let assignments = [];
 let submissions = [];
 let currentClass = null;
+let activeAssignmentFilter = 'all';
+
+let activeLanguage =
+  localStorage.getItem(
+    'copeak-classroom-student-language'
+  ) || 'ja';
 
 const processedResultIds = new Set();
 const savingAssignments = new Set();
 
 $('#signOut').onclick = signOut;
 
+
 // ==========================================
-// DEADLINE / COUNTDOWN
+// LANGUAGE
+// ==========================================
+
+const TEXT = {
+
+  ja: {
+
+    studentDashboard:
+      '生徒ダッシュボード',
+
+    signOut:
+      'ログアウト',
+
+    joinClassEyebrow:
+      'クラスに参加',
+
+    joinClassTitle:
+      'クラスに参加',
+
+    joinClassInstruction:
+      '先生から受け取ったClass Code・Student No.・Join PINを入力してください。',
+
+    classCode:
+      'Class Code',
+
+    studentNumber:
+      '出席番号',
+
+    joinPin:
+      'Join PIN',
+
+    joinClassButton:
+      'クラスに参加',
+
+    joinClassNote:
+      '初回だけ入力します。参加後は自分の課題・締切・結果が自動表示されます。',
+
+    learningProgressTitle:
+      '学習の進み具合',
+
+    learningProgressLead:
+      '音読課題の進み具合を確認できます。',
+
+    progress:
+      '進捗',
+
+    nextAssignment:
+      '次の課題',
+
+    timeRemaining:
+      '残り時間',
+
+    completed:
+      '完了した課題',
+
+    averageAccuracy:
+      '平均正確率',
+
+    bestWpm:
+      '最高WPM',
+
+    assignmentListEyebrow:
+      '音読課題',
+
+    assignmentListTitle:
+      '課題一覧',
+
+    filterAll:
+      'すべて',
+
+    filterTodo:
+      '未完了',
+
+    filterCompleted:
+      '完了',
+
+    filterUpcoming:
+      '公開前',
+
+    statusUpcoming:
+      '公開前',
+
+    statusClosed:
+      '締切終了',
+
+    statusDone:
+      '✓ 完了',
+
+    statusTodo:
+      '● 未完了',
+
+    deadline:
+      '締切',
+
+    opens:
+      '公開',
+
+    startsIn:
+      '公開まで',
+
+    closed:
+      '締切終了',
+
+    startCopeak:
+      'Copeakで始める →',
+
+    practiceAgain:
+      'もう一度練習する',
+
+    notOpen:
+      'まだ開始できません',
+
+    allCompleted:
+      'すべての課題が完了しました！',
+
+    greatWork:
+      'よく頑張りました。',
+
+    noAssignments:
+      '表示する課題がありません。',
+
+    noFilteredAssignments:
+      'この条件に当てはまる課題はありません。',
+
+    scoreAccuracy:
+      '正確率',
+
+    comprehension:
+      '理解度',
+
+    demoBanner:
+      'デモモード：TEST Submitを押すと提出済みに変わります。',
+
+    alertNotOpen:
+      'この課題はまだ公開時刻になっていません。',
+
+    alertClosed:
+      'この課題の提出期限は終了しました。',
+
+    alertNoLesson:
+      'この課題には音読教材が登録されていません。先生に確認してください。',
+
+    alertPopup:
+      'Copeakを開けませんでした。ブラウザのポップアップ設定を確認してください。',
+
+    alertSaveClosed:
+      '提出期限を過ぎたため、今回の結果はClassroomには保存されませんでした。',
+
+    joinCodeRequired:
+      'Class Codeを入力してください。',
+
+    joinRosterRequired:
+      '出席番号とJoin PINの両方を入力してください。',
+
+    submitComplete:
+      '提出完了！',
+
+    saveFailed:
+      '成績の保存に失敗しました'
+  },
+
+
+  en: {
+
+    studentDashboard:
+      'Student Dashboard',
+
+    signOut:
+      'Sign out',
+
+    joinClassEyebrow:
+      'JOIN A CLASS',
+
+    joinClassTitle:
+      'Join a Class',
+
+    joinClassInstruction:
+      'Enter the Class Code, Student No., and Join PIN given by your teacher.',
+
+    classCode:
+      'Class Code',
+
+    studentNumber:
+      'Student No.',
+
+    joinPin:
+      'Join PIN',
+
+    joinClassButton:
+      'Join Class',
+
+    joinClassNote:
+      'You only need to enter these details the first time. Your assignments, deadlines, and results will then appear automatically.',
+
+    learningProgressTitle:
+      'Your Progress',
+
+    learningProgressLead:
+      'See how many reading assignments you have completed.',
+
+    progress:
+      'Progress',
+
+    nextAssignment:
+      'Next Assignment',
+
+    timeRemaining:
+      'Time Remaining',
+
+    completed:
+      'Completed',
+
+    averageAccuracy:
+      'Average Accuracy',
+
+    bestWpm:
+      'Best WPM',
+
+    assignmentListEyebrow:
+      'YOUR ASSIGNMENTS',
+
+    assignmentListTitle:
+      'Assignments',
+
+    filterAll:
+      'All',
+
+    filterTodo:
+      'To Do',
+
+    filterCompleted:
+      'Completed',
+
+    filterUpcoming:
+      'Upcoming',
+
+    statusUpcoming:
+      'Not Open Yet',
+
+    statusClosed:
+      'Closed',
+
+    statusDone:
+      '✓ Completed',
+
+    statusTodo:
+      '● Not Completed',
+
+    deadline:
+      'Deadline',
+
+    opens:
+      'Opens',
+
+    startsIn:
+      'Opens in',
+
+    closed:
+      'Closed',
+
+    startCopeak:
+      'Start Copeak →',
+
+    practiceAgain:
+      'Practice Again',
+
+    notOpen:
+      'Not Open Yet',
+
+    allCompleted:
+      'All assignments completed!',
+
+    greatWork:
+      'Great work.',
+
+    noAssignments:
+      'There are no assignments to display.',
+
+    noFilteredAssignments:
+      'No assignments match this filter.',
+
+    scoreAccuracy:
+      'Accuracy',
+
+    comprehension:
+      'Comp.',
+
+    demoBanner:
+      'Demo mode: press TEST Submit to mark an assignment as submitted.',
+
+    alertNotOpen:
+      'This assignment is not open yet.',
+
+    alertClosed:
+      'The deadline for this assignment has passed.',
+
+    alertNoLesson:
+      'No reading text is registered for this assignment. Please ask your teacher.',
+
+    alertPopup:
+      'Copeak could not be opened. Please check your browser pop-up settings.',
+
+    alertSaveClosed:
+      'The deadline has passed, so this result was not saved to Classroom.',
+
+    joinCodeRequired:
+      'Please enter the Class Code.',
+
+    joinRosterRequired:
+      'Please enter both Student No. and Join PIN.',
+
+    submitComplete:
+      'Submitted!',
+
+    saveFailed:
+      'Failed to save the result'
+  }
+};
+
+
+function t(
+  key
+) {
+
+  return (
+    TEXT[
+      activeLanguage
+    ]?.[
+      key
+    ] ||
+    TEXT.ja[
+      key
+    ] ||
+    key
+  );
+}
+
+
+// ==========================================
+// STATIC LANGUAGE
+// ==========================================
+
+function applyStaticLanguage() {
+
+  document.documentElement.lang =
+    activeLanguage ===
+      'ja'
+      ? 'ja'
+      : 'en';
+
+
+  document
+    .querySelectorAll(
+      '[data-i18n]'
+    )
+    .forEach(
+      element => {
+
+        const key =
+          element.dataset.i18n;
+
+
+        if (
+          key &&
+          TEXT[
+            activeLanguage
+          ]?.[
+            key
+          ]
+        ) {
+
+          element.textContent =
+            TEXT[
+              activeLanguage
+            ][
+              key
+            ];
+        }
+      }
+    );
+
+
+  document
+    .querySelectorAll(
+      '[data-lang]'
+    )
+    .forEach(
+      button => {
+
+        const active =
+          button.dataset.lang ===
+          activeLanguage;
+
+
+        button.classList.toggle(
+          'active',
+          active
+        );
+
+
+        button.setAttribute(
+          'aria-pressed',
+          active
+            ? 'true'
+            : 'false'
+        );
+      }
+    );
+
+
+  const demoBanner =
+    $('#demoBanner');
+
+
+  if (
+    demoBanner &&
+    !demoBanner.classList.contains(
+      'hidden'
+    )
+  ) {
+
+    demoBanner.textContent =
+      t(
+        'demoBanner'
+      );
+  }
+}
+
+
+// ==========================================
+// CHANGE LANGUAGE
+// ==========================================
+
+function setLanguage(
+  language
+) {
+
+  if (
+    language !==
+      'ja' &&
+    language !==
+      'en'
+  ) {
+
+    return;
+  }
+
+
+  activeLanguage =
+    language;
+
+
+  localStorage.setItem(
+    'copeak-classroom-student-language',
+    language
+  );
+
+
+  applyStaticLanguage();
+
+
+  if (
+    ctx
+  ) {
+
+    render();
+  }
+}
+
+
+document
+  .querySelectorAll(
+    '[data-lang]'
+  )
+  .forEach(
+    button => {
+
+      button.addEventListener(
+        'click',
+        () => {
+
+          setLanguage(
+            button.dataset.lang
+          );
+        }
+      );
+    }
+  );
+
+
+// ==========================================
+// DATE / DEADLINE
+// ==========================================
+
+function validTime(
+  value
+) {
+
+  const time =
+    new Date(
+      value
+    ).getTime();
+
+
+  return Number.isFinite(
+    time
+  )
+    ? time
+    : null;
+}
+
+
+// ==========================================
+// DATE FORMAT
 // ==========================================
 
 function formatDateTime(
   value
 ) {
 
-  if (!value) {
+  const time =
+    validTime(
+      value
+    );
+
+
+  if (
+    time === null
+  ) {
+
     return '—';
   }
 
 
   const date =
-    new Date(value);
+    new Date(
+      time
+    );
 
 
   if (
-    Number.isNaN(
-      date.getTime()
-    )
+    activeLanguage ===
+      'ja'
   ) {
-    return '—';
+
+    const month =
+      date.getMonth() +
+      1;
+
+
+    const day =
+      date.getDate();
+
+
+    const hour =
+      String(
+        date.getHours()
+      ).padStart(
+        2,
+        '0'
+      );
+
+
+    const minute =
+      String(
+        date.getMinutes()
+      ).padStart(
+        2,
+        '0'
+      );
+
+
+    return (
+      `${month}月${day}日 ` +
+      `${hour}:${minute}`
+    );
   }
 
 
-  const month =
-    String(
-      date.getMonth() + 1
-    ).padStart(2, '0');
+  return new Intl
+    .DateTimeFormat(
+      'en-US',
+      {
+        month:
+          'short',
 
-  const day =
-    String(
-      date.getDate()
-    ).padStart(2, '0');
+        day:
+          'numeric',
 
-  const hour =
-    String(
-      date.getHours()
-    ).padStart(2, '0');
+        hour:
+          '2-digit',
 
-  const minute =
-    String(
-      date.getMinutes()
-    ).padStart(2, '0');
+        minute:
+          '2-digit',
 
-  const second =
-    String(
-      date.getSeconds()
-    ).padStart(2, '0');
-
-
-  return (
-    `${month}/${day} ` +
-    `${hour}:${minute}:${second}`
-  );
+        hour12:
+          false
+      }
+    )
+    .format(
+      date
+    );
 }
 
 
-function formatCountdown(
+// ==========================================
+// COUNTDOWN PARTS
+// ==========================================
+
+function countdownParts(
   milliseconds
 ) {
 
@@ -90,67 +647,136 @@ function formatCountdown(
     Math.max(
       0,
       Math.floor(
-        milliseconds / 1000
+        milliseconds /
+        1000
       )
     );
 
 
-  const days =
-    Math.floor(
-      totalSeconds / 86400
+  return {
+
+    days:
+      Math.floor(
+        totalSeconds /
+        86400
+      ),
+
+    hours:
+      Math.floor(
+        (
+          totalSeconds %
+          86400
+        ) /
+        3600
+      ),
+
+    minutes:
+      Math.floor(
+        (
+          totalSeconds %
+          3600
+        ) /
+        60
+      ),
+
+    seconds:
+      totalSeconds %
+      60
+  };
+}
+
+
+// ==========================================
+// HUMAN COUNTDOWN
+// ==========================================
+
+function formatHumanCountdown(
+  milliseconds
+) {
+
+  const {
+    days,
+    hours,
+    minutes,
+    seconds
+  } =
+    countdownParts(
+      milliseconds
     );
 
 
-  const hours =
-    Math.floor(
-      (
-        totalSeconds % 86400
-      ) / 3600
-    );
+  if (
+    activeLanguage ===
+      'ja'
+  ) {
+
+    if (
+      days >
+      0
+    ) {
+
+      return (
+        `あと ${days}日 ` +
+        `${hours}時間`
+      );
+    }
 
 
-  const minutes =
-    Math.floor(
-      (
-        totalSeconds % 3600
-      ) / 60
-    );
+    if (
+      hours >
+      0
+    ) {
 
+      return (
+        `あと ${hours}時間 ` +
+        `${minutes}分`
+      );
+    }
 
-  const seconds =
-    totalSeconds % 60;
-
-
-  const hh =
-    String(
-      hours
-    ).padStart(2, '0');
-
-  const mm =
-    String(
-      minutes
-    ).padStart(2, '0');
-
-  const ss =
-    String(
-      seconds
-    ).padStart(2, '0');
-
-
-  if (days > 0) {
 
     return (
-      `${days}d ` +
-      `${hh}:${mm}:${ss}`
+      `あと ${minutes}分 ` +
+      `${seconds}秒`
     );
   }
 
 
-  return `${hh}:${mm}:${ss}`;
+  if (
+    days >
+    0
+  ) {
+
+    return (
+      `${days}d ` +
+      `${hours}h`
+    );
+  }
+
+
+  if (
+    hours >
+    0
+  ) {
+
+    return (
+      `${hours}h ` +
+      `${minutes}m`
+    );
+  }
+
+
+  return (
+    `${minutes}m ` +
+    `${seconds}s`
+  );
 }
 
 
-function countdownInfo(
+// ==========================================
+// DEADLINE INFO
+// ==========================================
+
+function deadlineInfo(
   assignment
 ) {
 
@@ -159,66 +785,169 @@ function countdownInfo(
 
 
   const release =
-    new Date(
+    validTime(
       assignment.release_at
-    ).getTime();
+    );
 
 
   const due =
-    new Date(
+    validTime(
       assignment.due_at
-    ).getTime();
+    );
 
 
-  if (now < release) {
+  if (
+    release === null ||
+    due === null
+  ) {
 
     return {
 
-      text:
-        `Opens in ${formatCountdown(
-          release - now
+      state:
+        'unknown',
+
+      className:
+        'normal',
+
+      countdown:
+        '—',
+
+      percent:
+        0,
+
+      dateText:
+        '—'
+    };
+  }
+
+
+  // ========================================
+  // NOT OPEN
+  // ========================================
+
+  if (
+    now <
+      release
+  ) {
+
+    return {
+
+      state:
+        'upcoming',
+
+      className:
+        'upcoming',
+
+      countdown:
+        `${t(
+          'startsIn'
+        )} ${formatHumanCountdown(
+          release -
+          now
         )}`,
 
-      className:
-        'upcoming'
+      percent:
+        100,
 
+      dateText:
+        `${t(
+          'opens'
+        )}：${formatDateTime(
+          assignment.release_at
+        )}`
     };
   }
 
 
-  if (now >= due) {
+  // ========================================
+  // CLOSED
+  // ========================================
+
+  if (
+    now >=
+      due
+  ) {
 
     return {
 
-      text:
-        'Closed',
+      state:
+        'closed',
 
       className:
-        'closed'
+        'closed',
 
+      countdown:
+        t(
+          'closed'
+        ),
+
+      percent:
+        0,
+
+      dateText:
+        `${t(
+          'deadline'
+        )}：${formatDateTime(
+          assignment.due_at
+        )}`
     };
   }
+
+
+  // ========================================
+  // OPEN
+  // ========================================
+
+  const total =
+    Math.max(
+      1,
+      due -
+      release
+    );
 
 
   const remaining =
-    due - now;
+    due -
+    now;
+
+
+  const percent =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(
+          remaining /
+          total *
+          100
+        )
+      )
+    );
 
 
   let className =
     'normal';
 
 
+  // 1時間以内
   if (
     remaining <=
-    60 * 60 * 1000
+      60 *
+      60 *
+      1000
   ) {
 
     className =
       'danger';
+  }
 
-  } else if (
+  // 24時間以内
+  else if (
     remaining <=
-    24 * 60 * 60 * 1000
+      24 *
+      60 *
+      60 *
+      1000
   ) {
 
     className =
@@ -228,44 +957,71 @@ function countdownInfo(
 
   return {
 
-    text:
-      `${formatCountdown(
+    state:
+      'open',
+
+    className,
+
+    countdown:
+      formatHumanCountdown(
         remaining
-      )} remaining`,
+      ),
 
-    className
+    percent,
 
+    dateText:
+      `${t(
+        'deadline'
+      )}：${formatDateTime(
+        assignment.due_at
+      )}`
   };
 }
 
-// ==========================================
-// 最新提出結果
-// ==========================================
-function latestMap(rows) {
 
-  const m = new Map();
+// ==========================================
+// LATEST SUBMISSION
+// ==========================================
+
+function latestMap(
+  rows
+) {
+
+  const map =
+    new Map();
+
 
   rows
     .slice()
     .sort(
-      (a, b) =>
-        new Date(a.submitted_at) -
-        new Date(b.submitted_at)
+      (
+        a,
+        b
+      ) =>
+        new Date(
+          a.submitted_at
+        ) -
+        new Date(
+          b.submitted_at
+        )
     )
     .forEach(
-      r =>
-        m.set(
-          r.assignment_id,
-          r
-        )
+      row => {
+
+        map.set(
+          row.assignment_id,
+          row
+        );
+      }
     );
 
-  return m;
+
+  return map;
 }
 
 
 // ==========================================
-// 課題ステータス
+// ASSIGNMENT STATUS
 // ==========================================
 
 function assignmentStatus(
@@ -274,63 +1030,241 @@ function assignmentStatus(
 ) {
 
   const now =
-    new Date();
+    Date.now();
 
 
   const release =
-    new Date(
+    validTime(
       assignment.release_at
     );
 
 
   const due =
-    new Date(
+    validTime(
       assignment.due_at
     );
 
 
-  if (now < release) {
+  // ========================================
+  // COMPLETED
+  //
+  // 締切後でも提出済みなら完了
+  // ========================================
 
-    return [
-      'upcoming',
-      'Upcoming'
-    ];
+  if (
+    submission
+  ) {
+
+    return {
+
+      key:
+        'done',
+
+      label:
+        t(
+          'statusDone'
+        )
+    };
   }
 
 
-  if (now >= due) {
+  // ========================================
+  // UPCOMING
+  // ========================================
 
-    return [
-      'late',
-      'Closed'
-    ];
+  if (
+    release !==
+      null &&
+    now <
+      release
+  ) {
+
+    return {
+
+      key:
+        'upcoming',
+
+      label:
+        t(
+          'statusUpcoming'
+        )
+    };
   }
 
 
-  if (submission) {
+  // ========================================
+  // LATE / CLOSED
+  // ========================================
 
-    return [
-      'done',
-      '✓ Completed'
-    ];
+  if (
+    due !==
+      null &&
+    now >=
+      due
+  ) {
+
+    return {
+
+      key:
+        'late',
+
+      label:
+        activeLanguage ===
+          'ja'
+
+          ? '！未完了・締切終了'
+
+          : 'Not Completed · Closed'
+    };
   }
 
 
-  return [
-    'due',
-    'Open'
-  ];
+  // ========================================
+  // OPEN / TODO
+  // ========================================
+
+  return {
+
+    key:
+      'due',
+
+    label:
+      t(
+        'statusTodo'
+      )
+  };
 }
 
+
 // ==========================================
-// Dashboard描画
+// FILTER MATCH
 // ==========================================
+
+function assignmentMatchesFilter(
+  statusKey
+) {
+
+  if (
+    activeAssignmentFilter ===
+      'todo'
+  ) {
+
+    return (
+      statusKey ===
+        'due' ||
+      statusKey ===
+        'late'
+    );
+  }
+
+
+  if (
+    activeAssignmentFilter ===
+      'done'
+  ) {
+
+    return (
+      statusKey ===
+      'done'
+    );
+  }
+
+
+  if (
+    activeAssignmentFilter ===
+      'upcoming'
+  ) {
+
+    return (
+      statusKey ===
+      'upcoming'
+    );
+  }
+
+
+  return true;
+}
+
+
+// ==========================================
+// FILTER BUTTONS
+// ==========================================
+
+function syncFilterButtons() {
+
+  document
+    .querySelectorAll(
+      '[data-assignment-filter]'
+    )
+    .forEach(
+      button => {
+
+        const active =
+          button.dataset
+            .assignmentFilter ===
+          activeAssignmentFilter;
+
+
+        button.classList.toggle(
+          'active',
+          active
+        );
+
+
+        button.setAttribute(
+          'aria-pressed',
+          active
+            ? 'true'
+            : 'false'
+        );
+      }
+    );
+}
+
+
+document
+  .querySelectorAll(
+    '[data-assignment-filter]'
+  )
+  .forEach(
+    button => {
+
+      button.addEventListener(
+        'click',
+        () => {
+
+          activeAssignmentFilter =
+            button.dataset
+              .assignmentFilter ||
+            'all';
+
+
+          syncFilterButtons();
+
+
+          render();
+        }
+      );
+    }
+  );
+
+
+// ==========================================
+// DASHBOARD RENDER
+// ==========================================
+
 function render() {
+
+  applyStaticLanguage();
+
+  syncFilterButtons();
+
 
   const map =
     latestMap(
       submissions
     );
+
 
   const done =
     assignments
@@ -342,212 +1276,508 @@ function render() {
       )
       .length;
 
+
   const progress =
     assignments.length
+
       ? Math.round(
           done /
           assignments.length *
           100
         )
+
       : 0;
 
 
   $('#progressText').textContent =
-    `${done} / ${assignments.length}`;
+    activeLanguage ===
+      'ja'
+
+      ? `${done} / ${assignments.length} 課題完了`
+
+      : `${done} / ${assignments.length} completed`;
+
 
   $('#completedMetric').textContent =
     `${done} / ${assignments.length}`;
 
+
   $('#progressPct').textContent =
     `${progress}%`;
+
 
   $('#progressBar').style.width =
     `${progress}%`;
 
 
   // ========================================
-  // Accuracy平均
+  // SCORE SUMMARY
   // ========================================
+
   const scores =
-    [...map.values()];
+    [
+      ...map.values()
+    ];
 
 
   $('#avgAccuracy').textContent =
     scores.length
+
       ? pct(
           scores.reduce(
-            (sum, item) =>
+            (
+              sum,
+              item
+            ) =>
               sum +
               Number(
-                item.accuracy || 0
+                item.accuracy ||
+                0
               ),
             0
           ) /
           scores.length
         )
+
       : '—';
 
 
-  // ========================================
-  // Best WPM
-  // ========================================
   $('#bestWpm').textContent =
     scores.length
+
       ? Math.round(
           Math.max(
             ...scores.map(
               item =>
                 Number(
-                  item.wpm || 0
+                  item.wpm ||
+                  0
                 )
             )
           )
         )
+
       : '—';
 
 
-  // ========================================
-  // 今週の課題
-  // ========================================
-  const now =
-  new Date();
-
-
-const target =
-  assignments.find(
-    assignment =>
-
-      !map.has(
-        assignment.id
-      ) &&
-
-      now >=
-        new Date(
-          assignment.release_at
-        ) &&
-
-      now <
-        new Date(
-          assignment.due_at
-        )
-  )
-  ||
-  assignments.find(
-    assignment =>
-
-      !map.has(
-        assignment.id
-      ) &&
-
-      now <
-        new Date(
-          assignment.release_at
-        )
+  renderNextAssignment(
+    map
   );
 
 
-  if (target) {
+  renderAssignmentList(
+    map
+  );
+}
 
-    const [statusClass] =
-      assignmentStatus(
-        target,
-        null
-      );
+
+// ==========================================
+// NEXT ASSIGNMENT
+// ==========================================
+
+function renderNextAssignment(
+  map
+) {
+
+  const now =
+    Date.now();
+
+
+  // ========================================
+  // まず「今できる未完了課題」
+  // なければ「次の公開予定課題」
+  // ========================================
+
+  const target =
+    assignments.find(
+      assignment => {
+
+        const release =
+          validTime(
+            assignment.release_at
+          );
+
+
+        const due =
+          validTime(
+            assignment.due_at
+          );
+
+
+        return (
+          !map.has(
+            assignment.id
+          ) &&
+          release !==
+            null &&
+          due !==
+            null &&
+          now >=
+            release &&
+          now <
+            due
+        );
+      }
+    )
+    ||
+    assignments.find(
+      assignment => {
+
+        const release =
+          validTime(
+            assignment.release_at
+          );
+
+
+        return (
+          !map.has(
+            assignment.id
+          ) &&
+          release !==
+            null &&
+          now <
+            release
+        );
+      }
+    );
+
+
+  const weekStatus =
+    $('#weekStatus');
+
+
+  const deadlineVisual =
+    $('#weekDeadlineVisual');
+
+
+  const button =
+    $('#weekStart');
+
+
+  // ========================================
+  // ALL COMPLETED
+  // ========================================
+
+  if (
+    !target
+  ) {
 
     $('#weekLabel').textContent =
-  `ASSIGNMENT #${
-    String(
-      target.week_no
-    )
-    .padStart(
-      2,
-      '0'
-    )
-  }`;
+      activeLanguage ===
+        'ja'
+        ? '完了'
+        : 'COMPLETED';
+
 
     $('#weekTitle').textContent =
-      target.title;
+      t(
+        'allCompleted'
+      );
 
-    const countdown =
-  countdownInfo(
-    target
-  );
-
-
-$('#weekMeta').innerHTML =
-  `
-    ${
-      escapeHtml(
-        target.category ||
-        'Reading'
-      )
-    }
-
-    ・ Deadline
-    ${formatDateTime(
-      target.due_at
-    )}
-
-    ・
-
-    <span
-      class="deadline-countdown ${countdown.className}">
-
-      ${escapeHtml(
-        countdown.text
-      )}
-
-    </span>
-  `;
-
-    const button =
-      $('#weekStart');
-
-    button.disabled =
-  statusClass ===
-    'upcoming'
-  ||
-  statusClass ===
-    'late';
-  
-    button.textContent =
-
-  statusClass ===
-    'upcoming'
-
-    ? 'Not Open Yet'
-
-    : statusClass ===
-        'late'
-
-      ? 'Closed'
-
-      : 'Start Copeak →';
-
-    button.onclick =
-      () =>
-        openCopeak(
-          target
-        );
-
-  } else {
-
-    $('#weekTitle').textContent =
-      'All assignments completed!';
 
     $('#weekMeta').textContent =
-      'Great work.';
+      t(
+        'greatWork'
+      );
 
-    $('#weekStart').disabled =
+
+    if (
+      weekStatus
+    ) {
+
+      weekStatus.textContent =
+        t(
+          'statusDone'
+        );
+
+
+      weekStatus.className =
+        'student-status-badge done';
+    }
+
+
+    deadlineVisual
+      ?.classList
+      .add(
+        'hidden'
+      );
+
+
+    button.disabled =
       true;
+
+
+    button.textContent =
+      t(
+        'statusDone'
+      );
+
+
+    return;
   }
 
 
   // ========================================
-  // 課題一覧
+  // TARGET INFO
   // ========================================
-  $('#assignmentList').innerHTML =
+
+  const status =
+    assignmentStatus(
+      target,
+      null
+    );
+
+
+  const deadline =
+    deadlineInfo(
+      target
+    );
+
+
+  $('#weekLabel').textContent =
+    activeLanguage ===
+      'ja'
+
+      ? `課題 #${String(
+          target.week_no
+        ).padStart(
+          2,
+          '0'
+        )}`
+
+      : `ASSIGNMENT #${String(
+          target.week_no
+        ).padStart(
+          2,
+          '0'
+        )}`;
+
+
+  $('#weekTitle').textContent =
+    target.title;
+
+
+  $('#weekMeta').innerHTML =
+    `
+      <span class="student-category-chip">
+        ${escapeHtml(
+          target.category ||
+          'Reading'
+        )}
+      </span>
+    `;
+
+
+  // ========================================
+  // STATUS
+  // ========================================
+
+  if (
+    weekStatus
+  ) {
+
+    weekStatus.textContent =
+      status.label;
+
+
+    weekStatus.className =
+      `student-status-badge ${status.key}`;
+  }
+
+
+  // ========================================
+  // DEADLINE VISUAL
+  // ========================================
+
+  if (
+    deadlineVisual
+  ) {
+
+    deadlineVisual
+      .classList
+      .remove(
+        'hidden'
+      );
+
+
+    deadlineVisual
+      .classList
+      .remove(
+        'normal',
+        'warning',
+        'danger',
+        'upcoming',
+        'closed'
+      );
+
+
+    deadlineVisual
+      .classList
+      .add(
+        deadline.className
+      );
+  }
+
+
+  $('#weekDeadlineLabel').textContent =
+    deadline.state ===
+      'upcoming'
+
+      ? t(
+          'startsIn'
+        )
+
+      : t(
+          'timeRemaining'
+        );
+
+
+  $('#weekCountdown').textContent =
+    deadline.countdown;
+
+
+  $('#weekTimeBar').style.width =
+    `${deadline.percent}%`;
+
+
+  $('#weekDeadlineDate').textContent =
+    deadline.dateText;
+
+
+  // ========================================
+  // BUTTON
+  // ========================================
+
+  const unavailable =
+    status.key ===
+      'upcoming' ||
+    status.key ===
+      'late';
+
+
+  button.disabled =
+    unavailable;
+
+
+  button.textContent =
+    status.key ===
+      'upcoming'
+
+      ? t(
+          'notOpen'
+        )
+
+      : status.key ===
+          'late'
+
+        ? t(
+            'closed'
+          )
+
+        : t(
+            'startCopeak'
+          );
+
+
+  button.onclick =
+    unavailable
+
+      ? null
+
+      : () =>
+          openCopeak(
+            target
+          );
+}
+
+
+// ==========================================
+// ASSIGNMENT LIST
+// ==========================================
+
+function renderAssignmentList(
+  map
+) {
+
+  const visibleAssignments =
     assignments
+      .filter(
+        assignment => {
+
+          const submission =
+            map.get(
+              assignment.id
+            );
+
+
+          const status =
+            assignmentStatus(
+              assignment,
+              submission
+            );
+
+
+          return assignmentMatchesFilter(
+            status.key
+          );
+        }
+      );
+
+
+  // ========================================
+  // NO ASSIGNMENTS
+  // ========================================
+
+  if (
+    !assignments.length
+  ) {
+
+    $('#assignmentList').innerHTML =
+      `
+        <div class="student-empty-state">
+          ${escapeHtml(
+            t(
+              'noAssignments'
+            )
+          )}
+        </div>
+      `;
+
+
+    return;
+  }
+
+
+  // ========================================
+  // FILTER EMPTY
+  // ========================================
+
+  if (
+    !visibleAssignments.length
+  ) {
+
+    $('#assignmentList').innerHTML =
+      `
+        <div class="student-empty-state">
+          ${escapeHtml(
+            t(
+              'noFilteredAssignments'
+            )
+          )}
+        </div>
+      `;
+
+
+    return;
+  }
+
+
+  // ========================================
+  // CARDS
+  // ========================================
+
+  $('#assignmentList').innerHTML =
+    visibleAssignments
       .map(
         assignment => {
 
@@ -556,131 +1786,301 @@ $('#weekMeta').innerHTML =
               assignment.id
             );
 
-          const [
-            statusClass,
-            statusLabel
-          ] =
+
+          const status =
             assignmentStatus(
               assignment,
               submission
             );
 
-          const countdown =
-  countdownInfo(
-    assignment
-  );
+
+          const deadline =
+            deadlineInfo(
+              assignment
+            );
 
 
-const disabled =
-  (
-    statusClass ===
-      'upcoming'
-    ||
-    statusClass ===
-      'late'
-  )
+          const dueTime =
+            validTime(
+              assignment.due_at
+            );
 
-    ? 'disabled'
-    : '';
+
+          const releaseTime =
+            validTime(
+              assignment.release_at
+            );
+
+
+          const now =
+            Date.now();
+
+
+          const isNotOpen =
+            releaseTime !==
+              null &&
+            now <
+              releaseTime;
+
+
+          const isClosed =
+            dueTime !==
+              null &&
+            now >=
+              dueTime;
+
+
+          const disabled =
+            isNotOpen ||
+            isClosed;
+
+
+          let actionLabel;
+
+
+          if (
+            isNotOpen
+          ) {
+
+            actionLabel =
+              t(
+                'notOpen'
+              );
+          }
+
+          else if (
+            isClosed
+          ) {
+
+            actionLabel =
+              t(
+                'closed'
+              );
+          }
+
+          else if (
+            submission
+          ) {
+
+            actionLabel =
+              t(
+                'practiceAgain'
+              );
+          }
+
+          else {
+
+            actionLabel =
+              activeLanguage ===
+                'ja'
+
+                ? 'Copeakで始める'
+
+                : 'Start Copeak';
+          }
+
+
+          const deadlineLabel =
+            deadline.state ===
+              'upcoming'
+
+              ? deadline.dateText
+
+              : `${t(
+                  'deadline'
+                )}：${formatDateTime(
+                  assignment.due_at
+                )}`;
+
+
+          const showMiniDeadline =
+            status.key ===
+              'due' ||
+            status.key ===
+              'upcoming' ||
+            status.key ===
+              'late';
 
 
           return `
-            <div class="assignment">
+            <article
+              class="assignment student-assignment-card"
+              data-status="${status.key}">
 
               <div class="weekbox">
-  <span>NO.</span>
-                <strong>
+
+                <span>
                   ${
-                    String(
-                      assignment.week_no
-                    )
-                    .padStart(
-                      2,
-                      '0'
-                    )
+                    activeLanguage ===
+                      'ja'
+
+                      ? '課題'
+
+                      : 'NO.'
                   }
+                </span>
+
+                <strong>
+                  ${String(
+                    assignment.week_no
+                  ).padStart(
+                    2,
+                    '0'
+                  )}
                 </strong>
+
               </div>
 
 
-              <div>
+              <div class="student-assignment-content">
 
-                <div class="assignment-title">
-                  ${
-                    escapeHtml(
+
+                <div class="student-assignment-title-row">
+
+                  <div class="assignment-title">
+
+                    ${escapeHtml(
                       assignment.title
-                    )
-                  }
-                </div>
+                    )}
 
-                <div class="assignment-meta">
+                  </div>
 
-                  ${
-                    escapeHtml(
-                      assignment.category ||
-                      'Reading'
-                    )
-                  }
 
-                  ・
+                  <span
+                    class="student-status-badge ${status.key}">
 
-                  Deadline
-${formatDateTime(
-  assignment.due_at
-)}
+                    ${escapeHtml(
+                      status.label
+                    )}
 
-・
-
-<span
-  class="deadline-countdown ${countdown.className}">
-
-  ${escapeHtml(
-    countdown.text
-  )}
-
-</span>
-
-                  ・
-
-                  <span class="status ${statusClass}">
-                    ${statusLabel}
                   </span>
 
                 </div>
 
+
+                <div class="student-assignment-meta-row">
+
+                  <span class="student-category-chip">
+
+                    ${escapeHtml(
+                      assignment.category ||
+                      'Reading'
+                    )}
+
+                  </span>
+
+
+                  <span class="student-deadline-inline">
+
+                    ◷
+                    ${escapeHtml(
+                      deadlineLabel
+                    )}
+
+                  </span>
+
+                </div>
+
+
+                ${
+                  showMiniDeadline
+
+                    ? `
+                      <div
+                        class="student-mini-deadline ${deadline.className}">
+
+                        <div class="student-mini-deadline-copy">
+
+                          <strong>
+
+                            ${escapeHtml(
+                              deadline.countdown
+                            )}
+
+                          </strong>
+
+
+                          ${
+                            deadline.state ===
+                              'open'
+
+                              ? `
+                                <span>
+                                  ${deadline.percent}%
+                                </span>
+                              `
+
+                              : ''
+                          }
+
+                        </div>
+
+
+                        <div class="student-mini-deadline-track">
+
+                          <div
+                            class="student-mini-deadline-fill"
+                            style="width:${deadline.percent}%">
+                          </div>
+
+                        </div>
+
+                      </div>
+                    `
+
+                    : ''
+                }
+
               </div>
 
 
-              <div class="assignment-score">
+              <div
+                class="assignment-score student-assignment-result">
+
 
                 ${
                   submission
+
                     ? `
                       <strong>
-                        ${
-                          pct(
-                            submission.accuracy
-                          )
-                        }
+
+                        ${pct(
+                          submission.accuracy
+                        )}
+
                       </strong>
 
+
                       <div class="tiny muted">
-                        WPM ${
-                          Math.round(
-                            submission.wpm ||
-                            0
+
+                        ${escapeHtml(
+                          t(
+                            'scoreAccuracy'
                           )
-                        }
-                        /
-                        Comp ${
-                          pct(
-                            submission.comprehension
+                        )}
+
+                        · WPM
+                        ${Math.round(
+                          submission.wpm ||
+                          0
+                        )}
+
+                        ·
+                        ${escapeHtml(
+                          t(
+                            'comprehension'
                           )
-                        }
+                        )}
+
+                        ${pct(
+                          submission.comprehension
+                        )}
+
                       </div>
                     `
+
                     : `
-                      <strong style="color:#a8a29e">
+                      <strong class="student-no-score">
                         —
                       </strong>
                     `
@@ -701,33 +2101,24 @@ ${formatDateTime(
                       start-btn
                     "
                     data-id="${assignment.id}"
-                    ${disabled}
-                  >
                     ${
-  statusClass ===
-    'upcoming'
+                      disabled
+                        ? 'disabled'
+                        : ''
+                    }>
 
-    ? 'Not Open'
+                    ${escapeHtml(
+                      actionLabel
+                    )}
 
-    : statusClass ===
-        'late'
-
-      ? 'Closed'
-
-      : submission
-
-        ? 'Practice Again'
-
-        : 'Start Copeak'
-}
                   </button>
 
 
                   ${
                     ctx.demo &&
                     !submission &&
-                    statusClass !==
-                    'upcoming'
+                    !isNotOpen &&
+                    !isClosed
 
                       ? `
                         <button
@@ -737,9 +2128,10 @@ ${formatDateTime(
                             btn-dark
                             demo-submit
                           "
-                          data-id="${assignment.id}"
-                        >
+                          data-id="${assignment.id}">
+
                           TEST Submit
+
                         </button>
                       `
 
@@ -750,12 +2142,18 @@ ${formatDateTime(
 
               </div>
 
-            </div>
+            </article>
           `;
         }
       )
-      .join('');
+      .join(
+        ''
+      );
 
+
+  // ========================================
+  // START BUTTONS
+  // ========================================
 
   document
     .querySelectorAll(
@@ -777,6 +2175,10 @@ ${formatDateTime(
     );
 
 
+  // ========================================
+  // DEMO BUTTONS
+  // ========================================
+
   document
     .querySelectorAll(
       '.demo-submit'
@@ -795,8 +2197,9 @@ ${formatDateTime(
 
 
 // ==========================================
-// HTML安全化
+// HTML SAFETY
 // ==========================================
+
 function escapeHtml(
   value = ''
 ) {
@@ -805,25 +2208,42 @@ function escapeHtml(
     value
   )
     .replace(
-      /[&<>'"]/g,
+      /[&<>"']/g,
       character => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
+
+        '&':
+          '&amp;',
+
+        '<':
+          '&lt;',
+
+        '>':
+          '&gt;',
+
+        '"':
+          '&quot;',
+
+        "'":
+          '&#39;'
+
       })[
         character
       ]
     );
 }
 
+
+// ==========================================
+// SECURE ASSIGNMENT AUDIO URL
+// ==========================================
+
 async function getAssignmentAudioUrl(
   assignment
 ) {
 
   if (
-    !assignment?.audio_object_key
+    !assignment
+      ?.audio_object_key
   ) {
 
     return null;
@@ -849,7 +2269,8 @@ async function getAssignmentAudioUrl(
 
 
     if (
-      !session?.access_token
+      !session
+        ?.access_token
     ) {
 
       return null;
@@ -869,17 +2290,17 @@ async function getAssignmentAudioUrl(
               'application/json',
 
             'X-Supabase-Access-Token':
-              session.access_token
-
+              session
+                .access_token
           },
 
           body:
-            JSON.stringify({
-
-              assignmentId:
-                assignment.id
-
-            })
+            JSON.stringify(
+              {
+                assignmentId:
+                  assignment.id
+              }
+            )
         }
       );
 
@@ -893,21 +2314,23 @@ async function getAssignmentAudioUrl(
         response.status
       );
 
+
       return null;
     }
 
 
     const data =
-      await response.json();
+      await response
+        .json();
 
 
     return (
       data.downloadUrl ||
       null
     );
+  }
 
-
-  } catch (
+  catch (
     error
   ) {
 
@@ -916,23 +2339,27 @@ async function getAssignmentAudioUrl(
       error
     );
 
+
     return null;
   }
 }
-// ==========================================
-// Copeakを開く
-// Classroom課題の英文を自動で渡す
-// ==========================================
-async function openCopeak(assignment) {
 
-  if (!assignment) {
+
+// ==========================================
+// OPEN COPEAK
+// ==========================================
+
+async function openCopeak(
+  assignment
+) {
+
+  if (
+    !assignment
+  ) {
+
     return;
   }
 
-
-  // ========================================
-  // Release / Deadline Check
-  // ========================================
 
   const now =
     new Date();
@@ -950,49 +2377,75 @@ async function openCopeak(assignment) {
     );
 
 
-  if (now < release) {
+  // ========================================
+  // NOT OPEN
+  // ========================================
+
+  if (
+    now <
+      release
+  ) {
 
     alert(
-      'この課題はまだ公開時刻になっていません。'
+      t(
+        'alertNotOpen'
+      )
     );
 
-    return;
-  }
-
-
-  if (now >= due) {
-
-    alert(
-      'この課題の提出期限は終了しました。'
-    );
 
     return;
   }
 
 
   // ========================================
-  // 教材本文
+  // DEADLINE CLOSED
+  // ========================================
+
+  if (
+    now >=
+      due
+  ) {
+
+    alert(
+      t(
+        'alertClosed'
+      )
+    );
+
+
+    return;
+  }
+
+
+  // ========================================
+  // LESSON TEXT
   // ========================================
 
   const lessonText =
     String(
       assignment.lesson_text ||
       ''
-    ).trim();
+    )
+      .trim();
 
 
-  if (!lessonText) {
+  if (
+    !lessonText
+  ) {
 
     alert(
-      'この課題には音読教材が登録されていません。先生に確認してください。'
+      t(
+        'alertNoLesson'
+      )
     );
+
 
     return;
   }
 
 
   // ========================================
-  // Copeak URL
+  // COPEAK URL
   // ========================================
 
   const base =
@@ -1009,7 +2462,7 @@ async function openCopeak(assignment) {
 
 
   // ========================================
-  // Classroom情報
+  // CLASSROOM DATA
   // ========================================
 
   url.searchParams.set(
@@ -1031,7 +2484,7 @@ async function openCopeak(assignment) {
 
 
   // ========================================
-  // 教材情報
+  // LESSON DATA
   // ========================================
 
   url.searchParams.set(
@@ -1060,22 +2513,30 @@ async function openCopeak(assignment) {
     'en-US'
   );
 
-const audioUrl =
-  await getAssignmentAudioUrl(
-    assignment
-  );
-
-
-if (audioUrl) {
-
-  url.searchParams.set(
-    'audioUrl',
-    audioUrl
-  );
-}
 
   // ========================================
-  // Copeakを新しいタブで開く
+  // AUDIO
+  // ========================================
+
+  const audioUrl =
+    await getAssignmentAudioUrl(
+      assignment
+    );
+
+
+  if (
+    audioUrl
+  ) {
+
+    url.searchParams.set(
+      'audioUrl',
+      audioUrl
+    );
+  }
+
+
+  // ========================================
+  // OPEN
   // ========================================
 
   const popup =
@@ -1085,49 +2546,56 @@ if (audioUrl) {
     );
 
 
-  if (!popup) {
+  if (
+    !popup
+  ) {
 
     alert(
-      'Copeakを開けませんでした。ブラウザのポップアップ設定を確認してください。'
+      t(
+        'alertPopup'
+      )
     );
   }
 }
 
-  // 教材本文がない場合はCopeakを開かない
+
 // ==========================================
-// Demo提出
+// DEMO SUBMIT
 // ==========================================
+
 function demoSubmit(
   id
 ) {
 
-  submissions.push({
+  submissions.push(
+    {
 
-    id:
-      `demo-new-${Date.now()}`,
+      id:
+        `demo-new-${Date.now()}`,
 
-    student_id:
-      's1',
+      student_id:
+        's1',
 
-    assignment_id:
-      id,
+      assignment_id:
+        id,
 
-    accuracy:
-      92,
+      accuracy:
+        92,
 
-    wpm:
-      118,
+      wpm:
+        118,
 
-    comprehension:
-      88,
+      comprehension:
+        88,
 
-    attempt_no:
-      1,
+      attempt_no:
+        1,
 
-    submitted_at:
-      new Date()
-        .toISOString()
-  });
+      submitted_at:
+        new Date()
+          .toISOString()
+    }
+  );
 
 
   render();
@@ -1135,8 +2603,9 @@ function demoSubmit(
 
 
 // ==========================================
-// Copeak結果をSupabaseへ保存
+// SAVE COPEAK RESULT
 // ==========================================
+
 async function saveCopeakResult(
   data,
   event
@@ -1147,13 +2616,11 @@ async function saveCopeakResult(
     ctx.demo ||
     !ctx.user
   ) {
+
     return;
   }
 
 
-  // ========================================
-  // 本当にこのクラスの課題か確認
-  // ========================================
   const assignment =
     assignments.find(
       item =>
@@ -1162,50 +2629,75 @@ async function saveCopeakResult(
     );
 
 
-  if (!assignment) {
+  if (
+    !assignment
+  ) {
 
     console.warn(
       '[Copeak Classroom] Unknown assignment:',
       data.assignmentId
     );
 
+
     return;
   }
 
-const now =
-  new Date();
+
+  const now =
+    new Date();
 
 
-const release =
-  new Date(
-    assignment.release_at
-  );
+  const release =
+    new Date(
+      assignment.release_at
+    );
 
 
-const due =
-  new Date(
-    assignment.due_at
-  );
+  const due =
+    new Date(
+      assignment.due_at
+    );
 
 
-if (now < release) {
+  // ========================================
+  // RELEASE CHECK
+  // ========================================
 
-  alert(
-    'この課題はまだ公開されていません。'
-  );
+  if (
+    now <
+      release
+  ) {
 
-  return;
-}
+    alert(
+      t(
+        'alertNotOpen'
+      )
+    );
 
 
-if (now >= due) {
+    return;
+  }
 
-  alert(
-    '提出期限を過ぎたため、今回の結果はClassroomには保存されませんでした。'
-  );
 
-  return;
-}
+  // ========================================
+  // DEADLINE CHECK
+  // ========================================
+
+  if (
+    now >=
+      due
+  ) {
+
+    alert(
+      t(
+        'alertSaveClosed'
+      )
+    );
+
+
+    return;
+  }
+
 
   const resultId =
     String(
@@ -1215,14 +2707,16 @@ if (now >= due) {
 
 
   // ========================================
-  // 二重送信防止
+  // DUPLICATE PREVENTION
   // ========================================
+
   if (
     resultId &&
     processedResultIds.has(
       resultId
     )
   ) {
+
     return;
   }
 
@@ -1232,22 +2726,26 @@ if (now >= due) {
       data.assignmentId
     )
   ) {
+
     return;
   }
 
 
   // ========================================
-  // 数値取得
+  // VALUES
   // ========================================
+
   const accuracy =
     Number(
       data.accuracy
     );
 
+
   const wpm =
     Number(
       data.wpm
     );
+
 
   const comprehension =
     Number(
@@ -1256,15 +2754,19 @@ if (now >= due) {
 
 
   // ========================================
-  // 異常値防止
+  // VALUE CHECK
   // ========================================
+
   if (
     !Number.isFinite(
       accuracy
     ) ||
-    accuracy < 0 ||
-    accuracy > 100
+    accuracy <
+      0 ||
+    accuracy >
+      100
   ) {
+
     return;
   }
 
@@ -1273,8 +2775,10 @@ if (now >= due) {
     !Number.isFinite(
       wpm
     ) ||
-    wpm < 0
+    wpm <
+      0
   ) {
+
     return;
   }
 
@@ -1283,9 +2787,12 @@ if (now >= due) {
     !Number.isFinite(
       comprehension
     ) ||
-    comprehension < 0 ||
-    comprehension > 100
+    comprehension <
+      0 ||
+    comprehension >
+      100
   ) {
+
     return;
   }
 
@@ -1298,8 +2805,9 @@ if (now >= due) {
   try {
 
     // ======================================
-    // Attempt番号
+    // ATTEMPT NO.
     // ======================================
+
     const attempts =
       submissions
         .filter(
@@ -1328,8 +2836,9 @@ if (now >= due) {
 
 
     // ======================================
-    // 保存データ
+    // SAVE ROW
     // ======================================
+
     const row = {
 
       assignment_id:
@@ -1354,15 +2863,16 @@ if (now >= due) {
 
 
     // ======================================
-    // SupabaseへINSERT
+    // SUPABASE
     // ======================================
+
     const {
       data: saved,
       error
     } =
       await getClient(
-  'student'
-)
+        'student'
+      )
         .from(
           'submissions'
         )
@@ -1373,7 +2883,10 @@ if (now >= due) {
         .single();
 
 
-    if (error) {
+    if (
+      error
+    ) {
+
       throw error;
     }
 
@@ -1383,7 +2896,9 @@ if (now >= due) {
     );
 
 
-    if (resultId) {
+    if (
+      resultId
+    ) {
 
       processedResultIds.add(
         resultId
@@ -1391,13 +2906,17 @@ if (now >= due) {
     }
 
 
-    // 生徒Dashboardを即更新
+    // ======================================
+    // REFRESH DASHBOARD
+    // ======================================
+
     render();
 
 
     // ======================================
-    // Copeak側へ保存成功を通知
+    // RETURN RESULT TO COPEAK
     // ======================================
+
     if (
       event?.source &&
       typeof
@@ -1407,6 +2926,7 @@ if (now >= due) {
 
       event.source.postMessage(
         {
+
           type:
             'copeak-classroom-saved',
 
@@ -1415,19 +2935,29 @@ if (now >= due) {
 
           resultId
         },
+
         event.origin
       );
     }
 
 
     alert(
-      `提出完了！ Accuracy ${Math.round(accuracy)}% / ` +
-      `WPM ${Math.round(wpm)} / ` +
-      `Comp ${Math.round(comprehension)}%`
+      `${t(
+        'submitComplete'
+      )} ` +
+      `Accuracy ${Math.round(
+        accuracy
+      )}% / ` +
+      `WPM ${Math.round(
+        wpm
+      )} / ` +
+      `Comp ${Math.round(
+        comprehension
+      )}%`
     );
+  }
 
-
-  } catch (
+  catch (
     error
   ) {
 
@@ -1438,14 +2968,16 @@ if (now >= due) {
 
 
     alert(
-      `成績の保存に失敗しました: ${
+      `${t(
+        'saveFailed'
+      )}: ${
         error.message ||
         error
       }`
     );
+  }
 
-
-  } finally {
+  finally {
 
     savingAssignments.delete(
       data.assignmentId
@@ -1455,8 +2987,9 @@ if (now >= due) {
 
 
 // ==========================================
-// CopeakからpostMessageを受信
+// RECEIVE COPEAK RESULT
 // ==========================================
+
 window.addEventListener(
   'message',
   event => {
@@ -1474,8 +3007,9 @@ window.addEventListener(
             .copeakBaseUrl
         )
           .origin;
+    }
 
-    } catch (
+    catch (
       error
     ) {
 
@@ -1483,13 +3017,11 @@ window.addEventListener(
     }
 
 
-    // ======================================
-    // Copeak本体以外からは受けない
-    // ======================================
     if (
       event.origin !==
       copeakOrigin
     ) {
+
       return;
     }
 
@@ -1503,6 +3035,7 @@ window.addEventListener(
       data.type !==
         'copeak-classroom-result'
     ) {
+
       return;
     }
 
@@ -1516,10 +3049,7 @@ window.addEventListener(
 
 
 // ==========================================
-// Class Code参加
-// ==========================================
-// ==========================================
-// Class Join
+// CLASS JOIN
 // ==========================================
 
 async function joinClass() {
@@ -1553,16 +3083,28 @@ async function joinClass() {
     '';
 
 
-  if (!code) {
+  // ========================================
+  // CLASS CODE
+  // ========================================
+
+  if (
+    !code
+  ) {
 
     msg.textContent =
-      'Class Codeを入力してください。';
+      t(
+        'joinCodeRequired'
+      );
+
 
     return;
   }
 
 
-  // Student No.とPINの片方だけはNG
+  // ========================================
+  // STUDENT NO + PIN
+  // ========================================
+
   if (
     (
       studentNumber &&
@@ -1575,7 +3117,10 @@ async function joinClass() {
   ) {
 
     msg.textContent =
-      'Student No.とJoin PINの両方を入力してください。';
+      t(
+        'joinRosterRequired'
+      );
+
 
     return;
   }
@@ -1583,15 +3128,15 @@ async function joinClass() {
 
   const sb =
     getClient(
-  'student'
-);
+      'student'
+    );
 
 
   let error;
 
 
   // ========================================
-  // 名簿認証
+  // ROSTER AUTH
   // ========================================
 
   if (
@@ -1618,12 +3163,11 @@ async function joinClass() {
 
     error =
       result.error;
-
   }
 
+
   // ========================================
-  // 従来型Class Code
-  // 名簿なしクラスのみ利用可能
+  // LEGACY CLASS CODE
   // ========================================
 
   else {
@@ -1632,6 +3176,7 @@ async function joinClass() {
       await sb.rpc(
         'join_class_by_code',
         {
+
           p_code:
             code
         }
@@ -1643,10 +3188,13 @@ async function joinClass() {
   }
 
 
-  if (error) {
+  if (
+    error
+  ) {
 
     msg.textContent =
       error.message;
+
 
     return;
   }
@@ -1655,20 +3203,23 @@ async function joinClass() {
   location.reload();
 }
 
+
 // ==========================================
-// Studentデータ読み込み
+// LOAD LIVE DATA
 // ==========================================
+
 async function loadLive() {
 
   const sb =
     getClient(
-  'student'
-);
+      'student'
+    );
 
 
   // ========================================
-  // 所属クラス
+  // CLASS MEMBERSHIP
   // ========================================
+
   const {
     data: members,
     error: memberError
@@ -1692,15 +3243,18 @@ async function loadLive() {
   if (
     memberError
   ) {
+
     throw memberError;
   }
 
 
   // ========================================
-  // まだクラス未参加
+  // NOT JOINED
   // ========================================
+
   if (
-    !members?.length
+    !members
+      ?.length
   ) {
 
     $('#mainApp')
@@ -1709,21 +3263,30 @@ async function loadLive() {
         'hidden'
       );
 
+
     $('#joinPanel')
       .classList
       .remove(
         'hidden'
       );
 
+
     $('#joinBtn').onclick =
       joinClass;
+
 
     return;
   }
 
 
+  // ========================================
+  // CURRENT CLASS
+  // ========================================
+
   currentClass =
-    members[0]
+    members[
+      0
+    ]
       .classes;
 
 
@@ -1732,8 +3295,9 @@ async function loadLive() {
 
 
   // ========================================
-  // 課題読み込み
+  // ASSIGNMENTS
   // ========================================
+
   const {
     data: assignmentRows,
     error: assignmentError
@@ -1761,6 +3325,7 @@ async function loadLive() {
   if (
     assignmentError
   ) {
+
     throw assignmentError;
   }
 
@@ -1771,8 +3336,9 @@ async function loadLive() {
 
 
   // ========================================
-  // 自分の提出結果
+  // SUBMISSIONS
   // ========================================
+
   const {
     data: submissionRows,
     error: submissionError
@@ -1793,6 +3359,7 @@ async function loadLive() {
   if (
     submissionError
   ) {
+
     throw submissionError;
   }
 
@@ -1804,8 +3371,12 @@ async function loadLive() {
 
 
 // ==========================================
-// 起動
+// START
 // ==========================================
+
+applyStaticLanguage();
+
+
 (async () => {
 
   ctx =
@@ -1814,7 +3385,10 @@ async function loadLive() {
     );
 
 
-  if (!ctx) {
+  if (
+    !ctx
+  ) {
+
     return;
   }
 
@@ -1826,13 +3400,15 @@ async function loadLive() {
 
 
   // ========================================
-  // Demo
+  // DEMO
   // ========================================
+
   if (
     ctx.demo
   ) {
 
     currentClass = {
+
       id:
         'demo-class',
 
@@ -1865,7 +3441,18 @@ async function loadLive() {
       );
 
 
-  } else {
+    $('#demoBanner').textContent =
+      t(
+        'demoBanner'
+      );
+  }
+
+
+  // ========================================
+  // LIVE
+  // ========================================
+
+  else {
 
     await loadLive();
   }
@@ -1874,28 +3461,26 @@ async function loadLive() {
   render();
 
 
-// ==========================================
-// COUNTDOWN CLOCK
-// Supabase通信は発生しない
-// ==========================================
+  // ========================================
+  // COUNTDOWN CLOCK
+  //
+  // Supabase通信は発生しません。
+  // 画面の残り時間だけを1秒ごとに更新します。
+  // ========================================
 
-setInterval(
-  () => {
-
-    render();
-
-  },
-  1000
-);
-
-
+  setInterval(
+    render,
+    1000
+  );
 })()
+
 .catch(
   error => {
 
     console.error(
       error
     );
+
 
     alert(
       error.message
