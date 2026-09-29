@@ -22,7 +22,123 @@
 <body>
 
 
-<div class="app-shell">
+<div class="app-shell platform-layout">
+
+  <!-- ======================================
+       PLATFORM SIDEBAR
+  ======================================= -->
+
+  <aside class="platform-sidebar">
+
+    <div class="platform-sidebar-brand">
+
+      <div class="brand-mark">
+        C
+      </div>
+
+      <div>
+        <div class="platform-brand-title">
+          Copeak
+        </div>
+
+        <div class="platform-brand-sub">
+          Classroom
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="platform-sidebar-label">
+      CLASSROOM
+    </div>
+
+
+    <nav class="platform-nav">
+
+      <button
+        type="button"
+        class="platform-nav-item active"
+        data-platform-target="overview">
+
+        <span class="platform-nav-icon">
+          ◫
+        </span>
+
+        <span>
+          <strong>Overview</strong>
+          <small>クラス全体</small>
+        </span>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="platform-nav-item"
+        data-platform-target="assignments">
+
+        <span class="platform-nav-icon">
+          ▤
+        </span>
+
+        <span>
+          <strong>Assignments</strong>
+          <small>課題の作成・管理</small>
+        </span>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="platform-nav-item"
+        data-platform-target="students">
+
+        <span class="platform-nav-icon">
+          ◉
+        </span>
+
+        <span>
+          <strong>Students</strong>
+          <small>生徒・参加管理</small>
+        </span>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="platform-nav-item"
+        data-platform-target="gradebook">
+
+        <span class="platform-nav-icon">
+          ▦
+        </span>
+
+        <span>
+          <strong>Gradebook</strong>
+          <small>音読結果・成績</small>
+        </span>
+
+      </button>
+
+    </nav>
+
+
+    <div class="platform-sidebar-footer">
+
+      <div class="platform-product-badge">
+        COPEAK
+      </div>
+
+      <div>
+        Read · Practice · Grow
+      </div>
+
+    </div>
+
+  </aside>
 
 
   <!-- ======================================
@@ -176,7 +292,9 @@
          HERO
     ===================================== -->
 
-    <section class="hero paper">
+    <section
+  class="hero paper"
+  data-platform-page="overview">
 
       <div>
 
@@ -229,8 +347,9 @@
     ===================================== -->
 
     <section
-      class="grid grid-4"
-      style="margin-top:16px">
+  class="grid grid-4"
+  data-platform-page="overview"
+  style="margin-top:16px">
 
 
       <div class="metric">
@@ -302,16 +421,132 @@
 
     </section>
 
+    <!-- ====================================
+         OVERVIEW QUICK ACTIONS
+    ===================================== -->
 
+    <section
+      class="platform-overview-actions"
+      data-platform-page="overview">
+
+      <div class="paper section">
+
+        <div class="panel-title">
+
+          <div>
+
+            <div class="eyebrow">
+              Quick Actions
+            </div>
+
+            <h2>
+              What would you like to do?
+            </h2>
+
+          </div>
+
+        </div>
+
+
+        <div class="platform-quick-grid">
+
+          <button
+            type="button"
+            class="platform-quick-card"
+            data-platform-open="assignments">
+
+            <span class="platform-quick-icon">
+              ＋
+            </span>
+
+            <span>
+
+              <strong>
+                Create Assignment
+              </strong>
+
+              <small>
+                新しい音読課題を作成
+              </small>
+
+            </span>
+
+            <span class="platform-quick-arrow">
+              →
+            </span>
+
+          </button>
+
+
+          <button
+            type="button"
+            class="platform-quick-card"
+            data-platform-open="students">
+
+            <span class="platform-quick-icon">
+              ◉
+            </span>
+
+            <span>
+
+              <strong>
+                Manage Students
+              </strong>
+
+              <small>
+                生徒登録・参加状況を確認
+              </small>
+
+            </span>
+
+            <span class="platform-quick-arrow">
+              →
+            </span>
+
+          </button>
+
+
+          <button
+            type="button"
+            class="platform-quick-card"
+            data-platform-open="gradebook">
+
+            <span class="platform-quick-icon">
+              ▦
+            </span>
+
+            <span>
+
+              <strong>
+                Open Gradebook
+              </strong>
+
+              <small>
+                Accuracy・WPM・提出状況
+              </small>
+
+            </span>
+
+            <span class="platform-quick-arrow">
+              →
+            </span>
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
 
     <!-- ====================================
          STUDENT ROSTER
     ===================================== -->
 
     <section
-      id="rosterSection"
-      class="paper section"
-      style="margin-top:16px">
+  id="rosterSection"
+  class="paper section"
+  data-platform-page="students"
 
 
       <div class="panel-title">
@@ -551,8 +786,9 @@
     ===================================== -->
 
     <section
-      class="paper section"
-      style="margin-top:16px">
+  class="paper section"
+  data-platform-page="assignments"
+  style="margin-top:16px">
 
 
       <div class="panel-title">
@@ -854,8 +1090,9 @@
     ===================================== -->
 
     <section
-      class="paper section"
-      style="margin-top:16px">
+  class="paper section"
+  data-platform-page="gradebook"
+  style="margin-top:16px">
 
 
       <div class="panel-title">
@@ -922,9 +1159,12 @@
 
   <div class="footer-note">
 
-    Copeak Classroom MVP
+  Copeak Classroom
+  <span style="opacity:.55">
+    · Powered by Copeak
+  </span>
 
-  </div>
+</div>
 
 
 </div>
@@ -996,6 +1236,11 @@
 <script
   type="module"
   src="js/class-manager.js">
+</script>
+
+<script
+  type="module"
+  src="js/platform-ui.js">
 </script>
 
 </body>

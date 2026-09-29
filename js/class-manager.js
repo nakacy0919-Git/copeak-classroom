@@ -595,6 +595,8 @@ function buildClassManager() {
   section.className =
     'paper class-manager';
 
+  section.dataset.platformPage =
+  'overview';
 
   section.innerHTML = `
 
