@@ -63,7 +63,10 @@
 
 
     <!-- RIGHT -->
-    <div class="auth-form">
+    <div
+  id="authFormPanel"
+  class="auth-form"
+  style="visibility:hidden">
 
       <div class="eyebrow">
         Copeak Classroom
@@ -75,6 +78,45 @@
         Student Login
       </h2>
 
+      <!-- ==================================
+     REMEMBERED STUDENT
+=================================== -->
+
+<div
+  id="rememberedStudentPanel"
+  class="remembered-student hidden">
+
+  <div class="remembered-student-label">
+    WELCOME BACK
+  </div>
+
+  <div class="remembered-student-name">
+    <span id="rememberedStudentName">
+      Student
+    </span>
+  </div>
+
+  <div class="remembered-student-role">
+    Student Account
+  </div>
+
+  <button
+    type="button"
+    id="rememberedStudentContinue"
+    class="btn btn-primary remembered-student-primary">
+
+    Continue to Classroom →
+  </button>
+
+  <button
+    type="button"
+    id="rememberedStudentSwitch"
+    class="btn btn-light remembered-student-secondary">
+
+    Use another student account
+  </button>
+
+</div>
 
       <div
         id="message"

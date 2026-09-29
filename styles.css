@@ -2913,3 +2913,107 @@ tbody tr:hover td {
 table {
   max-width: none;
 }
+/* =========================================================
+   REMEMBERED STUDENT
+   ========================================================= */
+
+.remembered-student {
+
+  padding:
+    22px;
+
+  margin-bottom:
+    22px;
+
+  border:
+    1px solid
+    #d9e8e2;
+
+  border-radius:
+    14px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #f8fcfa,
+      #eef8f4
+    );
+
+  box-shadow:
+    0 10px 28px
+    rgba(5,150,105,.07);
+}
+
+
+.remembered-student-label {
+
+  color:
+    #059669;
+
+  font-size:
+    9px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .18em;
+}
+
+
+.remembered-student-name {
+
+  margin-top:
+    7px;
+
+  color:
+    #17211f;
+
+  font-size:
+    24px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    -.03em;
+}
+
+
+.remembered-student-role {
+
+  margin-top:
+    3px;
+
+  margin-bottom:
+    18px;
+
+  color:
+    #77847f;
+
+  font-size:
+    11px;
+
+  font-weight:
+    600;
+}
+
+
+.remembered-student-primary {
+
+  width:
+    100%;
+
+  padding:
+    13px;
+}
+
+
+.remembered-student-secondary {
+
+  width:
+    100%;
+
+  margin-top:
+    9px;
+}

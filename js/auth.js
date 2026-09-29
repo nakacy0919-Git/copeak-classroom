@@ -3,7 +3,8 @@ import {
   isConfigured,
   clearDemo,
   getStudentRememberLogin,
-  setStudentRememberLogin
+  setStudentRememberLogin,
+  clearStudentAuthStorage
 } from './supabase.js';
 
 
@@ -15,6 +16,8 @@ const $ =
 let teacherMode =
   'login';
 
+let rememberedStudent =
+  null;
 
 // ==========================================
 // MESSAGE
@@ -70,21 +73,52 @@ function showStudent() {
       'active'
     );
 
-  $('#studentForm')
-    .classList
-    .remove(
-      'hidden'
-    );
-
   $('#teacherForm')
     .classList
     .add(
       'hidden'
     );
 
+
+  const rememberedPanel =
+    $('#rememberedStudentPanel');
+
+
+  if (rememberedStudent) {
+
+    $('#studentForm')
+      .classList
+      .add(
+        'hidden'
+      );
+
+    rememberedPanel
+      ?.classList
+      .remove(
+        'hidden'
+      );
+
+  } else {
+
+    rememberedPanel
+      ?.classList
+      .add(
+        'hidden'
+      );
+
+    $('#studentForm')
+      .classList
+      .remove(
+        'hidden'
+      );
+  }
+
+
   $('#formTitle')
     .textContent =
-    'Student Login';
+    rememberedStudent
+      ? 'Welcome Back'
+      : 'Student Login';
 }
 
 
@@ -115,6 +149,12 @@ function showTeacher() {
     .add(
       'hidden'
     );
+
+    $('#rememberedStudentPanel')
+  ?.classList
+  .add(
+    'hidden'
+  );
 
   syncTeacherMode();
 }
@@ -638,102 +678,216 @@ $('#teacherForm').onsubmit =
 
 async function initializeAuthPage() {
 
-  showStudent();
-
-
-  // ----------------------------------------
-  // 保存している設定を
-  // チェックボックスへ反映
-  // ----------------------------------------
-
-  const rememberCheckbox =
-    $('#studentRememberLogin');
-
-  if (rememberCheckbox) {
-
-    rememberCheckbox.checked =
-      getStudentRememberLogin();
-  }
-
-
-  if (!isConfigured()) {
-
-    return;
-  }
-
-
-  // ----------------------------------------
-  // Student Sessionが残っていれば
-  // ログイン画面を飛ばす
-  // ----------------------------------------
-
-  const sb =
-    getClient(
-      'student'
-    );
-
-  if (!sb) {
-
-    return;
-  }
+  const authPanel =
+    $('#authFormPanel');
 
 
   try {
 
-    const {
-      data: {
-        session
-      },
-      error
-    } =
-      await sb.auth
-        .getSession();
+    // ----------------------------------------
+    // Remember設定をチェックボックスへ反映
+    // ----------------------------------------
 
+    const rememberCheckbox =
+      $('#studentRememberLogin');
 
-    if (error) {
+    if (rememberCheckbox) {
 
-      throw error;
+      rememberCheckbox.checked =
+        getStudentRememberLogin();
     }
 
 
-    if (!session) {
+    rememberedStudent =
+      null;
 
-      return;
+
+    if (isConfigured()) {
+
+      const sb =
+        getClient(
+          'student'
+        );
+
+
+      if (sb) {
+
+        const {
+          data: {
+            session
+          },
+          error
+        } =
+          await sb.auth
+            .getSession();
+
+
+        if (error) {
+
+          console.warn(
+            '[Student Saved Session]',
+            error
+          );
+
+        } else if (session) {
+
+          // Sessionが本当に有効か確認
+          const {
+            data: {
+              user
+            },
+            error: userError
+          } =
+            await sb.auth
+              .getUser();
+
+
+          if (
+            !userError &&
+            user
+          ) {
+
+            // Student名を取得
+            const {
+              data: profile,
+              error: profileError
+            } =
+              await sb
+                .from(
+                  'profiles'
+                )
+                .select(
+                  'display_name, role'
+                )
+                .eq(
+                  'id',
+                  user.id
+                )
+                .maybeSingle();
+
+
+            if (
+              !profileError &&
+              profile?.role ===
+                'student'
+            ) {
+
+              rememberedStudent = {
+                user,
+                profile
+              };
+
+
+              const name =
+                profile.display_name ||
+                user.user_metadata
+                  ?.display_name ||
+                'Student';
+
+
+              const nameElement =
+                $('#rememberedStudentName');
+
+              if (nameElement) {
+
+                nameElement.textContent =
+                  name;
+              }
+            }
+          }
+        }
+      }
     }
 
 
-    // Sessionが本当に有効か確認
-    const {
-      data: {
-        user
-      },
-      error: userError
-    } =
-      await sb.auth
-        .getUser();
+    // ----------------------------------------
+    // Student画面を表示
+    //
+    // Sessionあり：
+    // Continue画面
+    //
+    // Sessionなし：
+    // 通常Login
+    // ----------------------------------------
 
-
-    if (
-      userError ||
-      !user
-    ) {
-
-      return;
-    }
-
-
-    location.href =
-      'student.html';
+    showStudent();
 
 
   } catch (error) {
 
     console.warn(
-      '[Student Auto Login]',
+      '[Auth Initialize]',
       error
     );
+
+    rememberedStudent =
+      null;
+
+    showStudent();
+
+
+  } finally {
+
+    // Session確認前にLogin画面が
+    // 一瞬見える現象を防止
+    if (authPanel) {
+
+      authPanel.style.visibility =
+        'visible';
+    }
   }
 }
 
+// ==========================================
+// REMEMBERED STUDENT ACTIONS
+// ==========================================
+
+$('#rememberedStudentContinue')
+  ?.addEventListener(
+    'click',
+    () => {
+
+      location.href =
+        'student.html';
+    }
+  );
+
+
+$('#rememberedStudentSwitch')
+  ?.addEventListener(
+    'click',
+    async () => {
+
+      const sb =
+        getClient(
+          'student'
+        );
+
+
+      try {
+
+        if (sb) {
+
+          await sb.auth
+            .signOut();
+        }
+
+      } catch (error) {
+
+        console.warn(
+          '[Student Switch Account]',
+          error
+        );
+      }
+
+
+      clearStudentAuthStorage();
+
+      rememberedStudent =
+        null;
+
+      showStudent();
+    }
+  );
 
 initializeAuthPage();
