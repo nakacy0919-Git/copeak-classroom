@@ -667,10 +667,223 @@ $('#teacherForm').onsubmit =
     }
   };
 
+// ==========================================
+// SAVED STUDENT SESSION VALIDATION
+// ==========================================
+
+async function invalidateSavedStudentSession(
+  sb,
+  reason = ''
+) {
+
+  if (reason) {
+
+    console.warn(
+      '[Student Saved Session]',
+      reason
+    );
+  }
+
+
+  try {
+
+    if (sb) {
+
+      await sb.auth
+        .signOut();
+    }
+
+  } catch (error) {
+
+    console.warn(
+      '[Student Saved Session SignOut]',
+      error
+    );
+  }
+
+
+  clearStudentAuthStorage();
+
+  rememberedStudent =
+    null;
+}
+
 
 // ==========================================
-// INITIAL
+// 保存されたStudent Sessionが
+// 本当にClassroomで使えるか確認
 // ==========================================
+
+async function getValidRememberedStudent(
+  sb
+) {
+
+  // ----------------------------------------
+  // SESSION
+  // ----------------------------------------
+
+  const {
+    data: {
+      session
+    },
+    error: sessionError
+  } =
+    await sb.auth
+      .getSession();
+
+
+  if (sessionError) {
+
+    console.warn(
+      '[Student Saved Session]',
+      sessionError
+    );
+
+    return null;
+  }
+
+
+  if (!session) {
+
+    return null;
+  }
+
+
+  // ----------------------------------------
+  // USER
+  // ----------------------------------------
+
+  const {
+    data: {
+      user
+    },
+    error: userError
+  } =
+    await sb.auth
+      .getUser();
+
+
+  if (
+    userError ||
+    !user
+  ) {
+
+    await invalidateSavedStudentSession(
+      sb,
+      'Saved user is no longer valid.'
+    );
+
+    return null;
+  }
+
+
+  // ----------------------------------------
+  // PROFILE
+  // ----------------------------------------
+
+  const {
+    data: profile,
+    error: profileError
+  } =
+    await sb
+      .from(
+        'profiles'
+      )
+      .select(
+        'display_name, role'
+      )
+      .eq(
+        'id',
+        user.id
+      )
+      .maybeSingle();
+
+
+  if (profileError) {
+
+    console.warn(
+      '[Student Saved Profile]',
+      profileError
+    );
+
+    return null;
+  }
+
+
+  if (
+    !profile ||
+    profile.role !==
+      'student'
+  ) {
+
+    await invalidateSavedStudentSession(
+      sb,
+      'Saved session is not a valid student profile.'
+    );
+
+    return null;
+  }
+
+
+  // ----------------------------------------
+  // CLASS MEMBERSHIP
+  //
+  // ここが今回の重要な修正
+  // ----------------------------------------
+
+  const {
+    data: members,
+    error: memberError
+  } =
+    await sb
+      .from(
+        'class_members'
+      )
+      .select(
+        'class_id'
+      )
+      .eq(
+        'student_id',
+        user.id
+      )
+      .limit(
+        1
+      );
+
+
+  if (memberError) {
+
+    console.warn(
+      '[Student Saved Membership]',
+      memberError
+    );
+
+    return null;
+  }
+
+
+  // 古い匿名Sessionだけ残っていて
+  // Classにはもう所属していない
+  if (
+    !members ||
+    members.length ===
+      0
+  ) {
+
+    await invalidateSavedStudentSession(
+      sb,
+      'Saved student has no active class membership.'
+    );
+
+    return null;
+  }
+
+
+  return {
+    user,
+    profile
+  };
+}
 
 // ==========================================
 // INITIAL
@@ -685,11 +898,12 @@ async function initializeAuthPage() {
   try {
 
     // ----------------------------------------
-    // Remember設定をチェックボックスへ反映
+    // Remember設定
     // ----------------------------------------
 
     const rememberCheckbox =
       $('#studentRememberLogin');
+
 
     if (rememberCheckbox) {
 
@@ -702,6 +916,10 @@ async function initializeAuthPage() {
       null;
 
 
+    // ----------------------------------------
+    // 保存Student Sessionを確認
+    // ----------------------------------------
+
     if (isConfigured()) {
 
       const sb =
@@ -712,88 +930,40 @@ async function initializeAuthPage() {
 
       if (sb) {
 
-        const {
-          data: {
-            session
-          },
-          error
-        } =
-          await sb.auth
-            .getSession();
-
-
-        if (error) {
-
-          console.warn(
-            '[Student Saved Session]',
-            error
+        const savedStudent =
+          await getValidRememberedStudent(
+            sb
           );
 
-        } else if (session) {
 
-          // Sessionが本当に有効か確認
+        if (savedStudent) {
+
+          rememberedStudent =
+            savedStudent;
+
+
           const {
-            data: {
-              user
-            },
-            error: userError
+            user,
+            profile
           } =
-            await sb.auth
-              .getUser();
+            savedStudent;
 
 
-          if (
-            !userError &&
-            user
-          ) {
-
-            // Student名を取得
-            const {
-              data: profile,
-              error: profileError
-            } =
-              await sb
-                .from(
-                  'profiles'
-                )
-                .select(
-                  'display_name, role'
-                )
-                .eq(
-                  'id',
-                  user.id
-                )
-                .maybeSingle();
+          const name =
+            profile.display_name ||
+            user.user_metadata
+              ?.display_name ||
+            'Student';
 
 
-            if (
-              !profileError &&
-              profile?.role ===
-                'student'
-            ) {
-
-              rememberedStudent = {
-                user,
-                profile
-              };
+          const nameElement =
+            $('#rememberedStudentName');
 
 
-              const name =
-                profile.display_name ||
-                user.user_metadata
-                  ?.display_name ||
-                'Student';
+          if (nameElement) {
 
-
-              const nameElement =
-                $('#rememberedStudentName');
-
-              if (nameElement) {
-
-                nameElement.textContent =
-                  name;
-              }
-            }
+            nameElement.textContent =
+              name;
           }
         }
       }
@@ -801,13 +971,8 @@ async function initializeAuthPage() {
 
 
     // ----------------------------------------
-    // Student画面を表示
-    //
-    // Sessionあり：
-    // Continue画面
-    //
-    // Sessionなし：
-    // 通常Login
+    // ValidなStudentだけWelcome Back
+    // それ以外は通常Login
     // ----------------------------------------
 
     showStudent();
@@ -820,16 +985,17 @@ async function initializeAuthPage() {
       error
     );
 
+
     rememberedStudent =
       null;
+
 
     showStudent();
 
 
   } finally {
 
-    // Session確認前にLogin画面が
-    // 一瞬見える現象を防止
+    // Session確認前のちらつきを防止
     if (authPanel) {
 
       authPanel.style.visibility =
@@ -837,7 +1003,6 @@ async function initializeAuthPage() {
     }
   }
 }
-
 // ==========================================
 // REMEMBERED STUDENT ACTIONS
 // ==========================================
@@ -845,10 +1010,110 @@ async function initializeAuthPage() {
 $('#rememberedStudentContinue')
   ?.addEventListener(
     'click',
-    () => {
+    async () => {
 
-      location.href =
-        'student.html';
+      const button =
+        $('#rememberedStudentContinue');
+
+
+      const sb =
+        getClient(
+          'student'
+        );
+
+
+      if (!sb) {
+
+        showMessage(
+          'Student sessionを確認できませんでした。',
+          'error'
+        );
+
+        return;
+      }
+
+
+      button.disabled =
+        true;
+
+
+      const originalText =
+        button.textContent;
+
+
+      button.textContent =
+        'Checking...';
+
+
+      try {
+
+        const validStudent =
+          await getValidRememberedStudent(
+            sb
+          );
+
+
+        // ====================================
+        // 古いSessionならLogin画面へ戻す
+        // ====================================
+
+        if (!validStudent) {
+
+          rememberedStudent =
+            null;
+
+
+          showStudent();
+
+
+          showMessage(
+            '保存されていたログイン情報が古くなっています。Class Code・出席番号・Join PINで、もう一度ログインしてください。',
+            'info'
+          );
+
+
+          return;
+        }
+
+
+        // ====================================
+        // 正常なStudentだけClassroomへ
+        // ====================================
+
+        location.href =
+          'student.html';
+
+
+      } catch (error) {
+
+        console.error(
+          '[Student Continue]',
+          error
+        );
+
+
+        rememberedStudent =
+          null;
+
+
+        showStudent();
+
+
+        showMessage(
+          'ログイン状態を確認できませんでした。もう一度ログインしてください。',
+          'error'
+        );
+
+
+      } finally {
+
+        button.disabled =
+          false;
+
+
+        button.textContent =
+          originalText;
+      }
     }
   );
 
