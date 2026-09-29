@@ -1240,7 +1240,471 @@ async function createFirstClass() {
     });
   }
 }
+// ==========================================
+// YOUTUBE CLIP
+// URL / TIME PARSER
+// ==========================================
 
+function extractYoutubeVideoId(
+  value
+) {
+
+  const input =
+    String(
+      value || ''
+    ).trim();
+
+
+  if (!input) {
+    return null;
+  }
+
+
+  // ========================================
+  // Video IDそのものが入力された場合
+  // 11文字
+  // ========================================
+
+  if (
+    /^[A-Za-z0-9_-]{11}$/.test(
+      input
+    )
+  ) {
+
+    return input;
+  }
+
+
+  try {
+
+    const url =
+      new URL(
+        input
+      );
+
+
+    const host =
+      url.hostname
+        .toLowerCase()
+        .replace(
+          /^www\./,
+          ''
+        );
+
+
+    // ======================================
+    // youtu.be/VIDEO_ID
+    // ======================================
+
+    if (
+      host ===
+      'youtu.be'
+    ) {
+
+      const id =
+        url.pathname
+          .split('/')
+          .filter(Boolean)[0];
+
+
+      return (
+        /^[A-Za-z0-9_-]{11}$/.test(
+          id || ''
+        )
+          ? id
+          : null
+      );
+    }
+
+
+    // ======================================
+    // youtube.com
+    // ======================================
+
+    if (
+      host ===
+        'youtube.com' ||
+      host.endsWith(
+        '.youtube.com'
+      )
+    ) {
+
+      // ------------------------------------
+      // watch?v=VIDEO_ID
+      // ------------------------------------
+
+      const watchId =
+        url.searchParams.get(
+          'v'
+        );
+
+
+      if (
+        /^[A-Za-z0-9_-]{11}$/.test(
+          watchId || ''
+        )
+      ) {
+
+        return watchId;
+      }
+
+
+      // ------------------------------------
+      // /shorts/VIDEO_ID
+      // /embed/VIDEO_ID
+      // /live/VIDEO_ID
+      // ------------------------------------
+
+      const parts =
+        url.pathname
+          .split('/')
+          .filter(Boolean);
+
+
+      const supportedPaths =
+        new Set([
+          'shorts',
+          'embed',
+          'live'
+        ]);
+
+
+      if (
+        parts.length >=
+          2 &&
+        supportedPaths.has(
+          parts[0]
+        ) &&
+        /^[A-Za-z0-9_-]{11}$/.test(
+          parts[1]
+        )
+      ) {
+
+        return parts[1];
+      }
+    }
+
+
+  } catch {
+
+    return null;
+  }
+
+
+  return null;
+}
+
+
+// ==========================================
+// YOUTUBE TIME
+//
+// 45      → 45
+// 0:45    → 45
+// 1:20    → 80
+// 1:02:30 → 3750
+// ==========================================
+
+function parseYoutubeTimeToSeconds(
+  value
+) {
+
+  const text =
+    String(
+      value ?? ''
+    ).trim();
+
+
+  if (!text) {
+
+    return null;
+  }
+
+
+  // ========================================
+  // 秒だけ
+  // ========================================
+
+  if (
+    /^\d+$/.test(
+      text
+    )
+  ) {
+
+    return Number(
+      text
+    );
+  }
+
+
+  // ========================================
+  // mm:ss
+  // hh:mm:ss
+  // ========================================
+
+  if (
+    !/^\d+:\d{1,2}(?::\d{1,2})?$/.test(
+      text
+    )
+  ) {
+
+    return null;
+  }
+
+
+  const parts =
+    text
+      .split(':')
+      .map(Number);
+
+
+  if (
+    parts.some(
+      part =>
+        !Number.isFinite(
+          part
+        )
+    )
+  ) {
+
+    return null;
+  }
+
+
+  // ========================================
+  // mm:ss
+  // ========================================
+
+  if (
+    parts.length ===
+    2
+  ) {
+
+    const [
+      minutes,
+      seconds
+    ] =
+      parts;
+
+
+    if (
+      seconds >=
+      60
+    ) {
+
+      return null;
+    }
+
+
+    return (
+      minutes *
+        60 +
+      seconds
+    );
+  }
+
+
+  // ========================================
+  // hh:mm:ss
+  // ========================================
+
+  if (
+    parts.length ===
+    3
+  ) {
+
+    const [
+      hours,
+      minutes,
+      seconds
+    ] =
+      parts;
+
+
+    if (
+      minutes >=
+        60 ||
+      seconds >=
+        60
+    ) {
+
+      return null;
+    }
+
+
+    return (
+      hours *
+        3600 +
+      minutes *
+        60 +
+      seconds
+    );
+  }
+
+
+  return null;
+}
+
+
+// ==========================================
+// READ YOUTUBE CLIP FROM FORM
+// ==========================================
+
+function getYoutubeClipFromForm() {
+
+  const url =
+    $('#assignmentYoutubeUrl')
+      ?.value
+      ?.trim() ||
+    '';
+
+
+  const startValue =
+    $('#assignmentYoutubeStart')
+      ?.value
+      ?.trim() ||
+    '';
+
+
+  const endValue =
+    $('#assignmentYoutubeEnd')
+      ?.value
+      ?.trim() ||
+    '';
+
+
+  const loop =
+    $('#assignmentYoutubeLoop')
+      ?.checked ??
+    true;
+
+
+  // ========================================
+  // YouTubeを使用しない教材
+  // ========================================
+
+  if (!url) {
+
+    return {
+      enabled:
+        false,
+
+      url:
+        null,
+
+      videoId:
+        null,
+
+      startSeconds:
+        null,
+
+      endSeconds:
+        null,
+
+      loop:
+        false
+    };
+  }
+
+
+  // ========================================
+  // VIDEO ID
+  // ========================================
+
+  const videoId =
+    extractYoutubeVideoId(
+      url
+    );
+
+
+  if (!videoId) {
+
+    throw new Error(
+      '有効なYouTube URLを入力してください。'
+    );
+  }
+
+
+  // ========================================
+  // START
+  // ========================================
+
+  const startSeconds =
+    startValue
+      ? parseYoutubeTimeToSeconds(
+          startValue
+        )
+      : 0;
+
+
+  if (
+    startValue &&
+    startSeconds ===
+      null
+  ) {
+
+    throw new Error(
+      'YouTubeのStart Timeを確認してください。例：45 または 0:45'
+    );
+  }
+
+
+  // ========================================
+  // END
+  // ========================================
+
+  const endSeconds =
+    endValue
+      ? parseYoutubeTimeToSeconds(
+          endValue
+        )
+      : null;
+
+
+  if (
+    endValue &&
+    endSeconds ===
+      null
+  ) {
+
+    throw new Error(
+      'YouTubeのEnd Timeを確認してください。例：80 または 1:20'
+    );
+  }
+
+
+  // ========================================
+  // START / END RANGE
+  // ========================================
+
+  if (
+    endSeconds !==
+      null &&
+    endSeconds <=
+      startSeconds
+  ) {
+
+    throw new Error(
+      'YouTubeのEnd TimeはStart Timeより後にしてください。'
+    );
+  }
+
+
+  return {
+
+    enabled:
+      true,
+
+    url,
+
+    videoId,
+
+    startSeconds,
+
+    endSeconds,
+
+    loop
+  };
+}
 // ==========================================
 // NEW ASSIGNMENT FORM
 // ==========================================
@@ -1297,6 +1761,41 @@ function openAssignmentEditor(
     assignment?.lesson_translation ||
     '';
 
+  $('#assignmentYoutubeUrl').value =
+  assignment?.youtube_url ||
+  '';
+
+
+$('#assignmentYoutubeStart').value =
+  assignment?.youtube_start_seconds !==
+    null &&
+  assignment?.youtube_start_seconds !==
+    undefined
+
+    ? String(
+        assignment.youtube_start_seconds
+      )
+
+    : '';
+
+
+$('#assignmentYoutubeEnd').value =
+  assignment?.youtube_end_seconds !==
+    null &&
+  assignment?.youtube_end_seconds !==
+    undefined
+
+    ? String(
+        assignment.youtube_end_seconds
+      )
+
+    : '';
+
+
+$('#assignmentYoutubeLoop').checked =
+  assignment
+    ? assignment.youtube_loop !== false
+    : true;
 
   $('#assignmentLang').value =
     assignment?.lesson_lang ||
@@ -1698,6 +2197,9 @@ const week =
 const audioFile =
   getSelectedAssignmentAudio();
 
+let youtubeClip =
+  null;
+
   const language =
     $('#assignmentLang').value;
 
@@ -1737,7 +2239,80 @@ try {
   return;
 }
 
- 
+try {
+
+  youtubeClip =
+    getYoutubeClipFromForm();
+
+
+  const youtubeStatus =
+    $('#assignmentYoutubeStatus');
+
+
+  if (
+    youtubeStatus &&
+    youtubeClip.enabled
+  ) {
+
+    youtubeStatus.style.color =
+      '#15803d';
+
+
+    const start =
+      youtubeClip.startSeconds ?? 0;
+
+
+    const end =
+      youtubeClip.endSeconds;
+
+
+    youtubeStatus.textContent =
+      end !== null
+        ? `✓ YouTube Clip: ${start}s → ${end}s${youtubeClip.loop ? ' · Loop ON' : ''}`
+        : `✓ YouTube: ${start}sから再生${youtubeClip.loop ? ' · Loop ON' : ''}`;
+  }
+
+
+  if (
+    youtubeStatus &&
+    !youtubeClip.enabled
+  ) {
+
+    youtubeStatus.style.color =
+      '';
+
+
+    youtubeStatus.textContent =
+      'YouTube URLを貼り、再生する区間を指定してください。';
+  }
+
+} catch (
+  error
+) {
+
+  msg.textContent =
+    error.message ||
+    'YouTube設定を確認してください.';
+
+
+  const youtubeStatus =
+    $('#assignmentYoutubeStatus');
+
+
+  if (youtubeStatus) {
+
+    youtubeStatus.style.color =
+      '#b91c1c';
+
+    youtubeStatus.textContent =
+      error.message ||
+      'YouTube設定を確認してください。';
+  }
+
+
+  return;
+}
+
   if (!title) {
 
     msg.textContent =
@@ -1903,11 +2478,37 @@ let uploadedAudio =
       lessonText,
 
     lesson_translation:
-      translation ||
-      null,
+  translation ||
+  null,
 
-    lesson_lang:
-      language
+lesson_lang:
+  language,
+
+
+youtube_url:
+  youtubeClip?.enabled
+    ? youtubeClip.url
+    : null,
+
+youtube_video_id:
+  youtubeClip?.enabled
+    ? youtubeClip.videoId
+    : null,
+
+youtube_start_seconds:
+  youtubeClip?.enabled
+    ? youtubeClip.startSeconds
+    : null,
+
+youtube_end_seconds:
+  youtubeClip?.enabled
+    ? youtubeClip.endSeconds
+    : null,
+
+youtube_loop:
+  youtubeClip?.enabled
+    ? youtubeClip.loop
+    : false
   };
 
 
@@ -2291,14 +2892,34 @@ async function duplicateAssignment(
           false,
 
         lesson_text:
-          assignment.lesson_text,
+  assignment.lesson_text,
 
-        lesson_translation:
-          assignment.lesson_translation,
+lesson_translation:
+  assignment.lesson_translation,
 
-        lesson_lang:
-          assignment.lesson_lang ||
-          'en-US'
+lesson_lang:
+  assignment.lesson_lang ||
+  'en-US',
+
+youtube_url:
+  assignment.youtube_url ||
+  null,
+
+youtube_video_id:
+  assignment.youtube_video_id ||
+  null,
+
+youtube_start_seconds:
+  assignment.youtube_start_seconds ??
+  null,
+
+youtube_end_seconds:
+  assignment.youtube_end_seconds ??
+  null,
+
+youtube_loop:
+  assignment.youtube_loop ===
+  true
       });
 
 

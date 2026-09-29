@@ -2513,6 +2513,87 @@ async function openCopeak(
     'en-US'
   );
 
+// ========================================
+// YOUTUBE CLIP
+// ========================================
+
+const youtubeId =
+  String(
+    assignment.youtube_video_id ||
+    ''
+  ).trim();
+
+
+if (
+  /^[A-Za-z0-9_-]{11}$/.test(
+    youtubeId
+  )
+) {
+
+  url.searchParams.set(
+    'youtube_id',
+    youtubeId
+  );
+
+
+  const youtubeStart =
+    Number(
+      assignment.youtube_start_seconds
+    );
+
+
+  if (
+    Number.isFinite(
+      youtubeStart
+    ) &&
+    youtubeStart >=
+      0
+  ) {
+
+    url.searchParams.set(
+      'youtube_start',
+      String(
+        youtubeStart
+      )
+    );
+  }
+
+
+  const youtubeEnd =
+    Number(
+      assignment.youtube_end_seconds
+    );
+
+
+  if (
+    assignment.youtube_end_seconds !==
+      null &&
+    assignment.youtube_end_seconds !==
+      undefined &&
+    Number.isFinite(
+      youtubeEnd
+    ) &&
+    youtubeEnd >
+      youtubeStart
+  ) {
+
+    url.searchParams.set(
+      'youtube_end',
+      String(
+        youtubeEnd
+      )
+    );
+  }
+
+
+  url.searchParams.set(
+    'youtube_loop',
+    assignment.youtube_loop ===
+      true
+      ? '1'
+      : '0'
+  );
+}
 
   // ========================================
   // AUDIO
