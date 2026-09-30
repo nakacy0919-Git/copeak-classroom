@@ -2596,6 +2596,33 @@ if (
 }
 
   // ========================================
+  // OPEN WINDOW IMMEDIATELY
+  // Safari / iPad popup-blocker protection
+  // ========================================
+
+  const popup =
+    window.open(
+      'about:blank',
+      '_blank'
+    );
+
+
+  if (
+    !popup
+  ) {
+
+    alert(
+      t(
+        'alertPopup'
+      )
+    );
+
+
+    return;
+  }
+
+
+  // ========================================
   // AUDIO
   // ========================================
 
@@ -2617,26 +2644,12 @@ if (
 
 
   // ========================================
-  // OPEN
+  // NAVIGATE TO COPEAK
   // ========================================
 
-  const popup =
-    window.open(
-      url.toString(),
-      '_blank'
-    );
-
-
-  if (
-    !popup
-  ) {
-
-    alert(
-      t(
-        'alertPopup'
-      )
-    );
-  }
+  popup.location.replace(
+    url.toString()
+  );
 }
 
 
