@@ -2184,11 +2184,33 @@ const week =
       .trim();
 
 
-  const lessonText =
-    $('#assignmentText')
-      .value
-      .trim();
+  const lessonType =
+    $('#assignmentLessonType').value ===
+      'dialogue'
+      ? 'dialogue'
+      : 'text';
 
+
+  const lessonDialogue =
+    lessonType === 'dialogue'
+      ? getAssignmentDialogueFromForm()
+      : [];
+
+
+  const lessonText =
+    lessonType === 'dialogue'
+
+      ? lessonDialogue
+          .map(
+            item =>
+              item.text
+          )
+          .filter(Boolean)
+          .join('\n')
+
+      : $('#assignmentText')
+          .value
+          .trim();
 
   const translation =
     $('#assignmentTranslation')
@@ -2321,6 +2343,38 @@ try {
     return;
   }
 
+
+  if (
+    lessonType === 'dialogue'
+  ) {
+
+    if (
+      lessonDialogue.length < 2
+    ) {
+
+      msg.textContent =
+        'Dialogueは2つ以上のセリフを入力してください。';
+
+      return;
+    }
+
+
+    const incompleteDialogueLine =
+      lessonDialogue.find(
+        item =>
+          !item.speaker ||
+          !item.text
+      );
+
+
+    if (incompleteDialogueLine) {
+
+      msg.textContent =
+        'DialogueのSpeakerとTextを両方入力してください。';
+
+      return;
+    }
+  }
 
   if (!lessonText) {
 
@@ -2474,6 +2528,13 @@ let uploadedAudio =
     is_published:
       published,
 
+    lesson_type:
+      lessonType,
+
+    lesson_dialogue:
+      lessonType === 'dialogue'
+        ? lessonDialogue
+        : null,
     lesson_text:
       lessonText,
 
@@ -3419,6 +3480,44 @@ async function loadLive() {
 }
 
 // ==========================================
+function getAssignmentDialogueFromForm() {
+
+  return [
+    ...document.querySelectorAll(
+      '#assignmentDialogueLines .assignment-dialogue-line'
+    )
+  ]
+    .map(
+      line => {
+
+        const speaker =
+          line.querySelector(
+            '.assignment-dialogue-speaker'
+          );
+
+        const text =
+          line.querySelector(
+            '.assignment-dialogue-text'
+          );
+
+        return {
+          speaker:
+            speaker?.value.trim() ||
+            '',
+
+          text:
+            text?.value.trim() ||
+            ''
+        };
+      }
+    )
+    .filter(
+      item =>
+        item.speaker ||
+        item.text
+    );
+}
+
 // EVENTS
 // ==========================================
 
@@ -3433,6 +3532,112 @@ $('#cancelAssignment').onclick =
 $('#publishAssignment').onclick =
   () =>
     saveAssignment();
+
+$('#assignmentLessonType').onchange =
+  () => {
+
+    const isDialogue =
+      $('#assignmentLessonType').value ===
+      'dialogue';
+
+    $('#assignmentTextEditor')
+      .classList
+      .toggle(
+        'hidden',
+        isDialogue
+      );
+
+    $('#assignmentDialogueEditor')
+      .classList
+      .toggle(
+        'hidden',
+        !isDialogue
+      );
+
+  };
+
+$('#addAssignmentDialogueLine').onclick =
+  () => {
+
+    const container =
+      $('#assignmentDialogueLines');
+
+    const template =
+      container.querySelector(
+        '.assignment-dialogue-line'
+      );
+
+    if (!template) {
+      return;
+    }
+
+    const newLine =
+      template.cloneNode(true);
+
+    const speaker =
+      newLine.querySelector(
+        '.assignment-dialogue-speaker'
+      );
+
+    const dialogueText =
+      newLine.querySelector(
+        '.assignment-dialogue-text'
+      );
+
+    if (speaker) {
+      speaker.value = '';
+    }
+
+    if (dialogueText) {
+      dialogueText.value = '';
+    }
+
+    const removeWrap =
+      document.createElement(
+        'div'
+      );
+
+    removeWrap.style.cssText =
+      'margin-top:8px;text-align:right';
+
+    const removeButton =
+      document.createElement(
+        'button'
+      );
+
+    removeButton.type =
+      'button';
+
+    removeButton.className =
+      'btn btn-sm btn-light assignment-dialogue-remove';
+
+    removeButton.textContent =
+      '× Remove';
+
+    removeButton.onclick =
+      () => {
+
+        newLine.remove();
+
+      };
+
+    removeWrap.appendChild(
+      removeButton
+    );
+
+    newLine.appendChild(
+      removeWrap
+    );
+
+    container.appendChild(
+      newLine
+    );
+
+    if (speaker) {
+      speaker.focus();
+    }
+
+  };
 
 $('#assignmentRelease').onchange =
   updateDueDate;
