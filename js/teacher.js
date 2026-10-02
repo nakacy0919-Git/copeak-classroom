@@ -1709,6 +1709,113 @@ function getYoutubeClipFromForm() {
 // NEW ASSIGNMENT FORM
 // ==========================================
 
+function restoreAssignmentDialogueForm(
+  dialogue = []
+) {
+
+  const container =
+    $('#assignmentDialogueLines');
+
+  if (!container) {
+    return;
+  }
+
+  let lines =
+    [
+      ...container.querySelectorAll(
+        '.assignment-dialogue-line'
+      )
+    ];
+
+  lines
+    .slice(2)
+    .forEach(
+      line =>
+        line.remove()
+    );
+
+  lines =
+    [
+      ...container.querySelectorAll(
+        '.assignment-dialogue-line'
+      )
+    ];
+
+  lines.forEach(
+    line => {
+
+      const speaker =
+        line.querySelector(
+          '.assignment-dialogue-speaker'
+        );
+
+      const dialogueText =
+        line.querySelector(
+          '.assignment-dialogue-text'
+        );
+
+      if (speaker) {
+        speaker.value = '';
+      }
+
+      if (dialogueText) {
+        dialogueText.value = '';
+      }
+
+    }
+  );
+
+  const savedDialogue =
+    Array.isArray(dialogue)
+      ? dialogue
+      : [];
+
+  savedDialogue.forEach(
+    (item, index) => {
+
+      if (index >= 2) {
+        $('#addAssignmentDialogueLine')
+          ?.click();
+      }
+
+      const currentLines =
+        [
+          ...container.querySelectorAll(
+            '.assignment-dialogue-line'
+          )
+        ];
+
+      const line =
+        currentLines[index];
+
+      if (!line) {
+        return;
+      }
+
+      const speaker =
+        line.querySelector(
+          '.assignment-dialogue-speaker'
+        );
+
+      const dialogueText =
+        line.querySelector(
+          '.assignment-dialogue-text'
+        );
+
+      if (speaker) {
+        speaker.value =
+          item?.speaker || '';
+      }
+
+      if (dialogueText) {
+        dialogueText.value =
+          item?.text || '';
+      }
+
+    }
+  );
+}
+
 function openAssignmentEditor(
   assignment = null
 ) {
@@ -1751,6 +1858,38 @@ function openAssignmentEditor(
     assignment?.title ||
     '';
 
+
+  const editorLessonType =
+    assignment?.lesson_type ===
+      'dialogue'
+      ? 'dialogue'
+      : 'text';
+
+  $('#assignmentLessonType').value =
+    editorLessonType;
+
+  restoreAssignmentDialogueForm(
+    assignment?.lesson_dialogue ||
+    []
+  );
+
+  const editorIsDialogue =
+    editorLessonType ===
+    'dialogue';
+
+  $('#assignmentTextEditor')
+    .classList
+    .toggle(
+      'hidden',
+      editorIsDialogue
+    );
+
+  $('#assignmentDialogueEditor')
+    .classList
+    .toggle(
+      'hidden',
+      !editorIsDialogue
+    );
 
   $('#assignmentText').value =
     assignment?.lesson_text ||
