@@ -2514,6 +2514,33 @@ async function openCopeak(
   );
 
 // ========================================
+// ========================================
+// DIALOGUE LESSON
+// ========================================
+
+if (
+  assignment.lesson_type ===
+    'dialogue' &&
+  Array.isArray(
+    assignment.lesson_dialogue
+  ) &&
+  assignment.lesson_dialogue.length
+) {
+
+  url.searchParams.set(
+    'type',
+    'dialogue'
+  );
+
+
+  url.searchParams.set(
+    'dialogue',
+    JSON.stringify(
+      assignment.lesson_dialogue
+    )
+  );
+}
+
 // YOUTUBE CLIP
 // ========================================
 
