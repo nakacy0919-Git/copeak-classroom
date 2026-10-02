@@ -5466,3 +5466,25 @@ strong {
   }
 
 }
+/* ==========================================
+   DIALOGUE EDITOR
+========================================== */
+
+.assignment-dialogue-line .grid.grid-2 {
+  grid-template-columns:
+    minmax(140px, 0.35fr)
+    minmax(0, 1.65fr);
+}
+
+.assignment-dialogue-text {
+  min-height: 88px;
+  resize: vertical;
+}
+
+@media (max-width: 700px) {
+
+  .assignment-dialogue-line .grid.grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+}

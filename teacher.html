@@ -1741,27 +1741,162 @@
 
         <div class="field">
 
+  <label>
+    Lesson Type
+  </label>
 
+  <select
+    id="assignmentLessonType"
+    class="input">
+
+    <option value="text">
+      Text / 通常テキスト
+    </option>
+
+    <option value="dialogue">
+      Dialogue / 会話文
+    </option>
+
+  </select>
+
+  <div
+    class="tiny muted"
+    style="margin-top:6px">
+
+    Dialogueでは話者名を表示しますが、
+    Copeakで読む対象はセリフだけです。
+
+  </div>
+
+</div>
+
+
+<div
+  id="assignmentTextEditor"
+  class="field">
+
+  <label>
+    English Text
+  </label>
+
+  <textarea
+    id="assignmentText"
+    class="input assignment-textarea"
+    placeholder="Copeakで音読させる英文を貼り付けてください。"></textarea>
+
+</div>
+
+
+<div
+  id="assignmentDialogueEditor"
+  class="field hidden">
+
+  <label>
+    Dialogue
+  </label>
+
+  <div
+    class="tiny muted"
+    style="margin-bottom:10px">
+
+    Speakerには話者名、
+    Textには実際に読むセリフを入力してください。
+
+  </div>
+
+
+  <div id="assignmentDialogueLines">
+
+    <div
+      class="assignment-dialogue-line"
+      style="padding:12px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:10px">
+
+      <div
+        class="grid grid-2"
+        style="gap:10px">
+
+        <div class="field">
 
           <label>
-
-            English Text
-
+            Speaker
           </label>
 
-
-
-          <textarea
-
-            id="assignmentText"
-
-            class="input assignment-textarea"
-
-            placeholder="Copeakで音読させる英文を貼り付けてください。"></textarea>
-
-
+          <input
+            class="input assignment-dialogue-speaker"
+            type="text"
+            placeholder="Emma">
 
         </div>
+
+
+        <div class="field">
+
+          <label>
+            Text
+          </label>
+
+          <textarea
+            class="input assignment-dialogue-text"
+            placeholder="Hi, how are you?"></textarea>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="assignment-dialogue-line"
+      style="padding:12px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:10px">
+
+      <div
+        class="grid grid-2"
+        style="gap:10px">
+
+        <div class="field">
+
+          <label>
+            Speaker
+          </label>
+
+          <input
+            class="input assignment-dialogue-speaker"
+            type="text"
+            placeholder="Ken">
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Text
+          </label>
+
+          <textarea
+            class="input assignment-dialogue-text"
+            placeholder="I'm fine. How about you?"></textarea>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <button
+    id="addAssignmentDialogueLine"
+    type="button"
+    class="btn btn-light">
+
+    ＋ セリフを追加
+
+  </button>
+
+</div>
 
 
 
