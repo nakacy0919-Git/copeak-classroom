@@ -4724,6 +4724,174 @@ let assignmentOcrQueueUrls =
   [];
 
 
+function moveAssignmentOcrFile(
+  index,
+  direction
+) {
+
+  const newIndex =
+    index + direction;
+
+
+  if (
+    newIndex < 0 ||
+    newIndex >= assignmentOcrFiles.length
+  ) {
+    return;
+  }
+
+
+  const temp =
+    assignmentOcrFiles[index];
+
+  assignmentOcrFiles[index] =
+    assignmentOcrFiles[newIndex];
+
+  assignmentOcrFiles[newIndex] =
+    temp;
+
+
+  renderAssignmentOcrQueue();
+
+
+  const firstFile =
+    assignmentOcrFiles[0] ||
+    null;
+
+
+  handleAssignmentOcrImage(
+    firstFile
+  );
+
+
+  updateAssignmentOcrOrderSummary();
+}
+
+
+function updateAssignmentOcrOrderSummary() {
+
+  const button =
+    $('#assignmentOcrRun');
+
+  const summary =
+    $('#assignmentOcrOrderSummary');
+
+
+  if (
+    !button ||
+    !summary
+  ) {
+    return;
+  }
+
+
+  const count =
+    assignmentOcrFiles.length;
+
+
+  button.disabled =
+    count === 0;
+
+
+  if (
+    count === 0
+  ) {
+
+    summary.textContent =
+      '画像を選択してください。';
+
+    return;
+  }
+
+
+  summary.textContent =
+    `読み取り順：${
+      assignmentOcrFiles
+        .map(
+          (file, index) =>
+            `Page ${index + 1}`
+        )
+        .join(' → ')
+    }`;
+}
+
+function removeAssignmentOcrFile(
+  index
+) {
+
+  if (
+    index < 0 ||
+    index >= assignmentOcrFiles.length
+  ) {
+    return;
+  }
+
+
+  assignmentOcrFiles.splice(
+    index,
+    1
+  );
+
+
+  renderAssignmentOcrQueue();
+
+
+  const firstFile =
+    assignmentOcrFiles[0] ||
+    null;
+
+
+  handleAssignmentOcrImage(
+    firstFile
+  );
+
+
+  updateAssignmentOcrOrderSummary();
+
+
+  const result =
+    $('#assignmentOcrResult');
+
+  const resultWrap =
+    $('#assignmentOcrResultWrap');
+
+
+  if (
+    result
+  ) {
+    result.value =
+      '';
+  }
+
+
+  if (
+    resultWrap
+  ) {
+    resultWrap.classList.add(
+      'hidden'
+    );
+  }
+
+
+  const status =
+    $('#assignmentOcrStatus');
+
+
+  if (
+    status
+  ) {
+
+    status.style.color =
+      '';
+
+    status.textContent =
+      assignmentOcrFiles.length
+        ? `${assignmentOcrFiles.length}枚の画像を使用します。順番を確認して「この順番で読み取る」を押してください。`
+        : '画像を選択してください。';
+
+  }
+}
+
 function renderAssignmentOcrQueue() {
 
   const queue =
@@ -4774,7 +4942,7 @@ function renderAssignmentOcrQueue() {
 
         item.style.cssText =
           `
-            width:120px;
+            width:240px;
             padding:8px;
             border:1px solid #e5e7eb;
             border-radius:10px;
@@ -4798,8 +4966,9 @@ function renderAssignmentOcrQueue() {
               alt="OCR page ${index + 1}"
               style="
                 width:100%;
-                height:90px;
-                object-fit:cover;
+                height:170px;
+                object-fit:contain;
+                background:#f8fafc;
                 border-radius:7px;
                 display:block;
               ">
@@ -4814,7 +4983,101 @@ function renderAssignmentOcrQueue() {
               ">
               ${file.name}
             </div>
+
+            <div
+              class="ocr-page-controls"
+              style="
+                display:flex;
+                gap:4px;
+                margin-top:7px;
+              ">
+
+              <button
+                type="button"
+                class="btn btn-sm btn-light ocr-move-prev"
+                style="flex:1;font-size:10px;padding:4px;"
+                ${index === 0 ? 'disabled' : ''}>
+                ← 前へ
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-sm btn-light ocr-move-next"
+                style="flex:1;font-size:10px;padding:4px;"
+                ${index === assignmentOcrFiles.length - 1 ? 'disabled' : ''}>
+                後ろへ →
+              </button>
+
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-light ocr-remove-page"
+              style="
+                width:100%;
+                margin-top:7px;
+                font-size:10px;
+                padding:5px;
+              ">
+              × この画像を削除
+            </button>
           `;
+
+
+        const previousButton =
+          item.querySelector(
+            '.ocr-move-prev'
+          );
+
+
+        const nextButton =
+          item.querySelector(
+            '.ocr-move-next'
+          );
+
+
+        const removeButton =
+          item.querySelector(
+            '.ocr-remove-page'
+          );
+
+
+        if (previousButton) {
+
+          previousButton.onclick =
+            () => {
+              moveAssignmentOcrFile(
+                index,
+                -1
+              );
+            };
+
+        }
+
+
+        if (nextButton) {
+
+          nextButton.onclick =
+            () => {
+              moveAssignmentOcrFile(
+                index,
+                1
+              );
+            };
+
+        }
+
+
+        if (removeButton) {
+
+          removeButton.onclick =
+            () => {
+              removeAssignmentOcrFile(
+                index
+              );
+            };
+
+        }
 
 
         queue.appendChild(
@@ -5163,13 +5426,45 @@ $('#assignmentOcrImageInput').onchange =
     );
 
 
-    if (
-      assignmentOcrFiles.length
-    ) {
+    updateAssignmentOcrOrderSummary();
 
-      recognizeAssignmentOcrFiles(
+  };
+
+
+$('#assignmentOcrRun').onclick =
+  async () => {
+
+    if (
+      assignmentOcrFiles.length === 0
+    ) {
+      return;
+    }
+
+
+    const button =
+      $('#assignmentOcrRun');
+
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      '🔍 読み取り中...';
+
+
+    try {
+
+      await recognizeAssignmentOcrFiles(
         assignmentOcrFiles
       );
+
+    } finally {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        '🔍 この順番で読み取る';
 
     }
 
