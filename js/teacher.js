@@ -1125,7 +1125,7 @@ async function createFirstClass() {
 );
 
 
-  try {
+try {
 
     /*
      * 初回Teacherはschool_idを持っていない可能性があるため、
@@ -1859,6 +1859,40 @@ function openAssignmentEditor(
     '';
 
 
+  const editorAudienceType =
+    assignment?.audience_type ===
+      'targeted'
+      ? 'targeted'
+      : 'class';
+
+
+  $('#assignmentAudienceClass').checked =
+    editorAudienceType ===
+    'class';
+
+
+  $('#assignmentAudienceTargeted').checked =
+    editorAudienceType ===
+    'targeted';
+
+
+  $('#assignmentTargetPanel')
+    .classList
+    .toggle(
+      'hidden',
+      editorAudienceType !==
+      'targeted'
+    );
+
+
+  renderAssignmentTargetStudents(
+    editorAudienceType ===
+      'targeted'
+      ? assignment?.target_student_ids ||
+        []
+      : []
+  );
+
   const editorLessonType =
     assignment?.lesson_type ===
       'dialogue'
@@ -2383,6 +2417,39 @@ let youtubeClip =
 
   msg.style.color =
     '#b91c1c';
+  const audienceType =
+    $('#assignmentAudienceTargeted')
+      ?.checked === true
+      ? 'targeted'
+      : 'class';
+
+
+  const targetStudentIds =
+    audienceType === 'targeted'
+      ? [
+          ...document.querySelectorAll(
+            '.assignment-target-student:checked'
+          )
+        ]
+          .map(
+            input =>
+              input.value
+          )
+          .filter(Boolean)
+      : [];
+
+
+  if (
+    audienceType === 'targeted' &&
+    targetStudentIds.length === 0
+  ) {
+
+    msg.textContent =
+      '配布する生徒を1人以上選択してください。';
+
+    return;
+  }
+
 try {
 
   validateAssignmentAudio(
@@ -2667,6 +2734,9 @@ let uploadedAudio =
     is_published:
       published,
 
+    audience_type:
+      audienceType,
+
     lesson_type:
       lessonType,
 
@@ -2779,43 +2849,59 @@ if (audioFile) {
 
     let error;
 
+    let savedAssignmentId =
+      isEditing
+        ? editingAssignmentId
+        : null;
+
 
     if (
       isEditing
     ) {
 
       const result =
-  await sb
-    .from(
-      'assignments'
-    )
-    .update(
-      row
-    )
-    .eq(
-      'id',
-      editingAssignmentId
-    )
-    .select(
-      'id, release_at, due_at'
-    )
-    .single();
+        await sb
+          .from(
+            'assignments'
+          )
+          .update(
+            row
+          )
+          .eq(
+            'id',
+            editingAssignmentId
+          )
+          .select(
+            'id'
+          )
+          .single();
 
 
-error =
-  result.error;
+      error =
+        result.error;
 
 
-if (
-  !error &&
-  !result.data
-) {
+      if (
+        !error &&
+        !result.data
+      ) {
 
-  error =
-    new Error(
-      'Assignment was not updated.'
-    );
-}
+        error =
+          new Error(
+            'Assignment was not updated.'
+          );
+
+      }
+
+
+      if (
+        result.data?.id
+      ) {
+
+        savedAssignmentId =
+          result.data.id;
+
+      }
 
     } else {
 
@@ -2832,13 +2918,40 @@ if (
 
             copeak_url:
               null
-          });
+          })
+          .select(
+            'id'
+          )
+          .single();
 
 
       error =
         result.error;
-    }
 
+
+      if (
+        !error &&
+        !result.data
+      ) {
+
+        error =
+          new Error(
+            'Assignment was not created.'
+          );
+
+      }
+
+
+      if (
+        result.data?.id
+      ) {
+
+        savedAssignmentId =
+          result.data.id;
+
+      }
+
+    }
 
     if (error) {
 
@@ -2856,6 +2969,36 @@ if (
       throw error;
     }
 
+
+    if (!savedAssignmentId) {
+
+      throw new Error(
+        '保存した課題IDを取得できませんでした。'
+      );
+
+    }
+
+
+    const {
+      error: targetError
+    } =
+      await sb.rpc(
+        'set_assignment_targets',
+        {
+          p_assignment_id:
+            savedAssignmentId,
+
+          p_student_ids:
+            targetStudentIds
+        }
+      );
+
+
+    if (targetError) {
+
+      throw targetError;
+
+    }
 
     await loadClass(
       selectedClass.id
@@ -3056,6 +3199,7 @@ async function duplicateAssignment(
 
 
   const {
+    data: duplicatedAssignment,
     error
   } =
     await getClient(
@@ -3091,40 +3235,133 @@ async function duplicateAssignment(
         is_published:
           false,
 
+        audience_type:
+          assignment.audience_type ===
+            'targeted'
+            ? 'targeted'
+            : 'class',
+
+        lesson_type:
+          assignment.lesson_type ||
+          'text',
+
+        lesson_dialogue:
+          assignment.lesson_type ===
+            'dialogue'
+            ? assignment.lesson_dialogue ||
+              []
+            : null,
+
         lesson_text:
-  assignment.lesson_text,
+          assignment.lesson_text,
 
-lesson_translation:
-  assignment.lesson_translation,
+        lesson_translation:
+          assignment.lesson_translation,
 
-lesson_lang:
-  assignment.lesson_lang ||
-  'en-US',
+        lesson_lang:
+          assignment.lesson_lang ||
+          'en-US',
 
-youtube_url:
-  assignment.youtube_url ||
-  null,
+        audio_url:
+          assignment.audio_url ||
+          null,
 
-youtube_video_id:
-  assignment.youtube_video_id ||
-  null,
+        audio_object_key:
+          assignment.audio_object_key ||
+          null,
 
-youtube_start_seconds:
-  assignment.youtube_start_seconds ??
-  null,
+        audio_expires_at:
+          assignment.audio_expires_at ||
+          null,
 
-youtube_end_seconds:
-  assignment.youtube_end_seconds ??
-  null,
+        audio_file_name:
+          assignment.audio_file_name ||
+          null,
 
-youtube_loop:
-  assignment.youtube_loop ===
-  true
-      });
+        audio_size_bytes:
+          assignment.audio_size_bytes ??
+          null,
+
+        youtube_url:
+          assignment.youtube_url ||
+          null,
+
+        youtube_video_id:
+          assignment.youtube_video_id ||
+          null,
+
+        youtube_start_seconds:
+          assignment.youtube_start_seconds ??
+          null,
+
+        youtube_end_seconds:
+          assignment.youtube_end_seconds ??
+          null,
+
+        youtube_loop:
+          assignment.youtube_loop ===
+          true
+      })
+      .select(
+        'id'
+      )
+      .single();
 
 
   if (error) {
     throw error;
+  }
+
+
+  if (
+    !duplicatedAssignment?.id
+  ) {
+
+    throw new Error(
+      '複製した課題IDを取得できませんでした。'
+    );
+  }
+
+
+  const duplicateTargetIds =
+    assignment.audience_type ===
+      'targeted'
+      ? assignment.target_student_ids ||
+        []
+      : [];
+
+
+  if (
+    assignment.audience_type ===
+      'targeted' &&
+    duplicateTargetIds.length === 0
+  ) {
+
+    throw new Error(
+      '個別配布先を取得できないため複製できませんでした。'
+    );
+  }
+
+
+  const {
+    error: targetError
+  } =
+    await getClient(
+      'teacher'
+    ).rpc(
+      'set_assignment_targets',
+      {
+        p_assignment_id:
+          duplicatedAssignment.id,
+
+        p_student_ids:
+          duplicateTargetIds
+      }
+    );
+
+
+  if (targetError) {
+    throw targetError;
   }
 
 
@@ -3474,6 +3711,75 @@ students =
 
 
     const {
+      data: targetRows,
+      error: targetError
+    } =
+      await sb
+        .from(
+          'assignment_targets'
+        )
+        .select(
+          'assignment_id, student_id'
+        )
+        .in(
+          'assignment_id',
+          ids
+        );
+
+
+    if (
+      targetError
+    ) {
+
+      throw targetError;
+    }
+
+
+    const targetMap =
+      new Map();
+
+
+    (targetRows || [])
+      .forEach(
+        row => {
+
+          if (
+            !targetMap.has(
+              row.assignment_id
+            )
+          ) {
+
+            targetMap.set(
+              row.assignment_id,
+              []
+            );
+          }
+
+
+          targetMap
+            .get(
+              row.assignment_id
+            )
+            .push(
+              row.student_id
+            );
+        }
+      );
+
+
+    assignments =
+      assignments.map(
+        assignment => ({
+          ...assignment,
+
+          target_student_ids:
+            targetMap.get(
+              assignment.id
+            ) || []
+        })
+      );
+
+    const {
       data: submissionRows,
       error: submissionError
     } =
@@ -3657,7 +3963,168 @@ function getAssignmentDialogueFromForm() {
     );
 }
 
+function renderAssignmentTargetStudents(
+  selectedIds = []
+) {
+
+  const list =
+    $('#assignmentTargetList');
+
+  const summary =
+    $('#assignmentTargetSummary');
+
+  if (
+    !list ||
+    !summary
+  ) {
+    return;
+  }
+
+
+  const selectedSet =
+    new Set(
+      selectedIds
+    );
+
+
+  if (
+    !Array.isArray(
+      students
+    ) ||
+    students.length === 0
+  ) {
+
+    list.innerHTML =
+      '<div class="small muted">このクラスには生徒が登録されていません。</div>';
+
+    summary.textContent =
+      '0人選択';
+
+    return;
+  }
+
+
+  list.innerHTML =
+    students
+      .map(
+        student => {
+
+          const checked =
+            selectedSet.has(
+              student.id
+            )
+              ? ' checked'
+              : '';
+
+          const number =
+            student.student_number
+              ? `${student.student_number} `
+              : '';
+
+          const name =
+            student.display_name ||
+            'No name';
+
+          return `
+            <label
+              style="
+                display:flex;
+                align-items:center;
+                gap:8px;
+                padding:8px 6px;
+                border-bottom:1px solid #f1f5f9;
+                cursor:pointer;
+              ">
+
+              <input
+                type="checkbox"
+                class="assignment-target-student"
+                value="${student.id}"
+                ${checked}>
+
+              <span>
+                ${number}${name}
+              </span>
+
+            </label>
+          `;
+        }
+      )
+      .join('');
+
+
+  updateAssignmentTargetSummary();
+}
+
+
+function updateAssignmentTargetSummary() {
+
+  const summary =
+    $('#assignmentTargetSummary');
+
+  if (!summary) {
+    return;
+  }
+
+  const count =
+    document.querySelectorAll(
+      '.assignment-target-student:checked'
+    ).length;
+
+  summary.textContent =
+    `${count}人選択`;
+}
+
+
+function updateAssignmentAudienceUI() {
+
+  const targeted =
+    $('#assignmentAudienceTargeted')
+      ?.checked ===
+      true;
+
+  $('#assignmentTargetPanel')
+    ?.classList
+    .toggle(
+      'hidden',
+      !targeted
+    );
+
+  if (targeted) {
+    renderAssignmentTargetStudents();
+  }
+}
+
 // EVENTS
+
+$('#assignmentAudienceClass').onchange =
+  () => {
+    updateAssignmentAudienceUI();
+  };
+
+
+$('#assignmentAudienceTargeted').onchange =
+  () => {
+    updateAssignmentAudienceUI();
+  };
+
+
+$('#assignmentTargetList').onchange =
+  event => {
+
+    if (
+      event.target
+        ?.classList
+        ?.contains(
+          'assignment-target-student'
+        )
+    ) {
+
+      updateAssignmentTargetSummary();
+    }
+  };
+
+
 // ==========================================
 
 $('#newAssignment').onclick =
