@@ -4876,6 +4876,94 @@ function setAssignmentOcrFiles(
   }
 }
 
+function combineAssignmentOcrPages(
+  pageTexts
+) {
+
+  const pages =
+    (pageTexts || [])
+      .map(
+        text =>
+          String(
+            text || ''
+          ).trim()
+      )
+      .filter(Boolean);
+
+
+  if (
+    pages.length === 0
+  ) {
+    return '';
+  }
+
+
+  let combined =
+    pages[0];
+
+
+  for (
+    let index = 1;
+    index < pages.length;
+    index++
+  ) {
+
+    const nextPage =
+      pages[index];
+
+
+    const previousLastLine =
+      combined
+        .split('\n')
+        .filter(Boolean)
+        .at(-1)
+        ?.trim() ||
+      '';
+
+
+    const nextFirstLine =
+      nextPage
+        .split('\n')
+        .find(
+          line =>
+            line.trim()
+        )
+        ?.trim() ||
+      '';
+
+
+    const previousLooksComplete =
+      /[.!?]["'”’)]?$/.test(
+        previousLastLine
+      );
+
+
+    const nextStartsWithSpeaker =
+      /^[A-Za-z][A-Za-z0-9 ._'’\-]{0,31}\s*[:：]/.test(
+        nextFirstLine
+      );
+
+
+    if (
+      !previousLooksComplete &&
+      !nextStartsWithSpeaker
+    ) {
+
+      combined =
+        `${combined.trimEnd()} ${nextPage.trimStart()}`;
+
+    } else {
+
+      combined =
+        `${combined.trimEnd()}\n\n${nextPage.trimStart()}`;
+
+    }
+  }
+
+
+  return combined.trim();
+}
+
 async function recognizeAssignmentOcrFiles(
   files
 ) {
@@ -4966,11 +5054,9 @@ async function recognizeAssignmentOcrFiles(
 
 
     const combinedText =
-      pageTexts
-        .join(
-          '\n\n'
-        )
-        .trim();
+      combineAssignmentOcrPages(
+        pageTexts
+      );
 
 
     result.value =
