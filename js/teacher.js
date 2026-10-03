@@ -1816,9 +1816,140 @@ function restoreAssignmentDialogueForm(
   );
 }
 
+function resetAssignmentOcr() {
+
+  if (
+    assignmentOcrPreviewUrl
+  ) {
+
+    URL.revokeObjectURL(
+      assignmentOcrPreviewUrl
+    );
+
+    assignmentOcrPreviewUrl =
+      null;
+  }
+
+
+  assignmentOcrQueueUrls
+    .forEach(
+      url => {
+        URL.revokeObjectURL(
+          url
+        );
+      }
+    );
+
+
+  assignmentOcrQueueUrls =
+    [];
+
+  assignmentOcrFiles =
+    [];
+
+
+  const input =
+    $('#assignmentOcrImageInput');
+
+  if (input) {
+    input.value =
+      '';
+  }
+
+
+  const queue =
+    $('#assignmentOcrQueue');
+
+  if (queue) {
+    queue.innerHTML =
+      '';
+  }
+
+
+  const preview =
+    $('#assignmentOcrPreview');
+
+  if (preview) {
+
+    preview.removeAttribute(
+      'src'
+    );
+
+    preview.classList.add(
+      'hidden'
+    );
+  }
+
+
+  const result =
+    $('#assignmentOcrResult');
+
+  if (result) {
+    result.value =
+      '';
+  }
+
+
+  const resultWrap =
+    $('#assignmentOcrResultWrap');
+
+  if (resultWrap) {
+    resultWrap.classList.add(
+      'hidden'
+    );
+  }
+
+
+  const panel =
+    $('#assignmentOcrPanel');
+
+  if (panel) {
+    panel.classList.add(
+      'hidden'
+    );
+  }
+
+
+  const status =
+    $('#assignmentOcrStatus');
+
+  if (status) {
+
+    status.style.color =
+      '';
+
+    status.textContent =
+      '印刷された英語教科書のページを撮影または選択してください。';
+  }
+
+
+  const summary =
+    $('#assignmentOcrOrderSummary');
+
+  if (summary) {
+    summary.textContent =
+      '画像を選択してください。';
+  }
+
+
+  const runButton =
+    $('#assignmentOcrRun');
+
+  if (runButton) {
+
+    runButton.disabled =
+      true;
+
+    runButton.textContent =
+      '🔍 この順番で読み取る';
+  }
+}
+
 function openAssignmentEditor(
   assignment = null
 ) {
+
+  resetAssignmentOcr();
 
   editingAssignmentId =
     assignment?.id ||
@@ -2040,6 +2171,8 @@ $('#assignmentDue').value =
 // ==========================================
 
 function closeAssignmentEditor() {
+
+  resetAssignmentOcr();
 
   editingAssignmentId =
     null;
