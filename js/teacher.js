@@ -2272,6 +2272,47 @@ function openAssignmentEditor(
     assignment?.lesson_translation ||
     '';
 
+  const audioInput =
+    $('#assignmentAudio');
+
+  if (audioInput) {
+    audioInput.value = '';
+  }
+
+  const audioStatus =
+    $('#assignmentAudioStatus');
+
+  const removeAudioButton =
+    $('#removeAssignmentAudio');
+
+  const hasRegisteredAudio =
+    Boolean(
+      assignment?.audio_object_key ||
+      assignment?.audio_url ||
+      assignment?.audio_file_name
+    );
+
+  if (audioStatus) {
+
+    audioStatus.style.color =
+      hasRegisteredAudio
+        ? '#15803d'
+        : '';
+
+    audioStatus.textContent =
+      hasRegisteredAudio
+        ? `✓ 登録済み: ${assignment?.audio_file_name || 'MP3 Audio'}`
+        : 'MP3 only · Max 5 MB · Cloud copy expires after 14 days';
+  }
+
+  if (removeAudioButton) {
+
+    removeAudioButton.classList.toggle(
+      'hidden',
+      !hasRegisteredAudio
+    );
+  }
+
   $('#assignmentYoutubeUrl').value =
   assignment?.youtube_url ||
   '';
@@ -2658,6 +2699,145 @@ async function uploadAssignmentAudio(
 // ==========================================
 // CREATE ASSIGNMENT
 // ==========================================
+
+// ==========================================
+// REMOVE ASSIGNMENT AUDIO
+// ==========================================
+
+async function removeAssignmentAudio() {
+
+  if (!editingAssignmentId) {
+    return;
+  }
+
+  const assignment =
+    assignments.find(
+      item =>
+        item.id ===
+        editingAssignmentId
+    );
+
+  if (!assignment) {
+    return;
+  }
+
+  const ok =
+    await showConfirmModal({
+
+      badge:
+        'Remove Audio',
+
+      badgeType:
+        'danger',
+
+      title:
+        '登録済みMP3を削除しますか？',
+
+      message:
+        `「${assignment.audio_file_name || 'MP3 Audio'}」をこの課題から削除します。
+
+生徒はこの音声を利用できなくなります。`,
+
+      confirmText:
+        'MP3を削除',
+
+      cancelText:
+        'Cancel',
+
+      confirmVariant:
+        'danger'
+
+    });
+
+  if (!ok) {
+    return;
+  }
+
+  const button =
+    $('#removeAssignmentAudio');
+
+  if (button) {
+    button.disabled = true;
+  }
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await getClient(
+        'teacher'
+      )
+        .from(
+          'assignments'
+        )
+        .update({
+
+          audio_url: null,
+          audio_object_key: null,
+          audio_expires_at: null,
+          audio_file_name: null,
+          audio_size_bytes: null
+
+        })
+        .eq(
+          'id',
+          assignment.id
+        )
+        .select(
+          'id'
+        )
+        .single();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.id) {
+      throw new Error(
+        'MP3を削除できませんでした。'
+      );
+    }
+
+    assignment.audio_url = null;
+    assignment.audio_object_key = null;
+    assignment.audio_expires_at = null;
+    assignment.audio_file_name = null;
+    assignment.audio_size_bytes = null;
+
+    const input =
+      $('#assignmentAudio');
+
+    if (input) {
+      input.value = '';
+    }
+
+    const status =
+      $('#assignmentAudioStatus');
+
+    if (status) {
+
+      status.style.color =
+        '#15803d';
+
+      status.textContent =
+        '✓ 登録済みMP3を削除しました';
+    }
+
+    if (button) {
+      button.classList.add(
+        'hidden'
+      );
+    }
+
+  } finally {
+
+    if (button) {
+      button.disabled = false;
+    }
+  }
+}
 
 async function saveAssignment() {
 
@@ -6126,6 +6306,40 @@ $('#addAssignmentDialogueLine').onclick =
 
   };
 
+// REMOVE AUDIO BUTTON EVENT
+$('#removeAssignmentAudio')
+  ?.addEventListener(
+    'click',
+    async () => {
+
+      try {
+
+        await removeAssignmentAudio();
+
+      } catch (error) {
+
+        console.error(error);
+
+        await showInfoModal({
+
+          badge:
+            'Error',
+
+          badgeType:
+            'danger',
+
+          title:
+            'MP3を削除できませんでした',
+
+          message:
+            error.message ||
+            String(error)
+
+        });
+      }
+    }
+  );
+
 $('#assignmentRelease').onchange =
   updateDueDate;
 
@@ -6340,6 +6554,7 @@ $('#assignmentRelease').onchange =
     });
   }
 );
+
 
 
 
