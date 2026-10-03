@@ -1545,6 +1545,222 @@ function parseYoutubeTimeToSeconds(
 }
 
 
+function updateAssignmentYoutubePreview() {
+
+  const input =
+    $('#assignmentYoutubeUrl');
+
+  const preview =
+    $('#assignmentYoutubePreview');
+
+  const frame =
+    $('#assignmentYoutubePreviewFrame');
+
+
+  if (
+    !input ||
+    !preview ||
+    !frame
+  ) {
+    return;
+  }
+
+
+  const url =
+    input.value
+      .trim();
+
+
+  if (!url) {
+
+    preview.classList.add(
+      'hidden'
+    );
+
+    frame.src =
+      'about:blank';
+
+    delete frame.dataset.videoId;
+
+    return;
+  }
+
+
+  const videoId =
+    extractYoutubeVideoId(
+      url
+    );
+
+
+  if (!videoId) {
+
+    preview.classList.add(
+      'hidden'
+    );
+
+    frame.src =
+      'about:blank';
+
+    delete frame.dataset.videoId;
+
+    return;
+  }
+
+
+  if (
+    frame.dataset.videoId !==
+    videoId
+  ) {
+
+    frame.src =
+      `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&playsinline=1`;
+
+    frame.dataset.videoId =
+      videoId;
+  }
+
+
+  preview.classList.remove(
+    'hidden'
+  );
+}
+
+function previewAssignmentYoutubeClip() {
+
+  const url =
+    $('#assignmentYoutubeUrl')
+      ?.value
+      ?.trim() ||
+    '';
+
+  const startValue =
+    $('#assignmentYoutubeStart')
+      ?.value
+      ?.trim() ||
+    '';
+
+  const endValue =
+    $('#assignmentYoutubeEnd')
+      ?.value
+      ?.trim() ||
+    '';
+
+  const frame =
+    $('#assignmentYoutubePreviewFrame');
+
+  const preview =
+    $('#assignmentYoutubePreview');
+
+  const status =
+    $('#assignmentYoutubeStatus');
+
+
+  if (
+    !frame ||
+    !preview
+  ) {
+    return;
+  }
+
+
+  const videoId =
+    extractYoutubeVideoId(url);
+
+  if (!videoId) {
+
+    if (status) {
+      status.textContent =
+        '有効なYouTube URLを入力してください。';
+    }
+
+    return;
+  }
+
+
+  const startSeconds =
+    parseYoutubeTimeToSeconds(
+      startValue
+    );
+
+  const endSeconds =
+    parseYoutubeTimeToSeconds(
+      endValue
+    );
+
+
+  if (
+    startSeconds === null ||
+    endSeconds === null
+  ) {
+
+    if (status) {
+      status.textContent =
+        'Start と End を入力してください。例：1:25 / 2:10';
+    }
+
+    return;
+  }
+
+
+  if (endSeconds <= startSeconds) {
+
+    if (status) {
+      status.textContent =
+        'End Time は Start Time より後にしてください。';
+    }
+
+    return;
+  }
+
+
+  const loop =
+    $('#assignmentYoutubeLoop')
+      ?.checked ??
+    true;
+
+
+  const params =
+    new URLSearchParams({
+      rel: '0',
+      playsinline: '1',
+      autoplay: '1',
+      start: String(startSeconds),
+      end: String(endSeconds)
+    });
+
+
+  if (loop) {
+
+    params.set(
+      'loop',
+      '1'
+    );
+
+    params.set(
+      'playlist',
+      videoId
+    );
+  }
+
+
+  frame.src =
+    `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
+
+  frame.dataset.videoId =
+    videoId;
+
+  preview.classList.remove(
+    'hidden'
+  );
+
+
+  if (status) {
+    status.textContent =
+      `▶ ${startValue} 〜 ${endValue} をプレビュー再生中`;
+  }
+}
+
+
 // ==========================================
 // READ YOUTUBE CLIP FROM FORM
 // ==========================================
@@ -5503,7 +5719,203 @@ async function recognizeAssignmentOcrFiles(
   }
 }
 
+function setAssignmentMediaPanelOpen(
+  type,
+  isOpen
+) {
+
+  const isYoutube =
+    type === 'youtube';
+
+
+  const panel =
+    isYoutube
+      ? $('#assignmentYoutubePanel')
+      : $('#assignmentAudioPanel');
+
+
+  const button =
+    isYoutube
+      ? $('#toggleAssignmentYoutube')
+      : $('#toggleAssignmentAudio');
+
+
+  if (
+    !panel ||
+    !button
+  ) {
+    return;
+  }
+
+
+  panel.classList.toggle(
+    'hidden',
+    !isOpen
+  );
+
+
+  button.classList.toggle(
+    'is-open',
+    isOpen
+  );
+
+
+  button.setAttribute(
+    'aria-expanded',
+    isOpen
+      ? 'true'
+      : 'false'
+  );
+
+
+  button.style.borderColor =
+    isOpen
+      ? '#2563eb'
+      : '';
+
+
+  button.style.background =
+    isOpen
+      ? '#eff6ff'
+      : '';
+}
+
+
+function toggleAssignmentMediaPanel(
+  type
+) {
+
+  const panel =
+    type === 'youtube'
+      ? $('#assignmentYoutubePanel')
+      : $('#assignmentAudioPanel');
+
+
+  if (!panel) {
+    return;
+  }
+
+
+  const isOpen =
+    !panel.classList.contains(
+      'hidden'
+    );
+
+
+  setAssignmentMediaPanelOpen(
+    type,
+    !isOpen
+  );
+}
+
 // EVENTS
+
+
+const assignmentYoutubeUrlInput =
+  $('#assignmentYoutubeUrl');
+
+
+if (assignmentYoutubeUrlInput) {
+
+  assignmentYoutubeUrlInput
+    .addEventListener(
+      'input',
+      updateAssignmentYoutubePreview
+    );
+
+}
+
+const assignmentYoutubeStartInput =
+  $('#assignmentYoutubeStart');
+
+const assignmentYoutubeEndInput =
+  $('#assignmentYoutubeEnd');
+
+
+function previewYoutubeClipIfReady() {
+
+  const startValue =
+    assignmentYoutubeStartInput
+      ?.value
+      ?.trim() ||
+    '';
+
+  const endValue =
+    assignmentYoutubeEndInput
+      ?.value
+      ?.trim() ||
+    '';
+
+
+  if (
+    !startValue ||
+    !endValue
+  ) {
+    return;
+  }
+
+
+  previewAssignmentYoutubeClip();
+}
+
+
+[
+  assignmentYoutubeStartInput,
+  assignmentYoutubeEndInput
+].forEach(
+  input => {
+
+    if (!input) {
+      return;
+    }
+
+
+    input.addEventListener(
+      'change',
+      previewYoutubeClipIfReady
+    );
+
+
+    input.addEventListener(
+      'keydown',
+      event => {
+
+        if (
+          event.key !==
+          'Enter'
+        ) {
+          return;
+        }
+
+
+        event.preventDefault();
+
+        previewYoutubeClipIfReady();
+      }
+    );
+
+  }
+);
+
+
+$('#toggleAssignmentYoutube').onclick =
+  () => {
+
+    toggleAssignmentMediaPanel(
+      'youtube'
+    );
+
+  };
+
+
+$('#toggleAssignmentAudio').onclick =
+  () => {
+
+    toggleAssignmentMediaPanel(
+      'audio'
+    );
+
+  };
 
 $('#useOcrAsDialogue').onclick =
   () => {
@@ -5965,3 +6377,6 @@ $('#assignmentRelease').onchange =
     });
   }
 );
+
+
+

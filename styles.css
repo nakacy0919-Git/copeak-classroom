@@ -5488,3 +5488,250 @@ strong {
   }
 
 }
+
+/* ==========================================
+   Assignment Supplementary Media Cards
+========================================== */
+
+.assignment-media-tools {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.assignment-media-tools-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.assignment-media-tools-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.02em;
+}
+
+.assignment-media-tools-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.assignment-media-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.assignment-media-card {
+  width: 100%;
+  border: 1px solid #dbe2ea;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.assignment-media-card:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.assignment-media-card.is-open {
+  border-color: #93c5fd;
+  background: #f8fbff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.10);
+}
+
+.assignment-media-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 54px;
+}
+
+.assignment-media-icon svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.assignment-media-icon.youtube {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+  color: #dc2626;
+}
+
+.assignment-media-icon.audio {
+  background: linear-gradient(135deg, #eef2ff 0%, #ede9fe 100%);
+  color: #6d28d9;
+}
+
+.assignment-media-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.assignment-media-label {
+  font-size: 17px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.assignment-media-desc {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.assignment-media-chevron {
+  margin-left: auto;
+  font-size: 18px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.assignment-media-panel {
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+@media (max-width: 900px) {
+  .assignment-media-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================
+   Assignment Editor - Two Column Layout
+========================================== */
+
+.assignment-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(320px, 1fr);
+  gap: 22px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.assignment-editor-main,
+.assignment-editor-sidebar {
+  min-width: 0;
+}
+
+.assignment-editor-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.assignment-editor-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.assignment-editor-sidebar-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.assignment-editor-sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.assignment-editor-sidebar .assignment-media-tools {
+  margin-top: 0;
+}
+
+.assignment-editor-sidebar #assignmentYoutubePreview {
+  width: 100%;
+}
+
+.assignment-editor-sidebar #assignmentYoutubePreviewFrame {
+  width: 100%;
+}
+
+@media (max-width: 1050px) {
+  .assignment-editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .assignment-editor-sidebar {
+    width: 100%;
+  }
+}
+
+
+/* ==========================================
+   Assignment Schedule UI
+========================================== */
+
+.assignment-schedule-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.assignment-schedule-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.assignment-schedule-help {
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.assignment-schedule-card input[type="datetime-local"] {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  background: #f8fafc;
+}
+
+.assignment-schedule-card input[type="datetime-local"]:focus {
+  background: #ffffff;
+}
+
+.assignment-schedule-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+

@@ -1637,71 +1637,10 @@
 
 
 
-<div class="field">
-
-
-
-  <label>
-
-    Category
-
-  </label>
-
-
-
-  <select
-
-    id="assignmentCategory"
-
-    class="input">
-
-
-
-    <option value="Reading">
-
-      Reading
-
-    </option>
-
-
-
-    <option value="Grammar">
-
-      Grammar
-
-    </option>
-
-
-
-    <option value="Speech">
-
-      Speech
-
-    </option>
-
-
-
-    <option value="Textbook">
-
-      Textbook
-
-    </option>
-
-
-
-    <option value="Other">
-
-      Other
-
-    </option>
-
-
-
-  </select>
-
-
-
-</div>
+<input
+  type="hidden"
+  id="assignmentCategory"
+  value="Reading">
 
 
 
@@ -1739,110 +1678,9 @@
 
 
 
-        <div class="field assignment-audience-field">
+        <div class="assignment-editor-layout">
 
-  <label>
-    配布先 / Audience
-  </label>
-
-  <div
-    style="
-      display:flex;
-      gap:18px;
-      flex-wrap:wrap;
-      margin-top:6px;
-    ">
-
-    <label
-      style="
-        display:flex;
-        align-items:center;
-        gap:7px;
-        cursor:pointer;
-      ">
-
-      <input
-        type="radio"
-        id="assignmentAudienceClass"
-        name="assignmentAudience"
-        value="class"
-        checked>
-
-      <span>
-        クラス全員
-      </span>
-
-    </label>
-
-
-    <label
-      style="
-        display:flex;
-        align-items:center;
-        gap:7px;
-        cursor:pointer;
-      ">
-
-      <input
-        type="radio"
-        id="assignmentAudienceTargeted"
-        name="assignmentAudience"
-        value="targeted">
-
-      <span>
-        生徒を選択
-      </span>
-
-    </label>
-
-  </div>
-
-
-  <div
-    id="assignmentTargetPanel"
-    class="hidden"
-    style="
-      margin-top:12px;
-      padding:12px;
-      border:1px solid #e5e7eb;
-      border-radius:10px;
-    ">
-
-    <div
-      class="small"
-      style="
-        font-weight:700;
-        margin-bottom:8px;
-      ">
-
-      配布する生徒を選択
-
-    </div>
-
-
-    <div
-      id="assignmentTargetList">
-
-      <div class="small muted">
-        生徒一覧を読み込みます。
-      </div>
-
-    </div>
-
-
-    <div
-      id="assignmentTargetSummary"
-      class="tiny muted"
-      style="margin-top:8px">
-
-      0人選択
-
-    </div>
-
-  </div>
-
-</div>
-
+      <main class="assignment-editor-main">
 <div class="field">
 
   <label>
@@ -2198,7 +2036,259 @@
 
 
         </div>
-<div class="field">
+      </main>
+
+      <aside class="assignment-editor-sidebar">
+<div class="assignment-editor-sidebar-card">
+
+  <div class="assignment-editor-sidebar-title">
+    👥 配布先
+  </div>
+
+<div class="field assignment-audience-field">
+
+  <label>
+    配布先 / Audience
+  </label>
+
+  <div
+    style="
+      display:flex;
+      gap:18px;
+      flex-wrap:wrap;
+      margin-top:6px;
+    ">
+
+    <label
+      style="
+        display:flex;
+        align-items:center;
+        gap:7px;
+        cursor:pointer;
+      ">
+
+      <input
+        type="radio"
+        id="assignmentAudienceClass"
+        name="assignmentAudience"
+        value="class"
+        checked>
+
+      <span>
+        クラス全員
+      </span>
+
+    </label>
+
+
+    <label
+      style="
+        display:flex;
+        align-items:center;
+        gap:7px;
+        cursor:pointer;
+      ">
+
+      <input
+        type="radio"
+        id="assignmentAudienceTargeted"
+        name="assignmentAudience"
+        value="targeted">
+
+      <span>
+        生徒を選択
+      </span>
+
+    </label>
+
+  </div>
+
+
+  <div
+    id="assignmentTargetPanel"
+    class="hidden"
+    style="
+      margin-top:12px;
+      padding:12px;
+      border:1px solid #e5e7eb;
+      border-radius:10px;
+    ">
+
+    <div
+      class="small"
+      style="
+        font-weight:700;
+        margin-bottom:8px;
+      ">
+
+      配布する生徒を選択
+
+    </div>
+
+
+    <div
+      id="assignmentTargetList">
+
+      <div class="small muted">
+        生徒一覧を読み込みます。
+      </div>
+
+    </div>
+
+
+    <div
+      id="assignmentTargetSummary"
+      class="tiny muted"
+      style="margin-top:8px">
+
+      0人選択
+
+    </div>
+
+  </div>
+
+</div>
+
+</div>
+
+<div
+  class="field assignment-media-tools"
+  id="assignmentMediaTools"
+  style="
+    margin-top:18px;
+    padding:16px;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    background:#f8fafc;
+  ">
+
+  <div
+    style="
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:12px;
+    ">
+
+    <span style="font-size:18px">
+      ✨
+    </span>
+
+    <strong>
+      補助メディア
+    </strong>
+
+    <span class="tiny muted">
+      Optional
+    </span>
+
+  </div>
+
+
+  <div
+    class="grid grid-2"
+    style="gap:10px">
+
+    <button
+  type="button"
+  id="toggleAssignmentYoutube"
+  class="assignment-media-card"
+  aria-expanded="false">
+
+  <span
+    class="assignment-media-icon youtube"
+    aria-hidden="true">
+
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor">
+
+      <rect
+        x="2"
+        y="5"
+        width="20"
+        height="14"
+        rx="4">
+      </rect>
+
+      <path
+        d="M10 9L16 12L10 15Z"
+        fill="white">
+      </path>
+
+    </svg>
+
+  </span>
+
+  <span class="assignment-media-text">
+
+    <span class="assignment-media-label">
+      YouTube
+    </span>
+
+    <span class="assignment-media-desc">
+      動画クリップを追加・区間再生を設定
+    </span>
+
+  </span>
+
+  <span class="assignment-media-chevron">
+    ›
+  </span>
+
+</button>
+
+
+    <button
+  type="button"
+  id="toggleAssignmentAudio"
+  class="assignment-media-card"
+  aria-expanded="false">
+
+  <span
+    class="assignment-media-icon audio"
+    aria-hidden="true">
+
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round">
+
+      <path d="M4 14v-2a8 8 0 0 1 16 0v2"></path>
+      <path d="M4 14a2 2 0 0 1 2-2h1v7H6a2 2 0 0 1-2-2z"></path>
+      <path d="M20 14a2 2 0 0 0-2-2h-1v7h1a2 2 0 0 0 2-2z"></path>
+      <path d="M17 19c0 1.1-.9 2-2 2h-2"></path>
+
+    </svg>
+
+  </span>
+
+  <span class="assignment-media-text">
+
+    <span class="assignment-media-label">
+      Audio
+    </span>
+
+    <span class="assignment-media-desc">
+      MP3音声を追加して教材を補強
+    </span>
+
+  </span>
+
+  <span class="assignment-media-chevron">
+    ›
+  </span>
+
+</button>
+
+  </div>
+
+</div>
+
+<div id="assignmentYoutubePanel" class="hidden assignment-media-panel"><div class="field">
 
   <label>
     ▶ YouTube Clip
@@ -2217,6 +2307,81 @@
 
 
   <div
+  id="assignmentYoutubePreview"
+  class="hidden"
+  style="
+    margin-top:14px;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    overflow:hidden;
+    background:#0f172a;
+  ">
+
+  <div
+    style="
+      padding:9px 12px;
+      background:#ffffff;
+      border-bottom:1px solid #e5e7eb;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    ">
+
+    <span
+      style="
+        width:8px;
+        height:8px;
+        border-radius:999px;
+        background:#ef4444;
+      ">
+    </span>
+
+    <strong style="font-size:13px">
+      YouTube Preview
+    </strong>
+
+    <span
+      class="tiny muted"
+      style="margin-left:auto">
+      教材に使用する動画
+    </span>
+
+  </div>
+
+  <div
+    style="
+      position:relative;
+      width:100%;
+      aspect-ratio:16 / 9;
+      background:#000;
+    ">
+
+    <iframe
+      id="assignmentYoutubePreviewFrame"
+      title="YouTube preview"
+      style="
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        border:0;
+      "
+      allow="
+        accelerometer;
+        autoplay;
+        clipboard-write;
+        encrypted-media;
+        gyroscope;
+        picture-in-picture
+      "
+      allowfullscreen>
+    </iframe>
+
+  </div>
+
+</div>
+
+<div
     class="grid grid-2"
     style="margin-top:10px">
 
@@ -2298,7 +2463,9 @@
 
 </div>
 
-<div class="field">
+</div>
+
+<div id="assignmentAudioPanel" class="hidden assignment-media-panel"><div class="field">
 
 
 
@@ -2352,83 +2519,48 @@
 
 
 
-        <div class="grid grid-2">
+        </div>
 
+<div class="assignment-schedule-grid">
 
+  <div class="assignment-schedule-card">
 
-  <div class="field">
+    <div class="assignment-schedule-title">
+      <span>📅</span>
+      <span>Release</span>
+    </div>
 
-
-
-    <label>
-
-      Release Date & Time
-
-    </label>
-
-
-
-    <input
-
-      id="assignmentRelease"
-
-      type="datetime-local"
-
-      step="1"
-
-      class="input">
-
-
-
-    <div class="tiny muted" style="margin-top:5px">
-
+    <div class="assignment-schedule-help">
       生徒に課題を公開する日時
-
     </div>
-
-
-
-  </div>
-
-
-
-
-
-  <div class="field">
-
-
-
-    <label>
-
-      Deadline
-
-    </label>
-
-
 
     <input
-
-      id="assignmentDue"
-
+      id="assignmentRelease"
       type="datetime-local"
-
-      step="1"
-
+      step="60"
       class="input">
-
-
-
-    <div class="tiny muted" style="margin-top:5px">
-
-      この時刻を過ぎると提出できません
-
-    </div>
-
-
 
   </div>
 
 
+  <div class="assignment-schedule-card">
+
+    <div class="assignment-schedule-title">
+      <span>⏰</span>
+      <span>Deadline</span>
+    </div>
+
+    <div class="assignment-schedule-help">
+      この時刻まで提出できます
+    </div>
+
+    <input
+      id="assignmentDue"
+      type="datetime-local"
+      step="60"
+      class="input">
+
+  </div>
 
 </div>
 
@@ -2438,157 +2570,113 @@
 
 
 
-        <div class="grid grid-2">
+        <div class="assignment-editor-sidebar-card">
+
+  <div class="assignment-editor-sidebar-title">
+    🌐 Language
+  </div>
 
+  <select
+  id="assignmentLang"
+  class="input">
 
+  <optgroup label="English">
+    <option value="en-US">🇺🇸 English (US)</option>
+    <option value="en-GB">🇬🇧 English (UK)</option>
+  </optgroup>
 
+  <optgroup label="European Languages">
+    <option value="es-ES">🇪🇸 Spanish</option>
+    <option value="fr-FR">🇫🇷 French</option>
+    <option value="de-DE">🇩🇪 German</option>
+    <option value="it-IT">🇮🇹 Italian</option>
+    <option value="pt-PT">🇵🇹 Portuguese (Portugal)</option>
+    <option value="nl-NL">🇳🇱 Dutch</option>
+    <option value="pl-PL">🇵🇱 Polish</option>
+    <option value="ru-RU">🇷🇺 Russian</option>
+    <option value="uk-UA">🇺🇦 Ukrainian</option>
+    <option value="sv-SE">🇸🇪 Swedish</option>
+    <option value="nb-NO">🇳🇴 Norwegian</option>
+    <option value="da-DK">🇩🇰 Danish</option>
+    <option value="fi-FI">🇫🇮 Finnish</option>
+    <option value="cs-CZ">🇨🇿 Czech</option>
+    <option value="sk-SK">🇸🇰 Slovak</option>
+    <option value="hu-HU">🇭🇺 Hungarian</option>
+    <option value="ro-RO">🇷🇴 Romanian</option>
+    <option value="el-GR">🇬🇷 Greek</option>
+    <option value="tr-TR">🇹🇷 Turkish</option>
+  </optgroup>
 
+  <optgroup label="Asian / Middle Eastern Languages">
+    <option value="ja-JP">🇯🇵 Japanese</option>
+    <option value="zh-CN">🇨🇳 Chinese (Simplified)</option>
+    <option value="ko-KR">🇰🇷 Korean</option>
+    <option value="th-TH">🇹🇭 Thai</option>
+    <option value="id-ID">🇮🇩 Indonesian</option>
+    <option value="hi-IN">🇮🇳 Hindi</option>
+    <option value="ar-SA">🇸🇦 Arabic</option>
+  </optgroup>
 
-          <div class="field">
+  <optgroup label="Beta">
+    <option value="ne-NP">🇳🇵 Nepali (Beta)</option>
+  </optgroup>
 
+</select>
 
+</div>
 
-            <label>
 
-              English
+<div class="assignment-editor-sidebar-card">
 
-            </label>
+  <div class="assignment-editor-sidebar-title">
+    🚀 公開設定
+  </div>
 
+  <label class="publish-check">
 
+    <input
+      id="assignmentPublished"
+      type="checkbox"
+      checked>
 
-            <select
+    <span>
 
-              id="assignmentLang"
+      <strong>
+        Publish now
+      </strong>
 
-              class="input">
+      <small>
+        ONなら生徒にすぐ表示
+      </small>
 
+    </span>
 
+  </label>
 
-              <option value="en-US">
 
-                English (US)
+  <div
+    class="editor-actions"
+    style="margin-top:14px">
 
-              </option>
+    <button
+      id="publishAssignment"
+      class="btn btn-primary">
 
+      Publish Assignment
 
+    </button>
 
-              <option value="en-GB">
+    <button
+      id="cancelAssignment"
+      class="btn btn-light">
 
-                English (UK)
+      Cancel
 
-              </option>
+    </button>
 
+  </div>
 
-
-              <option value="en-AU">
-
-                English (Australia)
-
-              </option>
-
-
-
-            </select>
-
-
-
-          </div>
-
-
-
-
-
-          <label class="publish-check">
-
-
-
-            <input
-
-              id="assignmentPublished"
-
-              type="checkbox"
-
-              checked>
-
-
-
-            <span>
-
-
-
-              <strong>
-
-                Publish now
-
-              </strong>
-
-
-
-              <small>
-
-                ONなら生徒にすぐ表示
-
-              </small>
-
-
-
-            </span>
-
-
-
-          </label>
-
-
-
-
-
-        </div>
-
-
-
-
-
-
-
-        <div class="editor-actions">
-
-
-
-          <button
-
-            id="publishAssignment"
-
-            class="btn btn-primary">
-
-
-
-            Publish Assignment
-
-
-
-          </button>
-
-
-
-
-
-          <button
-
-            id="cancelAssignment"
-
-            class="btn btn-light">
-
-
-
-            Cancel
-
-
-
-          </button>
-
-
-
-        </div>
+</div>
 
 
 
@@ -2601,6 +2689,10 @@
           class="small">
 
         </div>
+      </aside>
+
+    </div>
+
 
 
 
@@ -2988,3 +3080,8 @@
 
 
 </html>
+
+
+
+
+
