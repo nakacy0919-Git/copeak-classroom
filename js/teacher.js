@@ -4095,7 +4095,681 @@ function updateAssignmentAudienceUI() {
   }
 }
 
+let assignmentOcrPreviewUrl =
+  null;
+
+
+function handleAssignmentOcrImage(
+  file
+) {
+
+  const preview =
+    $('#assignmentOcrPreview');
+
+  const status =
+    $('#assignmentOcrStatus');
+
+  const resultWrap =
+    $('#assignmentOcrResultWrap');
+
+  const result =
+    $('#assignmentOcrResult');
+
+
+  if (
+    assignmentOcrPreviewUrl
+  ) {
+
+    URL.revokeObjectURL(
+      assignmentOcrPreviewUrl
+    );
+
+    assignmentOcrPreviewUrl =
+      null;
+  }
+
+
+  if (!file) {
+
+    preview.removeAttribute(
+      'src'
+    );
+
+    preview.classList.add(
+      'hidden'
+    );
+
+    resultWrap.classList.add(
+      'hidden'
+    );
+
+    result.value =
+      '';
+
+    status.textContent =
+      '印刷された英語教科書のページを撮影または選択してください。';
+
+    return;
+  }
+
+
+  if (
+    !file.type.startsWith(
+      'image/'
+    )
+  ) {
+
+    status.textContent =
+      '画像ファイルを選択してください。';
+
+    return;
+  }
+
+
+  assignmentOcrPreviewUrl =
+    URL.createObjectURL(
+      file
+    );
+
+
+  preview.src =
+    assignmentOcrPreviewUrl;
+
+  preview.classList.remove(
+    'hidden'
+  );
+
+
+  resultWrap.classList.add(
+    'hidden'
+  );
+
+  result.value =
+    '';
+
+
+  status.textContent =
+    '画像を読み込みました。次のステップで文字認識を行います。';
+}
+
+let assignmentOcrWorker =
+  null;
+
+
+async function getAssignmentOcrWorker() {
+
+  if (
+    assignmentOcrWorker
+  ) {
+
+    return assignmentOcrWorker;
+  }
+
+
+  if (
+    !window.Tesseract
+  ) {
+
+    throw new Error(
+      'OCRエンジンを読み込めませんでした。ページを再読み込みしてください。'
+    );
+  }
+
+
+  assignmentOcrWorker =
+    await window.Tesseract.createWorker(
+      'eng',
+      1,
+      {
+        logger:
+          message => {
+
+            const status =
+              $('#assignmentOcrStatus');
+
+            if (!status) {
+              return;
+            }
+
+
+            if (
+              message.status ===
+              'recognizing text'
+            ) {
+
+              const percent =
+                Math.round(
+                  (message.progress || 0) *
+                  100
+                );
+
+              status.textContent =
+                `文字認識中... ${percent}%`;
+
+              return;
+            }
+
+
+            status.textContent =
+              'OCRを準備しています...';
+          }
+      }
+    );
+
+
+  return assignmentOcrWorker;
+}
+
+
+async function recognizeAssignmentOcr(
+  file
+) {
+
+  if (!file) {
+    return;
+  }
+
+
+  const status =
+    $('#assignmentOcrStatus');
+
+  const resultWrap =
+    $('#assignmentOcrResultWrap');
+
+  const result =
+    $('#assignmentOcrResult');
+
+
+  try {
+
+    status.style.color =
+      '';
+
+    status.textContent =
+      'OCRを準備しています...';
+
+
+    const worker =
+      await getAssignmentOcrWorker();
+
+
+    const response =
+      await worker.recognize(
+        file
+      );
+
+
+    const recognizedText =
+      response?.data?.text
+        ?.replace(
+          /\r\n/g,
+          '\n'
+        )
+        ?.trim() ||
+      '';
+
+
+    if (!recognizedText) {
+
+      result.value =
+        '';
+
+      resultWrap.classList.remove(
+        'hidden'
+      );
+
+      status.style.color =
+        '#b45309';
+
+      status.textContent =
+        '文字を認識できませんでした。画像の明るさや角度を確認してください。';
+
+      return;
+    }
+
+
+    result.value =
+      recognizedText;
+
+    resultWrap.classList.remove(
+      'hidden'
+    );
+
+    status.style.color =
+      '#15803d';
+
+    status.textContent =
+      '✓ 文字認識が完了しました。';
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'OCR error:',
+      error
+    );
+
+    status.style.color =
+      '#b91c1c';
+
+    status.textContent =
+      error.message ||
+      '文字認識中にエラーが発生しました。';
+  }
+}
+
+function cleanAssignmentOcrText(
+  rawText
+) {
+
+  const normalized =
+    String(
+      rawText ||
+      ''
+    )
+      .replace(
+        /\r\n/g,
+        '\n'
+      )
+      .replace(
+        /[ \t]+/g,
+        ' '
+      )
+      .trim();
+
+
+  if (!normalized) {
+    return '';
+  }
+
+
+  const paragraphs =
+    normalized
+      .split(
+        /\n\s*\n/
+      )
+      .map(
+        paragraph =>
+          paragraph
+            .split(
+              '\n'
+            )
+            .map(
+              line =>
+                line.trim()
+            )
+            .filter(Boolean)
+            .join(' ')
+            .replace(
+              /\s+([,.!?;:])/g,
+              '$1'
+            )
+            .replace(
+              /([“"'(])\s+/g,
+              '$1'
+            )
+            .replace(
+              /\s+([”"')])/g,
+              '$1'
+            )
+            .trim()
+      )
+      .filter(Boolean);
+
+
+  return paragraphs.join(
+    '\n\n'
+  );
+}
+
+
+function useAssignmentOcrAsText() {
+
+  const rawText =
+    $('#assignmentOcrResult')
+      ?.value ||
+    '';
+
+  const cleanedText =
+    cleanAssignmentOcrText(
+      rawText
+    );
+
+
+  if (!cleanedText) {
+
+    $('#assignmentOcrStatus').textContent =
+      '使用できる英文がありません。';
+
+    return;
+  }
+
+
+  $('#assignmentLessonType').value =
+    'text';
+
+
+  $('#assignmentTextEditor')
+    .classList
+    .remove(
+      'hidden'
+    );
+
+
+  $('#assignmentDialogueEditor')
+    .classList
+    .add(
+      'hidden'
+    );
+
+
+  $('#assignmentText').value =
+    cleanedText;
+
+
+  $('#assignmentOcrStatus').style.color =
+    '#15803d';
+
+
+  $('#assignmentOcrStatus').textContent =
+    '✓ 通常テキストとしてEnglish Textへ取り込みました。';
+}
+
+function parseAssignmentOcrDialogue(
+  rawText
+) {
+
+  const lines =
+    String(
+      rawText ||
+      ''
+    )
+      .replace(
+        /\r\n/g,
+        '\n'
+      )
+      .split(
+        '\n'
+      )
+      .map(
+        line =>
+          line.trim()
+      )
+      .filter(Boolean);
+
+
+  const dialogue =
+    [];
+
+  let current =
+    null;
+
+
+  const pushCurrent =
+    () => {
+
+      if (
+        current?.speaker &&
+        current?.text
+      ) {
+
+        dialogue.push({
+          speaker:
+            current.speaker.trim(),
+
+          text:
+            current.text
+              .replace(
+                /\s+([,.!?;:])/g,
+                '$1'
+              )
+              .replace(
+                /\s+/g,
+                ' '
+              )
+              .trim()
+        });
+      }
+
+
+      current =
+        null;
+    };
+
+
+  const isSpeakerOnlyLine =
+    line => {
+
+      if (
+        line.length > 32
+      ) {
+        return false;
+      }
+
+
+      if (
+        /[.!?,;:：]$/.test(
+          line
+        )
+      ) {
+        return false;
+      }
+
+
+      const words =
+        line.split(
+          /\s+/
+        );
+
+
+      if (
+        words.length > 4
+      ) {
+        return false;
+      }
+
+
+      return /^[A-Za-z][A-Za-z0-9 ._'’\-]*$/.test(
+        line
+      );
+    };
+
+
+  for (
+    let index = 0;
+    index < lines.length;
+    index++
+  ) {
+
+    const line =
+      lines[index];
+
+
+    const inlineMatch =
+      line.match(
+        /^([A-Za-z][A-Za-z0-9 ._'’\-]{0,31})\s*[:：]\s*(.+)$/
+      );
+
+
+    if (
+      inlineMatch
+    ) {
+
+      pushCurrent();
+
+
+      current = {
+        speaker:
+          inlineMatch[1],
+
+        text:
+          inlineMatch[2]
+      };
+
+
+      continue;
+    }
+
+
+    if (
+      isSpeakerOnlyLine(
+        line
+      ) &&
+      index <
+        lines.length - 1
+    ) {
+
+      pushCurrent();
+
+
+      current = {
+        speaker:
+          line,
+
+        text:
+          ''
+      };
+
+
+      continue;
+    }
+
+
+    if (
+      current
+    ) {
+
+      current.text +=
+        `${current.text ? ' ' : ''}${line}`;
+
+    }
+
+  }
+
+
+  pushCurrent();
+
+
+  return dialogue;
+}
+
+
+function useAssignmentOcrAsDialogue() {
+
+  const rawText =
+    $('#assignmentOcrResult')
+      ?.value ||
+    '';
+
+
+  const dialogue =
+    parseAssignmentOcrDialogue(
+      rawText
+    );
+
+
+  const status =
+    $('#assignmentOcrStatus');
+
+
+  if (
+    dialogue.length < 2
+  ) {
+
+    status.style.color =
+      '#b45309';
+
+    status.textContent =
+      '話者を2つ以上認識できませんでした。読み取り結果を「Emma: Hello.」のような形式に修正して、もう一度お試しください。';
+
+    return;
+  }
+
+
+  $('#assignmentLessonType').value =
+    'dialogue';
+
+
+  $('#assignmentTextEditor')
+    .classList
+    .add(
+      'hidden'
+    );
+
+
+  $('#assignmentDialogueEditor')
+    .classList
+    .remove(
+      'hidden'
+    );
+
+
+  restoreAssignmentDialogueForm(
+    dialogue
+  );
+
+
+  status.style.color =
+    '#15803d';
+
+  status.textContent =
+    `✓ Dialogueとして${dialogue.length}個のセリフを取り込みました。`;
+}
+
 // EVENTS
+
+$('#useOcrAsDialogue').onclick =
+  () => {
+
+    useAssignmentOcrAsDialogue();
+
+  };
+
+
+
+$('#useOcrAsText').onclick =
+  () => {
+
+    useAssignmentOcrAsText();
+
+  };
+
+
+
+$('#openAssignmentOcr').onclick =
+  () => {
+
+    $('#assignmentOcrPanel')
+      .classList
+      .toggle(
+        'hidden'
+      );
+
+  };
+
+
+$('#assignmentOcrImageInput').onchange =
+  event => {
+
+    const file =
+      event.target
+        ?.files
+        ?.[0] ||
+      null;
+
+    handleAssignmentOcrImage(
+      file
+    );
+
+
+    recognizeAssignmentOcr(
+      file
+    );
+
+  };
+
+
 
 $('#assignmentAudienceClass').onchange =
   () => {
