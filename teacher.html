@@ -1739,7 +1739,111 @@
 
 
 
-        <div class="field">
+        <div class="field assignment-audience-field">
+
+  <label>
+    配布先 / Audience
+  </label>
+
+  <div
+    style="
+      display:flex;
+      gap:18px;
+      flex-wrap:wrap;
+      margin-top:6px;
+    ">
+
+    <label
+      style="
+        display:flex;
+        align-items:center;
+        gap:7px;
+        cursor:pointer;
+      ">
+
+      <input
+        type="radio"
+        id="assignmentAudienceClass"
+        name="assignmentAudience"
+        value="class"
+        checked>
+
+      <span>
+        クラス全員
+      </span>
+
+    </label>
+
+
+    <label
+      style="
+        display:flex;
+        align-items:center;
+        gap:7px;
+        cursor:pointer;
+      ">
+
+      <input
+        type="radio"
+        id="assignmentAudienceTargeted"
+        name="assignmentAudience"
+        value="targeted">
+
+      <span>
+        生徒を選択
+      </span>
+
+    </label>
+
+  </div>
+
+
+  <div
+    id="assignmentTargetPanel"
+    class="hidden"
+    style="
+      margin-top:12px;
+      padding:12px;
+      border:1px solid #e5e7eb;
+      border-radius:10px;
+    ">
+
+    <div
+      class="small"
+      style="
+        font-weight:700;
+        margin-bottom:8px;
+      ">
+
+      配布する生徒を選択
+
+    </div>
+
+
+    <div
+      id="assignmentTargetList">
+
+      <div class="small muted">
+        生徒一覧を読み込みます。
+      </div>
+
+    </div>
+
+
+    <div
+      id="assignmentTargetSummary"
+      class="tiny muted"
+      style="margin-top:8px">
+
+      0人選択
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="field">
 
   <label>
     Lesson Type
