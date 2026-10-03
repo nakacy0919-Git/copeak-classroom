@@ -4717,6 +4717,310 @@ function useAssignmentOcrAsDialogue() {
     `✓ Dialogueとして${dialogue.length}個のセリフを取り込みました。`;
 }
 
+let assignmentOcrFiles =
+  [];
+
+let assignmentOcrQueueUrls =
+  [];
+
+
+function renderAssignmentOcrQueue() {
+
+  const queue =
+    $('#assignmentOcrQueue');
+
+  if (!queue) {
+    return;
+  }
+
+
+  assignmentOcrQueueUrls
+    .forEach(
+      url => {
+        URL.revokeObjectURL(
+          url
+        );
+      }
+    );
+
+
+  assignmentOcrQueueUrls =
+    [];
+
+
+  queue.innerHTML =
+    '';
+
+
+  assignmentOcrFiles
+    .forEach(
+      (file, index) => {
+
+        const url =
+          URL.createObjectURL(
+            file
+          );
+
+        assignmentOcrQueueUrls.push(
+          url
+        );
+
+
+        const item =
+          document.createElement(
+            'div'
+          );
+
+
+        item.style.cssText =
+          `
+            width:120px;
+            padding:8px;
+            border:1px solid #e5e7eb;
+            border-radius:10px;
+            background:#fff;
+          `;
+
+
+        item.innerHTML =
+          `
+            <div
+              style="
+                font-size:12px;
+                font-weight:700;
+                margin-bottom:6px;
+              ">
+              Page ${index + 1}
+            </div>
+
+            <img
+              src="${url}"
+              alt="OCR page ${index + 1}"
+              style="
+                width:100%;
+                height:90px;
+                object-fit:cover;
+                border-radius:7px;
+                display:block;
+              ">
+
+            <div
+              style="
+                margin-top:6px;
+                font-size:11px;
+                overflow:hidden;
+                text-overflow:ellipsis;
+                white-space:nowrap;
+              ">
+              ${file.name}
+            </div>
+          `;
+
+
+        queue.appendChild(
+          item
+        );
+      }
+    );
+}
+
+
+function setAssignmentOcrFiles(
+  files
+) {
+
+  const selectedFiles =
+    [
+      ...(files || [])
+    ]
+      .filter(
+        file =>
+          file.type.startsWith(
+            'image/'
+          )
+      );
+
+
+  assignmentOcrFiles =
+    selectedFiles.slice(
+      0,
+      5
+    );
+
+
+  renderAssignmentOcrQueue();
+
+
+  const status =
+    $('#assignmentOcrStatus');
+
+
+  if (
+    selectedFiles.length > 5
+  ) {
+
+    status.style.color =
+      '#b45309';
+
+    status.textContent =
+      '6枚以上選択されたため、最初の5枚を使用します。';
+
+  } else {
+
+    status.style.color =
+      '';
+
+    status.textContent =
+      `${assignmentOcrFiles.length}枚の画像を選択しました。`;
+
+  }
+}
+
+async function recognizeAssignmentOcrFiles(
+  files
+) {
+
+  const selectedFiles =
+    [
+      ...(files || [])
+    ].slice(
+      0,
+      5
+    );
+
+
+  if (
+    selectedFiles.length === 0
+  ) {
+    return;
+  }
+
+
+  const status =
+    $('#assignmentOcrStatus');
+
+  const resultWrap =
+    $('#assignmentOcrResultWrap');
+
+  const result =
+    $('#assignmentOcrResult');
+
+
+  try {
+
+    status.style.color =
+      '';
+
+    status.textContent =
+      'OCRを準備しています...';
+
+
+    const worker =
+      await getAssignmentOcrWorker();
+
+
+    const pageTexts =
+      [];
+
+
+    for (
+      let index = 0;
+      index < selectedFiles.length;
+      index++
+    ) {
+
+      const file =
+        selectedFiles[index];
+
+
+      status.textContent =
+        `Page ${index + 1} / ${selectedFiles.length} を文字認識中...`;
+
+
+      const response =
+        await worker.recognize(
+          file
+        );
+
+
+      const pageText =
+        response?.data?.text
+          ?.replace(
+            /\r\n/g,
+            '\n'
+          )
+          ?.trim() ||
+        '';
+
+
+      if (
+        pageText
+      ) {
+
+        pageTexts.push(
+          pageText
+        );
+      }
+
+    }
+
+
+    const combinedText =
+      pageTexts
+        .join(
+          '\n\n'
+        )
+        .trim();
+
+
+    result.value =
+      combinedText;
+
+
+    resultWrap.classList.remove(
+      'hidden'
+    );
+
+
+    if (
+      combinedText
+    ) {
+
+      status.style.color =
+        '#15803d';
+
+      status.textContent =
+        `✓ ${selectedFiles.length}枚の文字認識が完了しました。`;
+
+    } else {
+
+      status.style.color =
+        '#b45309';
+
+      status.textContent =
+        '文字を認識できませんでした。画像の明るさや角度を確認してください。';
+
+    }
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'Multi-page OCR error:',
+      error
+    );
+
+
+    status.style.color =
+      '#b91c1c';
+
+    status.textContent =
+      error.message ||
+      '複数画像の文字認識中にエラーが発生しました。';
+  }
+}
+
 // EVENTS
 
 $('#useOcrAsDialogue').onclick =
@@ -4752,24 +5056,38 @@ $('#openAssignmentOcr').onclick =
 $('#assignmentOcrImageInput').onchange =
   event => {
 
-    const file =
+    const files =
       event.target
-        ?.files
-        ?.[0] ||
+        ?.files ||
+      [];
+
+
+    setAssignmentOcrFiles(
+      files
+    );
+
+
+    const firstFile =
+      assignmentOcrFiles[0] ||
       null;
 
+
     handleAssignmentOcrImage(
-      file
+      firstFile
     );
 
 
-    recognizeAssignmentOcr(
-      file
-    );
+    if (
+      assignmentOcrFiles.length
+    ) {
+
+      recognizeAssignmentOcrFiles(
+        assignmentOcrFiles
+      );
+
+    }
 
   };
-
-
 
 $('#assignmentAudienceClass').onchange =
   () => {

@@ -1917,7 +1917,26 @@
       type="file"
       id="assignmentOcrImageInput"
       accept="image/*"
-      capture="environment">
+      multiple>
+
+    <div
+      class="tiny muted"
+      style="margin-top:6px">
+
+      教科書画像を最大5枚まで選択できます。
+      選択した順番で本文をつなげます。
+
+    </div>
+
+    <div
+      id="assignmentOcrQueue"
+      style="
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+        margin-top:12px;
+      ">
+    </div>
 
 
     <img
