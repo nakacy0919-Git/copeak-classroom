@@ -583,23 +583,14 @@ function renderAssignmentManager() {
 
 
                   <button
-                    class="btn btn-sm btn-danger"
-                    data-assignment-action="delete"
-                    data-assignment-id="${assignment.id}"
-                    ${
-                      submissionCount > 0
-                        ? 'disabled'
-                        : ''
-                    }
-                    title="${
-                      submissionCount > 0
-                        ? '提出済み課題は成績保護のため削除できません'
-                        : 'Delete assignment'
-                    }">
+  class="btn btn-sm btn-danger"
+  data-assignment-action="delete"
+  data-assignment-id="${assignment.id}"
+  title="課題と提出記録を完全削除">
 
-                    Delete
+  完全削除
 
-                  </button>
+</button>
 
                 </div>
 
@@ -3758,53 +3749,27 @@ async function deleteAssignment(
     ).length;
 
 
-  if (
-    submissionCount > 0
-  ) {
-
-    await showInfoModal({
-
-      badge:
-        'Protected',
-
-      badgeType:
-        'danger',
-
-      title:
-        'この課題は削除できません',
-
-      message:
-        `この課題には${submissionCount}件の提出があります。
-
-成績データを保護するため削除できません。
-
-生徒から非表示にしたい場合はUnpublishしてください。`
-
-    });
-
-    return;
-  }
-
-
   const ok =
     await showConfirmModal({
 
       badge:
-        'Delete Assignment',
+        'Permanent Delete',
 
       badgeType:
         'danger',
 
       title:
-        '課題を削除しますか？',
+        'この課題を完全に削除しますか？',
 
       message:
-        `「${assignment.title}」を削除します。
+        `「${assignment.title}」を完全に削除します。
+
+課題本体に加えて、${submissionCount}件の提出記録と個別配布設定も削除されます。
 
 この操作は元に戻せません。`,
 
       confirmText:
-        'Delete',
+        '完全削除',
 
       cancelText:
         'Cancel',
@@ -3816,7 +3781,6 @@ async function deleteAssignment(
 
 
   if (!ok) {
-
     return;
   }
 
@@ -3825,8 +3789,8 @@ async function deleteAssignment(
     error
   } =
     await getClient(
-  'teacher'
-)
+      'teacher'
+    )
       .from(
         'assignments'
       )
@@ -3838,7 +3802,6 @@ async function deleteAssignment(
 
 
   if (error) {
-
     throw error;
   }
 
@@ -3860,10 +3823,10 @@ async function deleteAssignment(
       'info',
 
     title:
-      '課題を削除しました',
+      '完全に削除しました',
 
     message:
-      `「${assignment.title}」を削除しました。`
+      `「${assignment.title}」と関連する提出記録を完全に削除しました。`
 
   });
 }
@@ -6377,6 +6340,7 @@ $('#assignmentRelease').onchange =
     });
   }
 );
+
 
 
 
