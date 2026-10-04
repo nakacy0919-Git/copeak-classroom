@@ -3154,6 +3154,119 @@ async function getAssignmentAudioUrl(
 
 
 // ==========================================
+// SECURE ASSIGNMENT IMAGE URL
+// ==========================================
+
+async function getAssignmentImageUrl(
+  assignment
+) {
+
+  if (
+    !assignment
+      ?.image_object_key
+  ) {
+
+    return null;
+  }
+
+
+  try {
+
+    const sb =
+      getClient(
+        'student'
+      );
+
+
+    const {
+      data: {
+        session
+      }
+    } =
+      await sb
+        .auth
+        .getSession();
+
+
+    if (
+      !session
+        ?.access_token
+    ) {
+
+      return null;
+    }
+
+
+    const response =
+      await fetch(
+        '/api/r2-download-url',
+        {
+          method:
+            'POST',
+
+          headers: {
+
+            'Content-Type':
+              'application/json',
+
+            'X-Supabase-Access-Token':
+              session
+                .access_token
+          },
+
+          body:
+            JSON.stringify(
+              {
+                assignmentId:
+                  assignment.id,
+
+                mediaType:
+                  'image'
+              }
+            )
+        }
+      );
+
+
+    if (
+      !response.ok
+    ) {
+
+      console.warn(
+        '[Copeak Classroom] image URL unavailable:',
+        response.status
+      );
+
+      return null;
+    }
+
+
+    const data =
+      await response
+        .json();
+
+
+    return (
+      data.downloadUrl ||
+      null
+    );
+  }
+
+  catch (
+    error
+  ) {
+
+    console.warn(
+      '[Copeak Classroom] image download URL failed:',
+      error
+    );
+
+    return null;
+  }
+}
+
+
+// ==========================================
 // OPEN COPEAK
 // ==========================================
 
@@ -3474,6 +3587,27 @@ if (
     url.searchParams.set(
       'audioUrl',
       audioUrl
+    );
+  }
+
+
+  // ========================================
+  // SUPPORT IMAGE
+  // ========================================
+
+  const imageUrl =
+    await getAssignmentImageUrl(
+      assignment
+    );
+
+
+  if (
+    imageUrl
+  ) {
+
+    url.searchParams.set(
+      'image_url',
+      imageUrl
     );
   }
 

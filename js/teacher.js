@@ -3733,6 +3733,65 @@ function openAssignmentEditor(
     );
   }
 
+  const imageInput =
+    $('#assignmentImage');
+
+
+  if (imageInput) {
+    imageInput.value =
+      '';
+  }
+
+
+  resetAssignmentImagePreview();
+
+
+  const imageStatus =
+    $('#assignmentImageStatus');
+
+
+  const removeImageButton =
+    $('#removeAssignmentImage');
+
+
+  const hasRegisteredImage =
+    Boolean(
+      assignment?.image_object_key ||
+      assignment?.image_file_name
+    );
+
+
+  if (imageStatus) {
+
+    imageStatus.style.color =
+      hasRegisteredImage
+        ? '#15803d'
+        : '';
+
+
+    imageStatus.textContent =
+      hasRegisteredImage
+
+        ? `✓ 登録済み: ${
+            assignment?.image_file_name ||
+            'Support Image'
+          }`
+
+        : 'PNG / JPG / WebP · Max 5 MB · 縦長・正方形・横長すべて対応';
+  }
+
+
+  if (removeImageButton) {
+
+    removeImageButton
+      .classList
+      .toggle(
+        'hidden',
+        !hasRegisteredImage
+      );
+  }
+
+
   $('#assignmentYoutubeUrl').value =
   assignment?.youtube_url ||
   '';
@@ -4178,6 +4237,471 @@ const sb =
 }
 
 // ==========================================
+// ASSIGNMENT SUPPORT IMAGE
+// PNG / JPG / WEBP → R2
+// ==========================================
+
+const MAX_ASSIGNMENT_IMAGE_SIZE =
+  5 * 1024 * 1024;
+
+
+let assignmentImagePreviewUrl =
+  null;
+
+
+function getSelectedAssignmentImage() {
+
+  return (
+    $('#assignmentImage')
+      ?.files?.[0] ||
+    null
+  );
+}
+
+
+function getAssignmentImageContentType(
+  file
+) {
+
+  const name =
+    String(
+      file?.name || ''
+    )
+      .trim()
+      .toLowerCase();
+
+
+  if (
+    name.endsWith(
+      '.png'
+    )
+  ) {
+    return 'image/png';
+  }
+
+
+  if (
+    name.endsWith(
+      '.webp'
+    )
+  ) {
+    return 'image/webp';
+  }
+
+
+  return 'image/jpeg';
+}
+
+
+function validateAssignmentImage(
+  file
+) {
+
+  if (!file) {
+    return;
+  }
+
+
+  const name =
+    String(
+      file.name || ''
+    )
+      .trim()
+      .toLowerCase();
+
+
+  const supported =
+    name.endsWith('.png') ||
+    name.endsWith('.jpg') ||
+    name.endsWith('.jpeg') ||
+    name.endsWith('.webp');
+
+
+  if (!supported) {
+
+    throw new Error(
+      'PNG・JPG・WebP画像を選択してください。'
+    );
+  }
+
+
+  if (
+    file.size >
+    MAX_ASSIGNMENT_IMAGE_SIZE
+  ) {
+
+    throw new Error(
+      '画像ファイルは5 MB以下にしてください。'
+    );
+  }
+}
+
+
+function resetAssignmentImagePreview() {
+
+  if (
+    assignmentImagePreviewUrl
+  ) {
+
+    URL.revokeObjectURL(
+      assignmentImagePreviewUrl
+    );
+
+    assignmentImagePreviewUrl =
+      null;
+  }
+
+
+  const preview =
+    $('#assignmentImagePreview');
+
+  const wrap =
+    $('#assignmentImagePreviewWrap');
+
+
+  if (preview) {
+    preview.removeAttribute(
+      'src'
+    );
+  }
+
+
+  wrap
+    ?.classList
+    .add(
+      'hidden'
+    );
+}
+
+
+function updateAssignmentImagePreview(
+  file
+) {
+
+  resetAssignmentImagePreview();
+
+
+  if (!file) {
+    return;
+  }
+
+
+  assignmentImagePreviewUrl =
+    URL.createObjectURL(
+      file
+    );
+
+
+  const preview =
+    $('#assignmentImagePreview');
+
+  const wrap =
+    $('#assignmentImagePreviewWrap');
+
+
+  if (preview) {
+
+    preview.src =
+      assignmentImagePreviewUrl;
+  }
+
+
+  wrap
+    ?.classList
+    .remove(
+      'hidden'
+    );
+}
+
+
+async function uploadAssignmentImage(
+  file
+) {
+
+  validateAssignmentImage(
+    file
+  );
+
+
+  const contentType =
+    getAssignmentImageContentType(
+      file
+    );
+
+
+  const sb =
+    getClient(
+      'teacher'
+    );
+
+
+  const {
+    data: {
+      session
+    },
+    error:
+      sessionError
+  } =
+    await sb
+      .auth
+      .getSession();
+
+
+  if (
+    sessionError ||
+    !session?.access_token
+  ) {
+
+    throw new Error(
+      'Teacherのログイン情報を確認できません。'
+    );
+  }
+
+
+  const signResponse =
+    await fetch(
+      '/api/r2-upload-url',
+      {
+        method:
+          'POST',
+
+        headers: {
+
+          'Content-Type':
+            'application/json',
+
+          'X-Supabase-Access-Token':
+            session.access_token
+
+        },
+
+        body:
+          JSON.stringify({
+
+            fileName:
+              file.name,
+
+            contentType,
+
+            fileSize:
+              file.size
+
+          })
+      }
+    );
+
+
+  let signed = {};
+
+
+  try {
+
+    signed =
+      await signResponse.json();
+
+  } catch {
+
+    signed = {};
+  }
+
+
+  if (
+    !signResponse.ok ||
+    !signed.uploadUrl ||
+    !signed.objectKey ||
+    signed.mediaKind !==
+      'image'
+  ) {
+
+    throw new Error(
+      signed.error ||
+      '画像のアップロード準備に失敗しました。'
+    );
+  }
+
+
+  const uploadResponse =
+    await fetch(
+      signed.uploadUrl,
+      {
+        method:
+          'PUT',
+
+        headers: {
+          'Content-Type':
+            contentType
+        },
+
+        body:
+          file
+      }
+    );
+
+
+  if (
+    !uploadResponse.ok
+  ) {
+
+    throw new Error(
+      `Image upload failed (${uploadResponse.status}).`
+    );
+  }
+
+
+  return {
+
+    objectKey:
+      signed.objectKey,
+
+    contentType:
+      signed.contentType ||
+      contentType,
+
+    fileName:
+      file.name,
+
+    fileSize:
+      file.size
+
+  };
+}
+
+
+async function removeAssignmentImage() {
+
+  if (
+    !editingAssignmentId
+  ) {
+    return;
+  }
+
+
+  const assignment =
+    assignments.find(
+      item =>
+        item.id ===
+        editingAssignmentId
+    );
+
+
+  if (!assignment) {
+    return;
+  }
+
+
+  const ok =
+    await showConfirmModal({
+
+      badge:
+        'Remove Image',
+
+      badgeType:
+        'danger',
+
+      title:
+        '補助画像を削除しますか？',
+
+      message:
+        'この課題から登録済みの補助画像を解除します。',
+
+      confirmText:
+        '画像を削除',
+
+      cancelText:
+        'Cancel',
+
+      confirmVariant:
+        'danger'
+
+    });
+
+
+  if (!ok) {
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await getClient(
+      'teacher'
+    )
+      .from(
+        'assignments'
+      )
+      .update({
+
+        image_object_key:
+          null,
+
+        image_file_name:
+          null,
+
+        image_size_bytes:
+          null,
+
+        image_content_type:
+          null
+
+      })
+      .eq(
+        'id',
+        editingAssignmentId
+      );
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  Object.assign(
+    assignment,
+    {
+
+      image_object_key:
+        null,
+
+      image_file_name:
+        null,
+
+      image_size_bytes:
+        null,
+
+      image_content_type:
+        null
+
+    }
+  );
+
+
+  $('#removeAssignmentImage')
+    ?.classList
+    .add(
+      'hidden'
+    );
+
+
+  const status =
+    $('#assignmentImageStatus');
+
+
+  if (status) {
+
+    status.style.color =
+      '';
+
+    status.textContent =
+      'PNG / JPG / WebP · Max 5 MB · 縦長・正方形・横長すべて対応';
+  }
+
+
+  resetAssignmentImagePreview();
+}
+
+
+// ==========================================
 // CREATE ASSIGNMENT
 // ==========================================
 
@@ -4393,6 +4917,9 @@ const week =
 const audioFile =
   getSelectedAssignmentAudio();
 
+const imageFile =
+  getSelectedAssignmentImage();
+
 let youtubeClip =
   null;
 
@@ -4569,6 +5096,24 @@ try {
 
   return;
 }
+
+try {
+
+  validateAssignmentImage(
+    imageFile
+  );
+
+} catch (
+  error
+) {
+
+  msg.textContent =
+    error.message ||
+    '画像ファイルを確認してください。';
+
+  return;
+}
+
 
 try {
 
@@ -4819,6 +5364,9 @@ const audioStatus =
 let uploadedAudio =
   null;
 
+let uploadedImage =
+  null;
+
   const row = {
 
     title,
@@ -4956,6 +5504,67 @@ if (audioFile) {
   button.textContent =
     'Saving...';
 }
+if (imageFile) {
+
+  const imageStatus =
+    $('#assignmentImageStatus');
+
+
+  if (imageStatus) {
+
+    imageStatus.style.color =
+      '#2563eb';
+
+    imageStatus.textContent =
+      `Uploading ${imageFile.name}...`;
+  }
+
+
+  button.textContent =
+    'Uploading image...';
+
+
+  uploadedImage =
+    await uploadAssignmentImage(
+      imageFile
+    );
+
+
+  Object.assign(
+    row,
+    {
+
+      image_object_key:
+        uploadedImage.objectKey,
+
+      image_file_name:
+        uploadedImage.fileName,
+
+      image_size_bytes:
+        uploadedImage.fileSize,
+
+      image_content_type:
+        uploadedImage.contentType
+
+    }
+  );
+
+
+  if (imageStatus) {
+
+    imageStatus.style.color =
+      '#15803d';
+
+    imageStatus.textContent =
+      `✓ ${uploadedImage.fileName} uploaded`;
+  }
+
+
+  button.textContent =
+    'Saving...';
+}
+
+
     const sb =
       getClient(
   'teacher'
@@ -5396,6 +6005,23 @@ async function duplicateAssignment(
         audio_size_bytes:
           assignment.audio_size_bytes ??
           null,
+
+        image_object_key:
+          assignment.image_object_key ||
+          null,
+
+        image_file_name:
+          assignment.image_file_name ||
+          null,
+
+        image_size_bytes:
+          assignment.image_size_bytes ??
+          null,
+
+        image_content_type:
+          assignment.image_content_type ||
+          null,
+
 
         youtube_url:
           assignment.youtube_url ||
@@ -7695,6 +8321,173 @@ $('#toggleAssignmentAudio').onclick =
     );
 
   };
+
+$('#toggleAssignmentImage').onclick =
+  () => {
+
+    const panel =
+      $('#assignmentImagePanel');
+
+    const button =
+      $('#toggleAssignmentImage');
+
+
+    const willOpen =
+      panel
+        ?.classList
+        .contains(
+          'hidden'
+        );
+
+
+    $('#assignmentYoutubePanel')
+      ?.classList
+      .add(
+        'hidden'
+      );
+
+    $('#assignmentAudioPanel')
+      ?.classList
+      .add(
+        'hidden'
+      );
+
+
+    $('#toggleAssignmentYoutube')
+      ?.setAttribute(
+        'aria-expanded',
+        'false'
+      );
+
+    $('#toggleAssignmentAudio')
+      ?.setAttribute(
+        'aria-expanded',
+        'false'
+      );
+
+
+    panel
+      ?.classList
+      .toggle(
+        'hidden',
+        !willOpen
+      );
+
+
+    button
+      ?.setAttribute(
+        'aria-expanded',
+        willOpen
+          ? 'true'
+          : 'false'
+      );
+  };
+
+
+$('#assignmentImage')
+  ?.addEventListener(
+    'change',
+    event => {
+
+      const file =
+        event.target
+          ?.files?.[0] ||
+        null;
+
+
+      try {
+
+        validateAssignmentImage(
+          file
+        );
+
+        updateAssignmentImagePreview(
+          file
+        );
+
+
+        const status =
+          $('#assignmentImageStatus');
+
+
+        if (
+          status &&
+          file
+        ) {
+
+          status.style.color =
+            '#15803d';
+
+          status.textContent =
+            `✓ 選択中: ${file.name}`;
+        }
+
+      } catch (
+        error
+      ) {
+
+        event.target.value =
+          '';
+
+        resetAssignmentImagePreview();
+
+
+        const status =
+          $('#assignmentImageStatus');
+
+
+        if (status) {
+
+          status.style.color =
+            '#b91c1c';
+
+          status.textContent =
+            error.message ||
+            '画像を確認してください。';
+        }
+      }
+    }
+  );
+
+
+$('#removeAssignmentImage')
+  ?.addEventListener(
+    'click',
+    async () => {
+
+      try {
+
+        await removeAssignmentImage();
+
+      } catch (
+        error
+      ) {
+
+        console.error(
+          error
+        );
+
+
+        await showInfoModal({
+
+          badge:
+            'Error',
+
+          badgeType:
+            'danger',
+
+          title:
+            '画像を削除できませんでした',
+
+          message:
+            error.message ||
+            String(error)
+
+        });
+      }
+    }
+  );
+
 
 $('#useOcrAsDialogue').onclick =
   () => {

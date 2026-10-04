@@ -2186,7 +2186,7 @@
 
 
   <div
-    class="grid grid-2"
+    class="grid assignment-media-grid"
     style="gap:10px">
 
     <button
@@ -2283,6 +2283,37 @@
   </span>
 
 </button>
+
+<button
+  type="button"
+  id="toggleAssignmentImage"
+  class="assignment-media-card"
+  aria-expanded="false">
+
+  <span
+    class="assignment-media-icon image"
+    aria-hidden="true">
+    🖼
+  </span>
+
+  <span class="assignment-media-text">
+
+    <span class="assignment-media-label">
+      Image
+    </span>
+
+    <span class="assignment-media-desc">
+      内容理解・文法学習用の補助画像を追加
+    </span>
+
+  </span>
+
+  <span class="assignment-media-chevron">
+    ›
+  </span>
+
+</button>
+
 
   </div>
 
@@ -2528,6 +2559,63 @@
 
 
         </div>
+
+
+
+<div
+  id="assignmentImagePanel"
+  class="hidden assignment-media-panel">
+
+  <div class="field">
+
+    <label>
+      🖼 Support Image
+
+      <span class="tiny muted">
+        (Optional)
+      </span>
+    </label>
+
+    <input
+      id="assignmentImage"
+      type="file"
+      accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+      class="input">
+
+    <div
+      id="assignmentImagePreviewWrap"
+      class="hidden assignment-image-preview-wrap">
+
+      <img
+        id="assignmentImagePreview"
+        class="assignment-image-preview"
+        alt="Support image preview">
+
+    </div>
+
+    <button
+      id="removeAssignmentImage"
+      type="button"
+      class="btn btn-sm btn-danger hidden"
+      style="margin-top:8px">
+
+      🗑 画像を削除
+
+    </button>
+
+    <div
+      id="assignmentImageStatus"
+      class="tiny muted"
+      style="margin-top:7px">
+
+      PNG / JPG / WebP · Max 5 MB ·
+      縦長・正方形・横長すべて対応
+
+    </div>
+
+  </div>
+
+</div>
 
 <div class="assignment-schedule-grid">
 
