@@ -390,52 +390,119 @@ module.exports =
           body.fileSize
         );
       // ====================================
-      // MP3 / WAV
+      // AUDIO / IMAGE
       // ====================================
 
       const lowerFileName =
         fileName.toLowerCase();
 
 
-      const extension =
-        lowerFileName.endsWith('.wav')
-          ? '.wav'
-          : lowerFileName.endsWith('.mp3')
-            ? '.mp3'
-            : null;
+      let mediaKind =
+        null;
+
+      let extension =
+        null;
+
+      let normalizedContentType =
+        null;
+
+      let allowedContentTypes =
+        [];
 
 
-      if (!extension) {
+      if (
+        lowerFileName.endsWith('.wav') ||
+        lowerFileName.endsWith('.mp3')
+      ) {
+
+        mediaKind =
+          'audio';
+
+
+        extension =
+          lowerFileName.endsWith('.wav')
+            ? '.wav'
+            : '.mp3';
+
+
+        normalizedContentType =
+          extension === '.wav'
+            ? 'audio/wav'
+            : 'audio/mpeg';
+
+
+        allowedContentTypes =
+          extension === '.wav'
+            ? [
+                'audio/wav',
+                'audio/x-wav',
+                'audio/wave',
+                'audio/vnd.wave'
+              ]
+            : [
+                'audio/mpeg',
+                'audio/mp3'
+              ];
+
+      } else if (
+        lowerFileName.endsWith('.png') ||
+        lowerFileName.endsWith('.jpg') ||
+        lowerFileName.endsWith('.jpeg') ||
+        lowerFileName.endsWith('.webp')
+      ) {
+
+        mediaKind =
+          'image';
+
+
+        extension =
+          lowerFileName.endsWith('.png')
+            ? '.png'
+            : lowerFileName.endsWith('.webp')
+              ? '.webp'
+              : lowerFileName.endsWith('.jpeg')
+                ? '.jpeg'
+                : '.jpg';
+
+
+        normalizedContentType =
+          extension === '.png'
+            ? 'image/png'
+            : extension === '.webp'
+              ? 'image/webp'
+              : 'image/jpeg';
+
+
+        allowedContentTypes =
+          extension === '.png'
+            ? [
+                'image/png'
+              ]
+            : extension === '.webp'
+              ? [
+                  'image/webp'
+                ]
+              : [
+                  'image/jpeg',
+                  'image/jpg'
+                ];
+      }
+
+
+      if (
+        !mediaKind ||
+        !extension
+      ) {
 
         return sendJson(
           res,
           400,
           {
             error:
-              'Only MP3 and WAV files are allowed.'
+              'Only MP3, WAV, PNG, JPG and WebP files are allowed.'
           }
         );
       }
-
-
-      const normalizedContentType =
-        extension === '.wav'
-          ? 'audio/wav'
-          : 'audio/mpeg';
-
-
-      const allowedContentTypes =
-        extension === '.wav'
-          ? [
-              'audio/wav',
-              'audio/x-wav',
-              'audio/wave',
-              'audio/vnd.wave'
-            ]
-          : [
-              'audio/mpeg',
-              'audio/mp3'
-            ];
 
 
       if (
@@ -450,12 +517,10 @@ module.exports =
           400,
           {
             error:
-              'Invalid audio content type.'
+              'Invalid media content type.'
           }
         );
       }
-
-
 
 
       if (
@@ -472,7 +537,7 @@ module.exports =
           400,
           {
             error:
-              'Audio file must be 5 MB or smaller.'
+              'Media file must be 5 MB or smaller.'
           }
         );
       }
@@ -480,14 +545,22 @@ module.exports =
 
       // ====================================
       // R2 OBJECT KEY
-      // Lifecycle prefix:
+      //
+      // Audio:
       // classroom-audio/
+      //
+      // Image:
+      // classroom-images/
       // ====================================
 
       const objectKey =
         [
-          'classroom-audio',
+          mediaKind === 'image'
+            ? 'classroom-images'
+            : 'classroom-audio',
+
           auth.user.id,
+
           `${Date.now()}-${crypto.randomUUID()}${extension}`
         ].join('/');
 
@@ -547,18 +620,26 @@ module.exports =
 
       // ====================================
       // CLOUD RETENTION
+      //
+      // Audioのみ14日。
+      // 教材画像はassignmentに紐づくため
+      // classroom-images prefixで保持。
       // ====================================
 
       const expiresAt =
-        new Date(
-          Date.now() +
-          AUDIO_RETENTION_DAYS *
-          24 *
-          60 *
-          60 *
-          1000
-        )
-          .toISOString();
+        mediaKind === 'audio'
+
+          ? new Date(
+              Date.now() +
+              AUDIO_RETENTION_DAYS *
+              24 *
+              60 *
+              60 *
+              1000
+            )
+              .toISOString()
+
+          : null;
 
 
       return sendJson(
@@ -569,6 +650,8 @@ module.exports =
           uploadUrl,
 
           objectKey,
+
+          mediaKind,
 
           contentType:
             normalizedContentType,
@@ -598,7 +681,7 @@ module.exports =
         500,
         {
           error:
-            'Could not prepare audio upload.'
+            'Could not prepare media upload.'
         }
       );
     }

@@ -146,10 +146,17 @@ module.exports =
     try {
 
       const {
-        assignmentId
+        assignmentId,
+        mediaType
       } =
         req.body ||
         {};
+
+
+      const requestedMedia =
+        mediaType === 'image'
+          ? 'image'
+          : 'audio';
 
 
       if (!assignmentId) {
@@ -321,7 +328,7 @@ module.exports =
         await supabaseGet(
           `/rest/v1/assignments?id=eq.${encodeURIComponent(
             assignmentId
-          )}&select=id,class_id,is_published,audio_object_key,audio_expires_at,audio_file_name`,
+          )}&select=id,class_id,is_published,audio_object_key,audio_expires_at,audio_file_name,image_object_key,image_file_name,image_content_type`,
           token
         );
 
@@ -380,22 +387,41 @@ module.exports =
       }
 
 
-      if (
-        !assignment.audio_object_key
-      ) {
+      const objectKey =
+        requestedMedia === 'image'
+          ? assignment.image_object_key
+          : assignment.audio_object_key;
+
+
+      const fileName =
+        requestedMedia === 'image'
+          ? (
+              assignment.image_file_name ||
+              'support-image'
+            )
+          : (
+              assignment.audio_file_name ||
+              'audio.mp3'
+            );
+
+
+      if (!objectKey) {
 
         return sendJson(
           res,
           404,
           {
             error:
-              'No audio is attached to this assignment.'
+              requestedMedia === 'image'
+                ? 'No image is attached to this assignment.'
+                : 'No audio is attached to this assignment.'
           }
         );
       }
 
 
       if (
+        requestedMedia === 'audio' &&
         assignment.audio_expires_at &&
         new Date(
           assignment.audio_expires_at
@@ -470,8 +496,7 @@ module.exports =
             bucket,
 
           Key:
-            assignment
-              .audio_object_key
+            objectKey
 
         });
 
@@ -494,9 +519,7 @@ module.exports =
 
           downloadUrl,
 
-          fileName:
-            assignment.audio_file_name ||
-            'audio.mp3',
+          fileName,
 
           expiresIn:
             DOWNLOAD_URL_SECONDS
@@ -520,7 +543,7 @@ module.exports =
         500,
         {
           error:
-            'Unable to create audio download URL.'
+            'Unable to create media download URL.'
         }
       );
     }
