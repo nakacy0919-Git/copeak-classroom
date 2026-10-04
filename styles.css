@@ -5761,3 +5761,55 @@ strong {
   font-size: 15px;
 }
 
+
+
+/* Gradebook metric controls */
+
+.gradebook-controls {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin:12px 0;
+}
+
+.gradebook-view-control {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.gradebook-view-control .input {
+  width:auto;
+  min-width:180px;
+}
+
+.grade-all-values {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  flex-wrap:wrap;
+}
+
+.grade-wpm-value {
+  cursor:default;
+}
+
+
+
+.grade-metric-stack {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  flex-wrap:wrap;
+}
+
+.grade-metric-stack .grade {
+  min-width:42px;
+  padding-left:5px;
+  padding-right:5px;
+}
+

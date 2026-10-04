@@ -34,6 +34,16 @@ let submissions = [];
 
 let manualScores = [];
 
+let gradebookDefaultMetric =
+  localStorage.getItem(
+    'copeak_gradebook_default_metric'
+  ) ||
+  'accuracy';
+
+
+let gradebookMetricMode =
+  gradebookDefaultMetric;
+
 let editingAssignmentId = null;
 
 $('#signOut').onclick =
@@ -693,7 +703,10 @@ function renderSummary() {
             best.get(key);
 
 
-          if (manualRow) {
+          if (
+            manualRow?.score !== null &&
+            manualRow?.score !== undefined
+          ) {
 
             values.push(
               Number(
@@ -751,20 +764,644 @@ function renderSummary() {
       : '—';
 }
 
-function renderTable() {
+function bestWpmSubmissionMap(
+  rows
+) {
+
+  const map =
+    new Map();
+
+
+  rows.forEach(
+    row => {
+
+      const key =
+        `${row.student_id}|${row.assignment_id}`;
+
+      const current =
+        map.get(key);
+
+
+      if (
+        !current ||
+        Number(
+          row.wpm ||
+          0
+        ) >
+        Number(
+          current.wpm ||
+          0
+        )
+      ) {
+
+        map.set(
+          key,
+          row
+        );
+      }
+
+    }
+  );
+
+
+  return map;
+}
+
+
+function bestComprehensionSubmissionMap(
+  rows
+) {
+
+  const map =
+    new Map();
+
+
+  rows.forEach(
+    row => {
+
+      if (
+        row.comprehension ===
+          null ||
+        row.comprehension ===
+          undefined
+      ) {
+        return;
+      }
+
+
+      const key =
+        `${row.student_id}|${row.assignment_id}`;
+
+      const current =
+        map.get(key);
+
+
+      if (
+        !current ||
+        Number(
+          row.comprehension
+        ) >
+        Number(
+          current.comprehension ||
+          0
+        )
+      ) {
+
+        map.set(
+          key,
+          row
+        );
+      }
+
+    }
+  );
+
+
+  return map;
+}
+
+
+function gradebookMetricLabel(
+  metric
+) {
+
+  if (metric === 'wpm') {
+    return 'WPM';
+  }
+
+  if (
+    metric ===
+    'comprehension'
+  ) {
+    return 'Comprehension';
+  }
+
+  if (metric === 'all') {
+    return 'All';
+  }
+
+  return 'Accuracy';
+}
+
+
+function updateGradebookDefaultLabel() {
+
+  const label =
+    $('#gradebookDefaultLabel');
+
+
+  if (label) {
+
+    label.textContent =
+      `Default: ${gradebookMetricLabel(
+        gradebookDefaultMetric
+      )}`;
+  }
+
+
+  const button =
+    $('#setGradebookDefault');
+
+
+  if (button) {
+
+    const isCurrentDefault =
+      gradebookMetricMode ===
+      gradebookDefaultMetric;
+
+
+    button.textContent =
+      isCurrentDefault
+        ? '★ デフォルト'
+        : '☆ デフォルトに設定';
+  }
+}
+
+function ensureGradebookControls() {
+
+  const tableWrap =
+    $('#gradeBody')
+      ?.closest(
+        '.table-wrap'
+      );
+
+
+  if (!tableWrap) {
+    return;
+  }
+
+
+  let controls =
+    $('#gradebookControls');
+
+
+  if (!controls) {
+
+    controls =
+      document.createElement(
+        'div'
+      );
+
+
+    controls.id =
+      'gradebookControls';
+
+    controls.className =
+      'gradebook-controls';
+
+
+    controls.innerHTML =
+      `
+        <div class="gradebook-view-control">
+
+          <span class="tiny muted">
+            表示
+          </span>
+
+          <select
+            id="gradebookMetricMode"
+            class="input">
+
+            <option value="accuracy">
+              Accuracy
+            </option>
+
+            <option value="wpm">
+              WPM
+            </option>
+
+            <option value="comprehension">
+              Comprehension
+            </option>
+
+            <option value="all">
+              All
+            </option>
+
+          </select>
+
+          <button
+            id="setGradebookDefault"
+            type="button"
+            class="btn btn-sm btn-light">
+
+            ☆ デフォルトに設定
+
+          </button>
+
+          <span
+            id="gradebookDefaultLabel"
+            class="tiny muted">
+          </span>
+
+        </div>
+
+
+        <button
+          id="exportGradebookCsv"
+          type="button"
+          class="btn btn-light">
+
+          CSV Export
+
+        </button>
+      `;
+
+
+    tableWrap.insertAdjacentElement(
+      'beforebegin',
+      controls
+    );
+
+
+    $('#gradebookMetricMode')
+      ?.addEventListener(
+        'change',
+        event => {
+
+          gradebookMetricMode =
+            event.target.value;
+
+
+          renderTable();
+        }
+      );
+
+
+    $('#exportGradebookCsv')
+      ?.addEventListener(
+        'click',
+        exportGradebookCsv
+      );
+
+    $('#setGradebookDefault')
+      ?.addEventListener(
+        'click',
+        () => {
+
+          gradebookDefaultMetric =
+            gradebookMetricMode;
+
+
+          localStorage.setItem(
+            'copeak_gradebook_default_metric',
+            gradebookDefaultMetric
+          );
+
+
+          updateGradebookDefaultLabel();
+        }
+      );
+  }
+
+
+  const select =
+    $('#gradebookMetricMode');
+
+
+  if (select) {
+    select.value =
+      gradebookMetricMode;
+  }
+
+
+  const hint =
+    tableWrap
+      .nextElementSibling;
+
+
+  if (
+    hint &&
+    hint.classList
+      ?.contains(
+        'muted'
+      )
+  ) {
+
+    hint.textContent =
+      'Accuracy / WPM / Comprehension を切り替えて表示できます。各スコアをクリックすると先生が手動修正できます。マウスを置くと全指標を確認できます。';
+  }
+}
+
+
+function metricManualValue(
+  manualRow,
+  metric
+) {
+
+  if (!manualRow) {
+    return null;
+  }
+
+
+  const field =
+    metric === 'accuracy'
+      ? 'score'
+      : metric;
+
+
+  const value =
+    manualRow[field];
+
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+
+    return null;
+  }
+
+
+  return Math.round(
+    Number(value)
+  );
+}
+
+
+function csvEscape(
+  value
+) {
+
+  const text =
+    String(
+      value ??
+      ''
+    );
+
+
+  return `"${text.replace(
+    /"/g,
+    '""'
+  )}"`;
+}
+
+
+function exportGradebookCsv() {
 
   const activeAssignments =
     visibleAssignments();
 
-  const best =
+
+  const bestAccuracy =
     bestSubmissionMap(
       submissions
     );
+
+
+  const bestWpm =
+    bestWpmSubmissionMap(
+      submissions
+    );
+
+
+  const bestComp =
+    bestComprehensionSubmissionMap(
+      submissions
+    );
+
 
   const manual =
     manualScoreMap(
       manualScores
     );
+
+
+  const attempts =
+    attemptCountMap(
+      submissions
+    );
+
+
+  const headers = [
+    'Student No.',
+    'Student'
+  ];
+
+
+  activeAssignments.forEach(
+    assignment => {
+
+      headers.push(
+        `#${assignment.week_no} Accuracy`,
+        `#${assignment.week_no} WPM`,
+        `#${assignment.week_no} Comprehension`,
+        `#${assignment.week_no} Reads`
+      );
+
+    }
+  );
+
+
+  const rows =
+    students.map(
+      student => {
+
+        const row = [
+          student.student_number ||
+            '',
+          student.display_name ||
+            ''
+        ];
+
+
+        activeAssignments.forEach(
+          assignment => {
+
+            const key =
+              `${student.id}|${assignment.id}`;
+
+
+            const manualRow =
+              manual.get(key);
+
+
+            const accuracyResult =
+              bestAccuracy.get(key);
+
+            const wpmResult =
+              bestWpm.get(key);
+
+            const compResult =
+              bestComp.get(key);
+
+
+            const manualAccuracy =
+              metricManualValue(
+                manualRow,
+                'accuracy'
+              );
+
+
+            const manualWpm =
+              metricManualValue(
+                manualRow,
+                'wpm'
+              );
+
+
+            const manualComp =
+              metricManualValue(
+                manualRow,
+                'comprehension'
+              );
+
+
+            const accuracy =
+              manualAccuracy ??
+              (
+                accuracyResult
+                  ? Math.round(
+                      Number(
+                        accuracyResult.accuracy ||
+                        0
+                      )
+                    )
+                  : ''
+              );
+
+
+            const wpm =
+              manualWpm ??
+              (
+                wpmResult
+                  ? Math.round(
+                      Number(
+                        wpmResult.wpm ||
+                        0
+                      )
+                    )
+                  : ''
+              );
+
+
+            const comprehension =
+              manualComp ??
+              (
+                compResult
+                  ? Math.round(
+                      Number(
+                        compResult.comprehension ||
+                        0
+                      )
+                    )
+                  : ''
+              );
+
+
+            row.push(
+              accuracy,
+              wpm,
+              comprehension,
+              attempts.get(key) ||
+                0
+            );
+
+          }
+        );
+
+
+        return row;
+      }
+    );
+
+
+  const csv =
+    [
+      headers,
+      ...rows
+    ]
+      .map(
+        row =>
+          row
+            .map(csvEscape)
+            .join(',')
+      )
+      .join(
+        "`r`n"
+      );
+
+
+  const blob =
+    new Blob(
+      [
+        '\uFEFF',
+        csv
+      ],
+      {
+        type:
+          'text/csv;charset=utf-8'
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  const link =
+    document.createElement(
+      'a'
+    );
+
+
+  link.href =
+    url;
+
+
+  link.download =
+    'copeak-gradebook.csv';
+
+
+  document.body.appendChild(
+    link
+  );
+
+
+  link.click();
+
+  link.remove();
+
+
+  URL.revokeObjectURL(
+    url
+  );
+}
+
+function renderTable() {
+
+  ensureGradebookControls();
+
+
+  const activeAssignments =
+    visibleAssignments();
+
+
+  const bestAccuracy =
+    bestSubmissionMap(
+      submissions
+    );
+
+
+  const bestWpm =
+    bestWpmSubmissionMap(
+      submissions
+    );
+
+
+  const bestComp =
+    bestComprehensionSubmissionMap(
+      submissions
+    );
+
+
+  const manual =
+    manualScoreMap(
+      manualScores
+    );
+
 
   const attempts =
     attemptCountMap(
@@ -803,14 +1440,7 @@ function renderTable() {
           activeAssignments
             .map(
               assignment =>
-                `
-                  <th
-                    title="${esc(
-                      assignment.title
-                    )}">
-                    #${assignment.week_no}
-                  </th>
-                `
+                `<th>#${assignment.week_no}</th>`
             )
             .join('')
         }
@@ -823,51 +1453,22 @@ function renderTable() {
     `;
 
 
-  const gradeTable =
-    $('#gradeBody')
-      ?.closest(
-        'table'
-      );
-
-
-  if (
-    gradeTable &&
-    !$('#gradeScoreEditHint')
-  ) {
-
-    const hint =
-      document.createElement(
-        'div'
-      );
-
-    hint.id =
-      'gradeScoreEditHint';
-
-    hint.className =
-      'tiny muted';
-
-    hint.style.marginTop =
-      '10px';
-
-    hint.textContent =
-      '💡 スコアをクリックすると、先生が手動で修正できます。Enterで保存、Escでキャンセルできます。';
-
-
-    gradeTable.insertAdjacentElement(
-      'afterend',
-      hint
-    );
-  }
-
   $('#gradeBody').innerHTML =
     visibleStudents
       .map(
         student => {
 
           let done = 0;
-          let total = 0;
-          let sum = 0;
           let totalReads = 0;
+
+          let aSum = 0;
+          let aCount = 0;
+
+          let wSum = 0;
+          let wCount = 0;
+
+          let cSum = 0;
+          let cCount = 0;
 
 
           const cells =
@@ -878,108 +1479,261 @@ function renderTable() {
                   const key =
                     `${student.id}|${assignment.id}`;
 
-                  const result =
-                    best.get(key);
 
                   const manualRow =
                     manual.get(key);
 
-                  const readCount =
-                    attempts.get(key) ||
-                    0;
 
-                  totalReads +=
-                    readCount;
+                  const aResult =
+                    bestAccuracy.get(key);
+
+                  const wResult =
+                    bestWpm.get(key);
+
+                  const cResult =
+                    bestComp.get(key);
 
 
-                  const hasManual =
-                    Boolean(
-                      manualRow
+                  const manualA =
+                    metricManualValue(
+                      manualRow,
+                      'accuracy'
                     );
 
 
-                  const value =
-                    hasManual
+                  const manualW =
+                    metricManualValue(
+                      manualRow,
+                      'wpm'
+                    );
 
-                      ? Math.round(
-                          Number(
-                            manualRow.score
-                          )
-                        )
 
-                      : result
+                  const manualC =
+                    metricManualValue(
+                      manualRow,
+                      'comprehension'
+                    );
 
+
+                  const accuracy =
+                    manualA ??
+                    (
+                      aResult
                         ? Math.round(
                             Number(
-                              result.accuracy ||
+                              aResult.accuracy ||
                               0
                             )
                           )
+                        : null
+                    );
 
-                        : null;
+
+                  const wpm =
+                    manualW ??
+                    (
+                      wResult
+                        ? Math.round(
+                            Number(
+                              wResult.wpm ||
+                              0
+                            )
+                          )
+                        : null
+                    );
+
+
+                  const comprehension =
+                    manualC ??
+                    (
+                      cResult
+                        ? Math.round(
+                            Number(
+                              cResult.comprehension ||
+                              0
+                            )
+                          )
+                        : null
+                    );
+
+
+                  const reads =
+                    attempts.get(key) ||
+                    0;
+
+
+                  totalReads +=
+                    reads;
 
 
                   if (
-                    value === null
+                    accuracy !== null ||
+                    wpm !== null ||
+                    comprehension !== null
                   ) {
-
-                    return `
-                      <td>
-
-                        <button
-                          type="button"
-                          class="grade grade-score-edit missing"
-                          data-score-edit="1"
-                          data-student-id="${student.id}"
-                          data-assignment-id="${assignment.id}"
-                          data-current-score=""
-                          title="クリックしてスコアを入力">
-                          —
-                        </button>
-
-                        <div class="tiny muted">
-                          ${readCount} reads
-                        </div>
-
-                      </td>
-                    `;
+                    done++;
                   }
 
 
-                  done++;
-                  total++;
-                  sum += value;
+                  if (accuracy !== null) {
+                    aSum += accuracy;
+                    aCount++;
+                  }
 
 
-                  const gradeClass =
-                    value >= 90
-                      ? 'good'
-                      : value >= 75
-                        ? 'mid'
-                        : 'low';
+                  if (wpm !== null) {
+                    wSum += wpm;
+                    wCount++;
+                  }
+
+
+                  if (
+                    comprehension !== null
+                  ) {
+                    cSum += comprehension;
+                    cCount++;
+                  }
+
+
+                  const detail =
+                    `Accuracy ${
+                      accuracy === null
+                        ? '—'
+                        : `${accuracy}%`
+                    } / WPM ${
+                      wpm === null
+                        ? '—'
+                        : wpm
+                    } / Comprehension ${
+                      comprehension === null
+                        ? '—'
+                        : `${comprehension}%`
+                    } / Reads ${reads}`;
+
+
+                  const metricButton =
+                    (
+                      metric,
+                      label,
+                      value
+                    ) => {
+
+                      return `
+                        <button
+                          type="button"
+                          class="grade grade-score-edit ${
+                            value === null
+                              ? 'missing'
+                              : ''
+                          }"
+                          data-metric-edit="1"
+                          data-metric="${metric}"
+                          data-student-id="${student.id}"
+                          data-assignment-id="${assignment.id}"
+                          data-current-value="${
+                            value === null
+                              ? ''
+                              : value
+                          }"
+                          title="${esc(
+                            `${detail} / ${label}をクリックして修正`
+                          )}">
+
+                          ${
+                            label
+                              ? `${label} `
+                              : ''
+                          }${
+                            value === null
+                              ? '—'
+                              : value
+                          }
+
+                        </button>
+                      `;
+                    };
+
+
+                  let display =
+                    '';
+
+
+                  if (
+                    gradebookMetricMode ===
+                    'wpm'
+                  ) {
+
+                    display =
+                      metricButton(
+                        'wpm',
+                        '',
+                        wpm
+                      );
+
+                  } else if (
+                    gradebookMetricMode ===
+                    'comprehension'
+                  ) {
+
+                    display =
+                      metricButton(
+                        'comprehension',
+                        '',
+                        comprehension
+                      );
+
+                  } else if (
+                    gradebookMetricMode ===
+                    'all'
+                  ) {
+
+                    display =
+                      `
+                        <div class="grade-metric-stack">
+
+                          ${metricButton(
+                            'accuracy',
+                            'A',
+                            accuracy
+                          )}
+
+                          ${metricButton(
+                            'wpm',
+                            'W',
+                            wpm
+                          )}
+
+                          ${metricButton(
+                            'comprehension',
+                            'C',
+                            comprehension
+                          )}
+
+                        </div>
+                      `;
+
+                  } else {
+
+                    display =
+                      metricButton(
+                        'accuracy',
+                        '',
+                        accuracy
+                      );
+                  }
 
 
                   return `
-                    <td>
+                    <td
+                      title="${esc(
+                        detail
+                      )}">
 
-                      <button
-                        type="button"
-                        class="grade grade-score-edit ${gradeClass}"
-                        data-score-edit="1"
-                        data-student-id="${student.id}"
-                        data-assignment-id="${assignment.id}"
-                        data-current-score="${value}"
-                        title="クリックしてスコアを修正">
-
-                        ${value}
-
-                      </button>
+                      ${display}
 
                       <div class="tiny muted">
-
-                        ${readCount}
-                        read${readCount === 1 ? '' : 's'}
-
+                        ${reads}
+                        read${reads === 1 ? '' : 's'}
                       </div>
 
                     </td>
@@ -987,6 +1741,69 @@ function renderTable() {
                 }
               )
               .join('');
+
+
+          const avgA =
+            aCount
+              ? Math.round(
+                  aSum /
+                  aCount
+                )
+              : null;
+
+
+          const avgW =
+            wCount
+              ? Math.round(
+                  wSum /
+                  wCount
+                )
+              : null;
+
+
+          const avgC =
+            cCount
+              ? Math.round(
+                  cSum /
+                  cCount
+                )
+              : null;
+
+
+          const average =
+            gradebookMetricMode ===
+              'wpm'
+
+              ? (
+                  avgW ??
+                  '—'
+                )
+
+              : gradebookMetricMode ===
+                  'comprehension'
+
+                ? (
+                    avgC === null
+                      ? '—'
+                      : `${avgC}%`
+                  )
+
+                : gradebookMetricMode ===
+                    'all'
+
+                  ? `A ${
+                      avgA ?? '—'
+                    } / W ${
+                      avgW ?? '—'
+                    } / C ${
+                      avgC ?? '—'
+                    }`
+
+                  : (
+                      avgA === null
+                        ? '—'
+                        : `${avgA}%`
+                    );
 
 
           return `
@@ -1025,22 +1842,7 @@ function renderTable() {
 
               <td>
                 <strong>
-
-                  ${
-                    total
-                      ? Math.round(
-                          sum /
-                          total
-                        )
-                      : '—'
-                  }
-
-                  ${
-                    total
-                      ? '%'
-                      : ''
-                  }
-
+                  ${average}
                 </strong>
               </td>
 
@@ -1099,10 +1901,11 @@ function esc(
 // SEARCH
 // ==========================================
 
-async function saveManualScore(
+async function saveManualMetric(
   studentId,
   assignmentId,
-  score
+  metric,
+  value
 ) {
 
   const {
@@ -1112,7 +1915,7 @@ async function saveManualScore(
       'teacher'
     )
       .rpc(
-        'set_manual_score',
+        'set_manual_metric',
         {
 
           p_assignment_id:
@@ -1121,8 +1924,11 @@ async function saveManualScore(
           p_student_id:
             studentId,
 
-          p_score:
-            score
+          p_metric:
+            metric,
+
+          p_value:
+            value
 
         }
       );
@@ -1133,50 +1939,63 @@ async function saveManualScore(
   }
 
 
-  const index =
-    manualScores.findIndex(
-      row =>
-        row.student_id ===
+  let row =
+    manualScores.find(
+      item =>
+        item.student_id ===
           studentId &&
-        row.assignment_id ===
+        item.assignment_id ===
           assignmentId
     );
 
 
-  if (
-    score === null
-  ) {
+  if (!row) {
 
-    if (
-      index >= 0
-    ) {
-
-      manualScores.splice(
-        index,
-        1
-      );
-    }
-
-  } else if (
-    index >= 0
-  ) {
-
-    manualScores[index].score =
-      score;
-
-  } else {
-
-    manualScores.push({
-
+    row = {
       student_id:
         studentId,
 
       assignment_id:
         assignmentId,
 
-      score
+      score:
+        null,
 
-    });
+      wpm:
+        null,
+
+      comprehension:
+        null
+    };
+
+
+    manualScores.push(
+      row
+    );
+  }
+
+
+  const field =
+    metric === 'accuracy'
+      ? 'score'
+      : metric;
+
+
+  row[field] =
+    value;
+
+
+  if (
+    row.score === null &&
+    row.wpm === null &&
+    row.comprehension === null
+  ) {
+
+    manualScores =
+      manualScores.filter(
+        item =>
+          item !== row
+      );
   }
 
 
@@ -1184,18 +2003,24 @@ async function saveManualScore(
 }
 
 
-function beginManualScoreEdit(
+function beginManualMetricEdit(
   button
 ) {
 
   const studentId =
     button.dataset.studentId;
 
+
   const assignmentId =
     button.dataset.assignmentId;
 
+
+  const metric =
+    button.dataset.metric;
+
+
   const current =
-    button.dataset.currentScore ||
+    button.dataset.currentValue ||
     '';
 
 
@@ -1211,11 +2036,19 @@ function beginManualScoreEdit(
   input.min =
     '0';
 
-  input.max =
-    '100';
-
   input.step =
     '1';
+
+
+  if (
+    metric === 'accuracy' ||
+    metric === 'comprehension'
+  ) {
+
+    input.max =
+      '100';
+  }
+
 
   input.value =
     current;
@@ -1230,6 +2063,7 @@ function beginManualScoreEdit(
 
 
   input.focus();
+
   input.select();
 
 
@@ -1244,7 +2078,9 @@ function beginManualScoreEdit(
         return;
       }
 
-      finished = true;
+
+      finished =
+        true;
 
 
       if (!save) {
@@ -1259,7 +2095,7 @@ function beginManualScoreEdit(
         input.value.trim();
 
 
-      const score =
+      const value =
         raw === ''
           ? null
           : Math.round(
@@ -1267,18 +2103,40 @@ function beginManualScoreEdit(
             );
 
 
-      if (
-        score !== null &&
+      const invalidPercent =
         (
-          !Number.isFinite(score) ||
-          score < 0 ||
-          score > 100
+          metric === 'accuracy' ||
+          metric === 'comprehension'
+        ) &&
+        value !== null &&
+        (
+          value < 0 ||
+          value > 100
+        );
+
+
+      const invalidWpm =
+        metric === 'wpm' &&
+        value !== null &&
+        value < 0;
+
+
+      if (
+        value !== null &&
+        (
+          !Number.isFinite(
+            value
+          ) ||
+          invalidPercent ||
+          invalidWpm
         )
       ) {
 
-        finished = false;
+        finished =
+          false;
 
         input.focus();
+
         input.select();
 
         return;
@@ -1291,10 +2149,11 @@ function beginManualScoreEdit(
 
       try {
 
-        await saveManualScore(
+        await saveManualMetric(
           studentId,
           assignmentId,
-          score
+          metric,
+          value
         );
 
       } catch (
@@ -1374,7 +2233,7 @@ $('#gradeBody')
 
       const button =
         event.target.closest(
-          '[data-score-edit]'
+          '[data-metric-edit]'
         );
 
 
@@ -1383,7 +2242,7 @@ $('#gradeBody')
       }
 
 
-      beginManualScoreEdit(
+      beginManualMetricEdit(
         button
       );
     }
@@ -4703,7 +5562,7 @@ students =
           'manual_scores'
         )
         .select(
-          'assignment_id,student_id,score,updated_at'
+          'assignment_id,student_id,score,wpm,comprehension,updated_at'
         )
         .in(
           'assignment_id',
@@ -6979,5 +7838,3 @@ $('#assignmentRelease').onchange =
     });
   }
 );
-
-
