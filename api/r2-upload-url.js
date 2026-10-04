@@ -389,37 +389,60 @@ module.exports =
         Number(
           body.fileSize
         );
-
-
       // ====================================
-      // MP3 ONLY
+      // MP3 / WAV
       // ====================================
 
-      if (
-        !fileName
-          .toLowerCase()
-          .endsWith(
-            '.mp3'
-          )
-      ) {
+      const lowerFileName =
+        fileName.toLowerCase();
+
+
+      const extension =
+        lowerFileName.endsWith('.wav')
+          ? '.wav'
+          : lowerFileName.endsWith('.mp3')
+            ? '.mp3'
+            : null;
+
+
+      if (!extension) {
 
         return sendJson(
           res,
           400,
           {
             error:
-              'Only MP3 files are allowed.'
+              'Only MP3 and WAV files are allowed.'
           }
         );
       }
+
+
+      const normalizedContentType =
+        extension === '.wav'
+          ? 'audio/wav'
+          : 'audio/mpeg';
+
+
+      const allowedContentTypes =
+        extension === '.wav'
+          ? [
+              'audio/wav',
+              'audio/x-wav',
+              'audio/wave',
+              'audio/vnd.wave'
+            ]
+          : [
+              'audio/mpeg',
+              'audio/mp3'
+            ];
 
 
       if (
         contentType &&
-        contentType !==
-          'audio/mpeg' &&
-        contentType !==
-          'audio/mp3'
+        !allowedContentTypes.includes(
+          contentType
+        )
       ) {
 
         return sendJson(
@@ -427,10 +450,12 @@ module.exports =
           400,
           {
             error:
-              'Invalid MP3 content type.'
+              'Invalid audio content type.'
           }
         );
       }
+
+
 
 
       if (
@@ -463,7 +488,7 @@ module.exports =
         [
           'classroom-audio',
           auth.user.id,
-          `${Date.now()}-${crypto.randomUUID()}.mp3`
+          `${Date.now()}-${crypto.randomUUID()}${extension}`
         ].join('/');
 
 
@@ -504,7 +529,7 @@ module.exports =
             objectKey,
 
           ContentType:
-            'audio/mpeg'
+            normalizedContentType
 
         });
 
@@ -546,7 +571,7 @@ module.exports =
           objectKey,
 
           contentType:
-            'audio/mpeg',
+            normalizedContentType,
 
           audioExpiresAt:
             expiresAt,

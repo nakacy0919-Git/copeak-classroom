@@ -32,6 +32,18 @@ let assignments = [];
 
 let submissions = [];
 
+let manualScores = [];
+
+let gradebookDefaultMetric =
+  localStorage.getItem(
+    'copeak_gradebook_default_metric'
+  ) ||
+  'accuracy';
+
+
+let gradebookMetricMode =
+  gradebookDefaultMetric;
+
 let editingAssignmentId = null;
 
 $('#signOut').onclick =
@@ -346,6 +358,27 @@ function attemptCountMap(
 // PUBLISHED ASSIGNMENTS
 // ==========================================
 
+function manualScoreMap(
+  rows
+) {
+
+  const map =
+    new Map();
+
+  rows.forEach(
+    row => {
+
+      map.set(
+        `${row.student_id}|${row.assignment_id}`,
+        row
+      );
+
+    }
+  );
+
+  return map;
+}
+
 function visibleAssignments() {
 
   return assignments
@@ -610,24 +643,92 @@ function renderAssignmentManager() {
 function renderSummary() {
 
   const best =
-  bestSubmissionMap(
-    submissions
-  );
+    bestSubmissionMap(
+      submissions
+    );
 
+  const manual =
+    manualScoreMap(
+      manualScores
+    );
 
   const activeAssignments =
     visibleAssignments();
 
-
   const released =
-    activeAssignments
-      .filter(
-        assignment =>
-          new Date(
-            assignment.release_at
-          ) <=
-          new Date()
+    activeAssignments.filter(
+      assignment =>
+        new Date(
+          assignment.release_at
+        ) <=
+        new Date()
+    );
+
+
+  let done = 0;
+
+  const values = [];
+
+
+  students.forEach(
+    student => {
+
+      released.forEach(
+        assignment => {
+
+          const key =
+            `${student.id}|${assignment.id}`;
+
+          if (
+            manual.has(key) ||
+            best.has(key)
+          ) {
+            done++;
+          }
+
+        }
       );
+
+
+      activeAssignments.forEach(
+        assignment => {
+
+          const key =
+            `${student.id}|${assignment.id}`;
+
+          const manualRow =
+            manual.get(key);
+
+          const result =
+            best.get(key);
+
+
+          if (
+            manualRow?.score !== null &&
+            manualRow?.score !== undefined
+          ) {
+
+            values.push(
+              Number(
+                manualRow.score
+              )
+            );
+
+          } else if (result) {
+
+            values.push(
+              Number(
+                result.accuracy ||
+                0
+              )
+            );
+          }
+
+        }
+      );
+
+    }
+  );
 
 
   const possible =
@@ -635,69 +736,23 @@ function renderSummary() {
     released.length;
 
 
-  let done =
-    0;
-
-
-  best.forEach(
-    submission => {
-
-      if (
-        released.some(
-          assignment =>
-            assignment.id ===
-            submission.assignment_id
-        )
-      ) {
-
-        done++;
-
-      }
-    }
-  );
-
-
   $('#studentCount').textContent =
     students.length;
-
 
   $('#assignmentCount').textContent =
     activeAssignments.length;
 
-
   $('#submissionRate').textContent =
     possible
-
       ? `${Math.round(
           done /
           possible *
           100
         )}%`
-
       : '—';
-
-
-  const values =
-    [...best.values()]
-      .filter(
-        row =>
-          activeAssignments.some(
-            assignment =>
-              assignment.id ===
-              row.assignment_id
-          )
-      )
-      .map(
-        row =>
-          Number(
-            row.accuracy || 0
-          )
-      );
-
 
   $('#classAverage').textContent =
     values.length
-
       ? `${Math.round(
           values.reduce(
             (a, b) =>
@@ -706,24 +761,782 @@ function renderSummary() {
           ) /
           values.length
         )}%`
-
       : '—';
 }
 
+function bestWpmSubmissionMap(
+  rows
+) {
 
-// ==========================================
-// GRADEBOOK
-// ==========================================
+  const map =
+    new Map();
 
-function renderTable() {
+
+  rows.forEach(
+    row => {
+
+      const key =
+        `${row.student_id}|${row.assignment_id}`;
+
+      const current =
+        map.get(key);
+
+
+      if (
+        !current ||
+        Number(
+          row.wpm ||
+          0
+        ) >
+        Number(
+          current.wpm ||
+          0
+        )
+      ) {
+
+        map.set(
+          key,
+          row
+        );
+      }
+
+    }
+  );
+
+
+  return map;
+}
+
+
+function bestComprehensionSubmissionMap(
+  rows
+) {
+
+  const map =
+    new Map();
+
+
+  rows.forEach(
+    row => {
+
+      if (
+        row.comprehension ===
+          null ||
+        row.comprehension ===
+          undefined
+      ) {
+        return;
+      }
+
+
+      const key =
+        `${row.student_id}|${row.assignment_id}`;
+
+      const current =
+        map.get(key);
+
+
+      if (
+        !current ||
+        Number(
+          row.comprehension
+        ) >
+        Number(
+          current.comprehension ||
+          0
+        )
+      ) {
+
+        map.set(
+          key,
+          row
+        );
+      }
+
+    }
+  );
+
+
+  return map;
+}
+
+
+function gradebookMetricLabel(
+  metric
+) {
+
+  if (metric === 'wpm') {
+    return 'WPM';
+  }
+
+  if (
+    metric ===
+    'comprehension'
+  ) {
+    return 'Comprehension';
+  }
+
+  if (metric === 'all') {
+    return 'All';
+  }
+
+  return 'Accuracy';
+}
+
+
+function updateGradebookDefaultLabel() {
+
+  const label =
+    $('#gradebookDefaultLabel');
+
+
+  if (label) {
+
+    label.textContent =
+      `Default: ${gradebookMetricLabel(
+        gradebookDefaultMetric
+      )}`;
+  }
+
+
+  const button =
+    $('#setGradebookDefault');
+
+
+  if (button) {
+
+    const isCurrentDefault =
+      gradebookMetricMode ===
+      gradebookDefaultMetric;
+
+
+    button.textContent =
+      isCurrentDefault
+        ? '★ デフォルト'
+        : '☆ デフォルトに設定';
+  }
+}
+
+function ensureGradebookControls() {
+
+  const tableWrap =
+    $('#gradeBody')
+      ?.closest(
+        '.table-wrap'
+      );
+
+
+  if (!tableWrap) {
+    return;
+  }
+
+
+  let controls =
+    $('#gradebookControls');
+
+
+  if (!controls) {
+
+    controls =
+      document.createElement(
+        'div'
+      );
+
+
+    controls.id =
+      'gradebookControls';
+
+    controls.className =
+      'gradebook-controls';
+
+
+    controls.innerHTML =
+      `
+        <div class="gradebook-view-control">
+
+          <span class="tiny muted">
+            表示
+          </span>
+
+          <select
+            id="gradebookMetricMode"
+            class="input">
+
+            <option value="accuracy">
+              Accuracy
+            </option>
+
+            <option value="wpm">
+              WPM
+            </option>
+
+            <option value="comprehension">
+              Comprehension
+            </option>
+
+            <option value="all">
+              All
+            </option>
+
+          </select>
+
+          <button
+            id="setGradebookDefault"
+            type="button"
+            class="btn btn-sm btn-light">
+
+            ☆ デフォルトに設定
+
+          </button>
+
+          <span
+            id="gradebookDefaultLabel"
+            class="tiny muted">
+          </span>
+
+        </div>
+
+
+        <button
+          id="exportGradebookCsv"
+          type="button"
+          class="btn btn-light">
+
+          CSV Export
+
+        </button>
+      `;
+
+
+    tableWrap.insertAdjacentElement(
+      'beforebegin',
+      controls
+    );
+
+
+    $('#gradebookMetricMode')
+      ?.addEventListener(
+        'change',
+        event => {
+
+          gradebookMetricMode =
+            event.target.value;
+
+
+          renderTable();
+        }
+      );
+
+
+    $('#exportGradebookCsv')
+      ?.addEventListener(
+        'click',
+        exportGradebookCsv
+      );
+
+    $('#setGradebookDefault')
+      ?.addEventListener(
+        'click',
+        () => {
+
+          gradebookDefaultMetric =
+            gradebookMetricMode;
+
+
+          localStorage.setItem(
+            'copeak_gradebook_default_metric',
+            gradebookDefaultMetric
+          );
+
+
+          updateGradebookDefaultLabel();
+        }
+      );
+  }
+
+
+  const select =
+    $('#gradebookMetricMode');
+
+
+  if (select) {
+    select.value =
+      gradebookMetricMode;
+  }
+
+
+  const hint =
+    tableWrap
+      .nextElementSibling;
+
+
+  if (
+    hint &&
+    hint.classList
+      ?.contains(
+        'muted'
+      )
+  ) {
+
+    hint.textContent =
+      'Accuracy / WPM / Comprehension を切り替えて表示できます。各スコアをクリックすると先生が手動修正できます。マウスを置くと全指標を確認できます。';
+  }
+}
+
+
+function metricManualValue(
+  manualRow,
+  metric
+) {
+
+  if (!manualRow) {
+    return null;
+  }
+
+
+  const field =
+    metric === 'accuracy'
+      ? 'score'
+      : metric;
+
+
+  const value =
+    manualRow[field];
+
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+
+    return null;
+  }
+
+
+  return Math.round(
+    Number(value)
+  );
+}
+
+
+function csvEscape(
+  value
+) {
+
+  const text =
+    String(
+      value ??
+      ''
+    );
+
+
+  return `"${text.replace(
+    /"/g,
+    '""'
+  )}"`;
+}
+
+
+function assignmentPassResult(
+  assignment,
+  accuracy,
+  wpm,
+  comprehension
+) {
+
+  if (
+    assignment.pass_enabled !== true
+  ) {
+
+    return {
+      configured: false,
+      passed: false
+    };
+  }
+
+
+  const normalize =
+    value => {
+
+      if (
+        value === null ||
+        value === undefined ||
+        value === ''
+      ) {
+        return null;
+      }
+
+
+      const number =
+        Number(value);
+
+
+      return Number.isFinite(number)
+        ? number
+        : null;
+    };
+
+
+  const accuracyTarget =
+    normalize(
+      assignment.pass_accuracy
+    );
+
+
+  const wpmTarget =
+    normalize(
+      assignment.pass_wpm
+    );
+
+
+  const comprehensionTarget =
+    normalize(
+      assignment.pass_comprehension
+    );
+
+
+  const configured =
+    accuracyTarget !== null ||
+    wpmTarget !== null ||
+    comprehensionTarget !== null;
+
+
+  if (!configured) {
+
+    return {
+      configured: false,
+      passed: false
+    };
+  }
+
+
+  const checks = [];
+
+
+  if (accuracyTarget !== null) {
+
+    checks.push(
+      accuracy !== null &&
+      accuracy >= accuracyTarget
+    );
+  }
+
+
+  if (wpmTarget !== null) {
+
+    checks.push(
+      wpm !== null &&
+      wpm >= wpmTarget
+    );
+  }
+
+
+  if (
+    comprehensionTarget !== null
+  ) {
+
+    checks.push(
+      comprehension !== null &&
+      comprehension >=
+        comprehensionTarget
+    );
+  }
+
+
+  return {
+    configured: true,
+    passed:
+      checks.length > 0 &&
+      checks.every(Boolean)
+  };
+}
+
+function exportGradebookCsv() {
 
   const activeAssignments =
     visibleAssignments();
 
 
-  const best =
+  const bestAccuracy =
     bestSubmissionMap(
       submissions
+    );
+
+
+  const bestWpm =
+    bestWpmSubmissionMap(
+      submissions
+    );
+
+
+  const bestComp =
+    bestComprehensionSubmissionMap(
+      submissions
+    );
+
+
+  const manual =
+    manualScoreMap(
+      manualScores
+    );
+
+
+  const attempts =
+    attemptCountMap(
+      submissions
+    );
+
+
+  const headers = [
+    'Student No.',
+    'Student'
+  ];
+
+
+  activeAssignments.forEach(
+    assignment => {
+
+      headers.push(
+        `#${assignment.week_no} Accuracy`,
+        `#${assignment.week_no} WPM`,
+        `#${assignment.week_no} Comprehension`,
+        `#${assignment.week_no} Reads`,
+        `#${assignment.week_no} Pass`
+      );
+
+    }
+  );
+
+
+  const rows =
+    students.map(
+      student => {
+
+        const row = [
+          student.student_number ||
+            '',
+          student.display_name ||
+            ''
+        ];
+
+
+        activeAssignments.forEach(
+          assignment => {
+
+            const key =
+              `${student.id}|${assignment.id}`;
+
+
+            const manualRow =
+              manual.get(key);
+
+
+            const accuracyResult =
+              bestAccuracy.get(key);
+
+            const wpmResult =
+              bestWpm.get(key);
+
+            const compResult =
+              bestComp.get(key);
+
+
+            const manualAccuracy =
+              metricManualValue(
+                manualRow,
+                'accuracy'
+              );
+
+
+            const manualWpm =
+              metricManualValue(
+                manualRow,
+                'wpm'
+              );
+
+
+            const manualComp =
+              metricManualValue(
+                manualRow,
+                'comprehension'
+              );
+
+
+            const accuracy =
+              manualAccuracy ??
+              (
+                accuracyResult
+                  ? Math.round(
+                      Number(
+                        accuracyResult.accuracy ||
+                        0
+                      )
+                    )
+                  : ''
+              );
+
+
+            const wpm =
+              manualWpm ??
+              (
+                wpmResult
+                  ? Math.round(
+                      Number(
+                        wpmResult.wpm ||
+                        0
+                      )
+                    )
+                  : ''
+              );
+
+
+            const comprehension =
+              manualComp ??
+              (
+                compResult
+                  ? Math.round(
+                      Number(
+                        compResult.comprehension ||
+                        0
+                      )
+                    )
+                  : ''
+              );
+
+
+            const passResultCsv =
+              assignmentPassResult(
+                assignment,
+                accuracy === ''
+                  ? null
+                  : accuracy,
+                wpm === ''
+                  ? null
+                  : wpm,
+                comprehension === ''
+                  ? null
+                  : comprehension
+              );
+
+
+            row.push(
+              accuracy,
+              wpm,
+              comprehension,
+              attempts.get(key) ||
+                0,
+              passResultCsv.configured
+                ? (
+                    passResultCsv.passed
+                      ? 'PASS'
+                      : 'NOT YET'
+                  )
+                : ''
+            );
+
+          }
+        );
+
+
+        return row;
+      }
+    );
+
+
+  const csv =
+    [
+      headers,
+      ...rows
+    ]
+      .map(
+        row =>
+          row
+            .map(csvEscape)
+            .join(',')
+      )
+      .join(
+        "`r`n"
+      );
+
+
+  const blob =
+    new Blob(
+      [
+        '\uFEFF',
+        csv
+      ],
+      {
+        type:
+          'text/csv;charset=utf-8'
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  const link =
+    document.createElement(
+      'a'
+    );
+
+
+  link.href =
+    url;
+
+
+  link.download =
+    'copeak-gradebook.csv';
+
+
+  document.body.appendChild(
+    link
+  );
+
+
+  link.click();
+
+  link.remove();
+
+
+  URL.revokeObjectURL(
+    url
+  );
+}
+
+function renderTable() {
+
+  ensureGradebookControls();
+
+
+  const activeAssignments =
+    visibleAssignments();
+
+
+  const bestAccuracy =
+    bestSubmissionMap(
+      submissions
+    );
+
+
+  const bestWpm =
+    bestWpmSubmissionMap(
+      submissions
+    );
+
+
+  const bestComp =
+    bestComprehensionSubmissionMap(
+      submissions
+    );
+
+
+  const manual =
+    manualScoreMap(
+      manualScores
     );
 
 
@@ -743,19 +1556,14 @@ function renderTable() {
   const visibleStudents =
     students.filter(
       student =>
-        student
-          .display_name
+        student.display_name
           .toLowerCase()
-          .includes(
-            query
-          )
+          .includes(query)
         ||
         String(
           student.student_number ||
           ''
-        ).includes(
-          query
-        )
+        ).includes(query)
     );
 
 
@@ -763,37 +1571,20 @@ function renderTable() {
     `
       <tr>
 
-        <th>
-          Student
-        </th>
+        <th>Student</th>
 
         ${
           activeAssignments
             .map(
               assignment =>
-                `
-                  <th
-                    title="${esc(
-                      assignment.title
-                    )}">
-                    #${assignment.week_no}
-                  </th>
-                `
+                `<th>#${assignment.week_no}</th>`
             )
             .join('')
         }
 
-        <th>
-          Reads
-        </th>
-
-        <th>
-          Done
-        </th>
-
-        <th>
-          Avg.
-        </th>
+        <th>Reads</th>
+        <th>Done</th>
+        <th>Avg.</th>
 
       </tr>
     `;
@@ -804,17 +1595,17 @@ function renderTable() {
       .map(
         student => {
 
-          let done =
-            0;
+          let done = 0;
+          let totalReads = 0;
 
-          let total =
-            0;
+          let aSum = 0;
+          let aCount = 0;
 
-          let sum =
-            0;
+          let wSum = 0;
+          let wCount = 0;
 
-          let totalReads =
-            0;
+          let cSum = 0;
+          let cCount = 0;
 
 
           const cells =
@@ -826,86 +1617,286 @@ function renderTable() {
                     `${student.id}|${assignment.id}`;
 
 
-                  const result =
-                    best.get(
-                      key
+                  const manualRow =
+                    manual.get(key);
+
+
+                  const aResult =
+                    bestAccuracy.get(key);
+
+                  const wResult =
+                    bestWpm.get(key);
+
+                  const cResult =
+                    bestComp.get(key);
+
+
+                  const manualA =
+                    metricManualValue(
+                      manualRow,
+                      'accuracy'
                     );
 
 
-                  const readCount =
-                    attempts.get(
-                      key
-                    ) || 0;
+                  const manualW =
+                    metricManualValue(
+                      manualRow,
+                      'wpm'
+                    );
+
+
+                  const manualC =
+                    metricManualValue(
+                      manualRow,
+                      'comprehension'
+                    );
+
+
+                  const accuracy =
+                    manualA ??
+                    (
+                      aResult
+                        ? Math.round(
+                            Number(
+                              aResult.accuracy ||
+                              0
+                            )
+                          )
+                        : null
+                    );
+
+
+                  const wpm =
+                    manualW ??
+                    (
+                      wResult
+                        ? Math.round(
+                            Number(
+                              wResult.wpm ||
+                              0
+                            )
+                          )
+                        : null
+                    );
+
+
+                  const comprehension =
+                    manualC ??
+                    (
+                      cResult
+                        ? Math.round(
+                            Number(
+                              cResult.comprehension ||
+                              0
+                            )
+                          )
+                        : null
+                    );
+
+
+                  const reads =
+                    attempts.get(key) ||
+                    0;
 
 
                   totalReads +=
-                    readCount;
+                    reads;
 
 
-                  if (!result) {
-
-                    return `
-                      <td>
-
-                        <span class="grade missing">
-                          —
-                        </span>
-
-                        <div class="tiny muted">
-                          0 reads
-                        </div>
-
-                      </td>
-                    `;
+                  if (
+                    accuracy !== null ||
+                    wpm !== null ||
+                    comprehension !== null
+                  ) {
+                    done++;
                   }
 
 
-                  done++;
+                  if (accuracy !== null) {
+                    aSum += accuracy;
+                    aCount++;
+                  }
 
-                  total++;
 
-                  sum +=
-                    Number(
-                      result.accuracy || 0
+                  if (wpm !== null) {
+                    wSum += wpm;
+                    wCount++;
+                  }
+
+
+                  if (
+                    comprehension !== null
+                  ) {
+                    cSum += comprehension;
+                    cCount++;
+                  }
+
+
+                  const detail =
+                    `Accuracy ${
+                      accuracy === null
+                        ? '—'
+                        : `${accuracy}%`
+                    } / WPM ${
+                      wpm === null
+                        ? '—'
+                        : wpm
+                    } / Comprehension ${
+                      comprehension === null
+                        ? '—'
+                        : `${comprehension}%`
+                    } / Reads ${reads}`;
+
+
+                  const passResult =
+                    assignmentPassResult(
+                      assignment,
+                      accuracy,
+                      wpm,
+                      comprehension
                     );
 
 
-                  const value =
-                    Math.round(
-                      result.accuracy || 0
-                    );
+                  const passHtml =
+                    passResult.passed
+
+                      ? `
+                          <div
+                            class="grade-pass-badge"
+                            title="設定された合格基準をすべてクリア">
+
+                            ✓ PASS
+
+                          </div>
+                        `
+
+                      : '';
+
+                  const metricButton =
+                    (
+                      metric,
+                      label,
+                      value
+                    ) => {
+
+                      return `
+                        <button
+                          type="button"
+                          class="grade grade-score-edit ${
+                            value === null
+                              ? 'missing'
+                              : ''
+                          }"
+                          data-metric-edit="1"
+                          data-metric="${metric}"
+                          data-student-id="${student.id}"
+                          data-assignment-id="${assignment.id}"
+                          data-current-value="${
+                            value === null
+                              ? ''
+                              : value
+                          }"
+                          title="${esc(
+                            `${detail} / ${label}をクリックして修正`
+                          )}">
+
+                          ${
+                            label
+                              ? `${label} `
+                              : ''
+                          }${
+                            value === null
+                              ? '—'
+                              : value
+                          }
+
+                        </button>
+                      `;
+                    };
 
 
-                  const gradeClass =
-                    value >= 90
+                  let display =
+                    '';
 
-                      ? 'good'
 
-                      : value >= 75
+                  if (
+                    gradebookMetricMode ===
+                    'wpm'
+                  ) {
 
-                        ? 'mid'
+                    display =
+                      metricButton(
+                        'wpm',
+                        '',
+                        wpm
+                      );
 
-                        : 'low';
+                  } else if (
+                    gradebookMetricMode ===
+                    'comprehension'
+                  ) {
+
+                    display =
+                      metricButton(
+                        'comprehension',
+                        '',
+                        comprehension
+                      );
+
+                  } else if (
+                    gradebookMetricMode ===
+                    'all'
+                  ) {
+
+                    display =
+                      `
+                        <div class="grade-metric-stack">
+
+                          ${metricButton(
+                            'accuracy',
+                            'A',
+                            accuracy
+                          )}
+
+                          ${metricButton(
+                            'wpm',
+                            'W',
+                            wpm
+                          )}
+
+                          ${metricButton(
+                            'comprehension',
+                            'C',
+                            comprehension
+                          )}
+
+                        </div>
+                      `;
+
+                  } else {
+
+                    display =
+                      metricButton(
+                        'accuracy',
+                        '',
+                        accuracy
+                      );
+                  }
 
 
                   return `
                     <td
-                      title="Best Accuracy ${value}% / ${readCount} reads / WPM ${Math.round(
-                        result.wpm || 0
-                      )} / Comp ${pct(
-                        result.comprehension
+                      title="${esc(
+                        detail
                       )}">
 
-                      <span
-                        class="grade ${gradeClass}">
+                      ${display}
 
-                        ${value}
-
-                      </span>
+                      ${passHtml}
 
                       <div class="tiny muted">
-                        ${readCount}
-                        read${readCount === 1 ? '' : 's'}
+                        ${reads}
+                        read${reads === 1 ? '' : 's'}
                       </div>
 
                     </td>
@@ -913,6 +1904,69 @@ function renderTable() {
                 }
               )
               .join('');
+
+
+          const avgA =
+            aCount
+              ? Math.round(
+                  aSum /
+                  aCount
+                )
+              : null;
+
+
+          const avgW =
+            wCount
+              ? Math.round(
+                  wSum /
+                  wCount
+                )
+              : null;
+
+
+          const avgC =
+            cCount
+              ? Math.round(
+                  cSum /
+                  cCount
+                )
+              : null;
+
+
+          const average =
+            gradebookMetricMode ===
+              'wpm'
+
+              ? (
+                  avgW ??
+                  '—'
+                )
+
+              : gradebookMetricMode ===
+                  'comprehension'
+
+                ? (
+                    avgC === null
+                      ? '—'
+                      : `${avgC}%`
+                  )
+
+                : gradebookMetricMode ===
+                    'all'
+
+                  ? `A ${
+                      avgA ?? '—'
+                    } / W ${
+                      avgW ?? '—'
+                    } / C ${
+                      avgC ?? '—'
+                    }`
+
+                  : (
+                      avgA === null
+                        ? '—'
+                        : `${avgA}%`
+                    );
 
 
           return `
@@ -951,24 +2005,7 @@ function renderTable() {
 
               <td>
                 <strong>
-
-                  ${
-                    total
-
-                      ? Math.round(
-                          sum /
-                          total
-                        )
-
-                      : '—'
-                  }
-
-                  ${
-                    total
-                      ? '%'
-                      : ''
-                  }
-
+                  ${average}
                 </strong>
               </td>
 
@@ -979,10 +2016,6 @@ function renderTable() {
       )
       .join('');
 }
-
-// ==========================================
-// MAIN RENDER
-// ==========================================
 
 function render() {
 
@@ -1031,6 +2064,357 @@ function esc(
 // SEARCH
 // ==========================================
 
+async function saveManualMetric(
+  studentId,
+  assignmentId,
+  metric,
+  value
+) {
+
+  const {
+    error
+  } =
+    await getClient(
+      'teacher'
+    )
+      .rpc(
+        'set_manual_metric',
+        {
+
+          p_assignment_id:
+            assignmentId,
+
+          p_student_id:
+            studentId,
+
+          p_metric:
+            metric,
+
+          p_value:
+            value
+
+        }
+      );
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  let row =
+    manualScores.find(
+      item =>
+        item.student_id ===
+          studentId &&
+        item.assignment_id ===
+          assignmentId
+    );
+
+
+  if (!row) {
+
+    row = {
+      student_id:
+        studentId,
+
+      assignment_id:
+        assignmentId,
+
+      score:
+        null,
+
+      wpm:
+        null,
+
+      comprehension:
+        null
+    };
+
+
+    manualScores.push(
+      row
+    );
+  }
+
+
+  const field =
+    metric === 'accuracy'
+      ? 'score'
+      : metric;
+
+
+  row[field] =
+    value;
+
+
+  if (
+    row.score === null &&
+    row.wpm === null &&
+    row.comprehension === null
+  ) {
+
+    manualScores =
+      manualScores.filter(
+        item =>
+          item !== row
+      );
+  }
+
+
+  render();
+}
+
+
+function beginManualMetricEdit(
+  button
+) {
+
+  const studentId =
+    button.dataset.studentId;
+
+
+  const assignmentId =
+    button.dataset.assignmentId;
+
+
+  const metric =
+    button.dataset.metric;
+
+
+  const current =
+    button.dataset.currentValue ||
+    '';
+
+
+  const input =
+    document.createElement(
+      'input'
+    );
+
+
+  input.type =
+    'number';
+
+  input.min =
+    '0';
+
+  input.step =
+    '1';
+
+
+  if (
+    metric === 'accuracy' ||
+    metric === 'comprehension'
+  ) {
+
+    input.max =
+      '100';
+  }
+
+
+  input.value =
+    current;
+
+  input.className =
+    'grade-score-input';
+
+
+  button.replaceWith(
+    input
+  );
+
+
+  input.focus();
+
+  input.select();
+
+
+  let finished =
+    false;
+
+
+  const finish =
+    async save => {
+
+      if (finished) {
+        return;
+      }
+
+
+      finished =
+        true;
+
+
+      if (!save) {
+
+        renderTable();
+
+        return;
+      }
+
+
+      const raw =
+        input.value.trim();
+
+
+      const value =
+        raw === ''
+          ? null
+          : Math.round(
+              Number(raw)
+            );
+
+
+      const invalidPercent =
+        (
+          metric === 'accuracy' ||
+          metric === 'comprehension'
+        ) &&
+        value !== null &&
+        (
+          value < 0 ||
+          value > 100
+        );
+
+
+      const invalidWpm =
+        metric === 'wpm' &&
+        value !== null &&
+        value < 0;
+
+
+      if (
+        value !== null &&
+        (
+          !Number.isFinite(
+            value
+          ) ||
+          invalidPercent ||
+          invalidWpm
+        )
+      ) {
+
+        finished =
+          false;
+
+        input.focus();
+
+        input.select();
+
+        return;
+      }
+
+
+      input.disabled =
+        true;
+
+
+      try {
+
+        await saveManualMetric(
+          studentId,
+          assignmentId,
+          metric,
+          value
+        );
+
+      } catch (
+        error
+      ) {
+
+        console.error(
+          error
+        );
+
+
+        await showInfoModal({
+
+          badge:
+            'Error',
+
+          badgeType:
+            'danger',
+
+          title:
+            'スコアを保存できませんでした',
+
+          message:
+            error.message ||
+            String(error)
+
+        });
+
+
+        renderTable();
+      }
+    };
+
+
+  input.addEventListener(
+    'keydown',
+    event => {
+
+      if (
+        event.key ===
+        'Enter'
+      ) {
+
+        event.preventDefault();
+
+        finish(true);
+      }
+
+
+      if (
+        event.key ===
+        'Escape'
+      ) {
+
+        event.preventDefault();
+
+        finish(false);
+      }
+    }
+  );
+
+
+  input.addEventListener(
+    'blur',
+    () => {
+
+      finish(true);
+    }
+  );
+}
+
+
+$('#gradeBody')
+  ?.addEventListener(
+    'click',
+    event => {
+
+      const button =
+        event.target.closest(
+          '[data-metric-edit]'
+        );
+
+
+      if (!button) {
+        return;
+      }
+
+
+      beginManualMetricEdit(
+        button
+      );
+    }
+  );
+
+
+// ==========================================
+// SEARCH
+// ==========================================
 $('#studentSearch').oninput =
   renderTable;
 
@@ -2152,6 +3536,42 @@ function resetAssignmentOcr() {
   }
 }
 
+function updateAssignmentPassCriteriaState() {
+
+  const enabled =
+    $('#assignmentPassEnabled')
+      ?.checked ===
+    true;
+
+
+  [
+    '#assignmentPassAccuracy',
+    '#assignmentPassWpm',
+    '#assignmentPassComprehension'
+  ]
+    .forEach(
+      selector => {
+
+        const input =
+          $(selector);
+
+
+        if (input) {
+          input.disabled =
+            !enabled;
+        }
+      }
+    );
+
+
+  $('#assignmentPassCriteriaFields')
+    ?.classList
+    .toggle(
+      'is-disabled',
+      !enabled
+    );
+}
+
 function openAssignmentEditor(
   assignment = null
 ) {
@@ -2301,8 +3721,8 @@ function openAssignmentEditor(
 
     audioStatus.textContent =
       hasRegisteredAudio
-        ? `✓ 登録済み: ${assignment?.audio_file_name || 'MP3 Audio'}`
-        : 'MP3 only · Max 5 MB · Cloud copy expires after 14 days';
+        ? `✓ 登録済み: ${assignment?.audio_file_name || 'Audio File'}`
+        : 'MP3 / WAV · Max 5 MB · Cloud copy expires after 14 days';
   }
 
   if (removeAudioButton) {
@@ -2366,7 +3786,46 @@ $('#assignmentDue').value =
   );
 
 
-  $('#assignmentPublished').checked =
+    $('#assignmentPassAccuracy').value =
+    assignment?.pass_accuracy ??
+    '';
+
+
+  $('#assignmentPassWpm').value =
+    assignment?.pass_wpm ??
+    '';
+
+
+  $('#assignmentPassComprehension').value =
+    assignment?.pass_comprehension ??
+    '';
+
+
+  const passEnabledForEditor =
+    assignment
+
+      ? (
+          assignment.pass_enabled === true ||
+          (
+            assignment.pass_enabled === undefined &&
+            (
+              assignment.pass_accuracy !== null ||
+              assignment.pass_wpm !== null ||
+              assignment.pass_comprehension !== null
+            )
+          )
+        )
+
+      : false;
+
+
+  $('#assignmentPassEnabled').checked =
+    passEnabledForEditor;
+
+
+  updateAssignmentPassCriteriaState();
+
+$('#assignmentPublished').checked =
     assignment
       ? assignment.is_published !== false
       : true;
@@ -2490,7 +3949,7 @@ function updateDueDate() {
 
 // ==========================================
 // ASSIGNMENT AUDIO
-// MP3 → R2
+// MP3 / WAV → R2
 // ==========================================
 
 const MAX_ASSIGNMENT_AUDIO_SIZE =
@@ -2504,6 +3963,24 @@ function getSelectedAssignmentAudio() {
       ?.files?.[0] ||
     null
   );
+}
+
+
+function getAssignmentAudioContentType(
+  file
+) {
+
+  const fileName =
+    String(
+      file?.name || ''
+    )
+      .trim()
+      .toLowerCase();
+
+
+  return fileName.endsWith('.wav')
+    ? 'audio/wav'
+    : 'audio/mpeg';
 }
 
 
@@ -2524,14 +4001,15 @@ function validateAssignmentAudio(
       .toLowerCase();
 
 
-  if (
-    !fileName.endsWith(
-      '.mp3'
-    )
-  ) {
+  const supported =
+    fileName.endsWith('.mp3') ||
+    fileName.endsWith('.wav');
+
+
+  if (!supported) {
 
     throw new Error(
-      'MP3ファイルを選択してください。'
+      'MP3またはWAVファイルを選択してください。'
     );
   }
 
@@ -2542,11 +4020,10 @@ function validateAssignmentAudio(
   ) {
 
     throw new Error(
-      'MP3は5 MB以下にしてください。'
+      '音声ファイルは5 MB以下にしてください。'
     );
   }
 }
-
 
 async function uploadAssignmentAudio(
   file
@@ -2557,7 +4034,12 @@ async function uploadAssignmentAudio(
   );
 
 
-  const sb =
+    const contentType =
+    getAssignmentAudioContentType(
+      file
+    );
+
+const sb =
     getClient(
       'teacher'
     );
@@ -2610,7 +4092,7 @@ async function uploadAssignmentAudio(
               file.name,
 
             contentType:
-              'audio/mpeg',
+              contentType,
 
             fileSize:
               file.size
@@ -2642,7 +4124,7 @@ async function uploadAssignmentAudio(
 
     throw new Error(
       signed.error ||
-      'MP3のアップロード準備に失敗しました。'
+      '音声ファイルのアップロード準備に失敗しました。'
     );
   }
 
@@ -2656,7 +4138,7 @@ async function uploadAssignmentAudio(
 
         headers: {
           'Content-Type':
-            'audio/mpeg'
+            contentType
         },
 
         body:
@@ -2670,7 +4152,7 @@ async function uploadAssignmentAudio(
   ) {
 
     throw new Error(
-      `MP3 upload failed (${uploadResponse.status}).`
+      `Audio upload failed (${uploadResponse.status}).`
     );
   }
 
@@ -2684,8 +4166,7 @@ async function uploadAssignmentAudio(
       signed.audioExpiresAt,
 
     contentType:
-      signed.contentType ||
-      'audio/mpeg',
+      signed.contentType || contentType,
 
     fileName:
       file.name,
@@ -2734,7 +4215,7 @@ async function removeAssignmentAudio() {
         '登録済みMP3を削除しますか？',
 
       message:
-        `「${assignment.audio_file_name || 'MP3 Audio'}」をこの課題から削除します。
+        `「${assignment.audio_file_name || 'Audio File'}」をこの課題から削除します。
 
 生徒はこの音声を利用できなくなります。`,
 
@@ -2937,6 +4418,108 @@ let youtubeClip =
 
   msg.style.color =
     '#b91c1c';
+  const optionalNumber =
+    selector => {
+
+      const raw =
+        $(selector)
+          ?.value
+          ?.trim() ||
+        '';
+
+
+      if (raw === '') {
+        return null;
+      }
+
+
+      return Number(raw);
+    };
+
+
+  const passAccuracy =
+    optionalNumber(
+      '#assignmentPassAccuracy'
+    );
+
+
+  const passWpm =
+    optionalNumber(
+      '#assignmentPassWpm'
+    );
+
+
+  const passComprehension =
+    optionalNumber(
+      '#assignmentPassComprehension'
+    );
+
+
+  const passEnabled =
+    $('#assignmentPassEnabled')
+      ?.checked ===
+    true;
+
+
+  if (
+    passEnabled &&
+    passAccuracy === null &&
+    passWpm === null &&
+    passComprehension === null
+  ) {
+
+    msg.textContent =
+      '合格基準を使用する場合は、Accuracy・WPM・Comprehensionのいずれかを設定してください。';
+
+    return;
+  }
+
+  if (
+    passAccuracy !== null &&
+    (
+      !Number.isFinite(passAccuracy) ||
+      passAccuracy < 0 ||
+      passAccuracy > 100
+    )
+  ) {
+
+    msg.textContent =
+      'Accuracyの合格基準は0〜100で入力してください。';
+
+    return;
+  }
+
+
+  if (
+    passWpm !== null &&
+    (
+      !Number.isFinite(passWpm) ||
+      passWpm < 0
+    )
+  ) {
+
+    msg.textContent =
+      'WPMの合格基準は0以上で入力してください。';
+
+    return;
+  }
+
+
+  if (
+    passComprehension !== null &&
+    (
+      !Number.isFinite(passComprehension) ||
+      passComprehension < 0 ||
+      passComprehension > 100
+    )
+  ) {
+
+    msg.textContent =
+      'Comprehensionの合格基準は0〜100で入力してください。';
+
+    return;
+  }
+
   const audienceType =
     $('#assignmentAudienceTargeted')
       ?.checked === true
@@ -2982,7 +4565,7 @@ try {
 
   msg.textContent =
     error.message ||
-    'MP3ファイルを確認してください。';
+    'MP3 / WAVファイルを確認してください。';
 
   return;
 }
@@ -3273,6 +4856,18 @@ let uploadedAudio =
 
 lesson_lang:
   language,
+
+pass_accuracy:
+  passAccuracy,
+
+pass_wpm:
+  passWpm,
+
+pass_comprehension:
+  passComprehension,
+
+pass_enabled:
+  passEnabled,
 
 
 youtube_url:
@@ -4303,6 +5898,47 @@ students =
   } else {
 
     submissions =
+      [];
+  }
+
+  if (
+    assignments.length
+  ) {
+
+    const {
+      data: manualRows,
+      error: manualError
+    } =
+      await sb
+        .from(
+          'manual_scores'
+        )
+        .select(
+          'assignment_id,student_id,score,wpm,comprehension,updated_at'
+        )
+        .in(
+          'assignment_id',
+          assignments.map(
+            assignment =>
+              assignment.id
+          )
+        );
+
+
+    if (
+      manualError
+    ) {
+      throw manualError;
+    }
+
+
+    manualScores =
+      manualRows ||
+      [];
+
+  } else {
+
+    manualScores =
       [];
   }
 }
@@ -6340,6 +7976,12 @@ $('#removeAssignmentAudio')
     }
   );
 
+$('#assignmentPassEnabled')
+  ?.addEventListener(
+    'change',
+    updateAssignmentPassCriteriaState
+  );
+
 $('#assignmentRelease').onchange =
   updateDueDate;
 
@@ -6554,8 +8196,3 @@ $('#assignmentRelease').onchange =
     });
   }
 );
-
-
-
-
-

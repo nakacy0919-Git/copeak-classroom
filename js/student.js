@@ -15,6 +15,7 @@ const $ = selector => document.querySelector(selector);
 let ctx;
 let assignments = [];
 let submissions = [];
+let manualScores = [];
 let currentClass = null;
 let activeAssignmentFilter = 'all';
 
@@ -137,7 +138,7 @@ const TEXT = {
       'Copeakで始める →',
 
     practiceAgain:
-      'もう一度練習する',
+      'Copeakでもう一度練習',
 
     notOpen:
       'まだ開始できません',
@@ -294,7 +295,7 @@ const TEXT = {
       'Start Copeak →',
 
     practiceAgain:
-      'Practice Again',
+      'Practice Again in Copeak',
 
     notOpen:
       'Not Open Yet',
@@ -1024,6 +1025,797 @@ function latestMap(
 // ASSIGNMENT STATUS
 // ==========================================
 
+function bestStudentMetricMap(
+  rows,
+  metric
+) {
+
+  const map =
+    new Map();
+
+
+  rows.forEach(
+    row => {
+
+      const raw =
+        row?.[metric];
+
+
+      if (
+        raw === null ||
+        raw === undefined
+      ) {
+        return;
+      }
+
+
+      const value =
+        Number(raw);
+
+
+      if (
+        !Number.isFinite(value)
+      ) {
+        return;
+      }
+
+
+      const current =
+        map.get(
+          row.assignment_id
+        );
+
+
+      if (
+        !current ||
+        value >
+        Number(
+          current?.[metric] ??
+          -Infinity
+        )
+      ) {
+
+        map.set(
+          row.assignment_id,
+          row
+        );
+      }
+
+    }
+  );
+
+
+  return map;
+}
+
+
+function studentManualScoreMap(
+  rows
+) {
+
+  const map =
+    new Map();
+
+
+  rows.forEach(
+    row => {
+
+      map.set(
+        row.assignment_id,
+        row
+      );
+
+    }
+  );
+
+
+  return map;
+}
+
+
+function studentEffectiveMetric(
+  manualRow,
+  automaticRow,
+  metric
+) {
+
+  const manualField =
+    metric === 'accuracy'
+      ? 'score'
+      : metric;
+
+
+  const manualValue =
+    manualRow?.[
+      manualField
+    ];
+
+
+  if (
+    manualValue !== null &&
+    manualValue !== undefined
+  ) {
+
+    const number =
+      Number(
+        manualValue
+      );
+
+
+    return Number.isFinite(
+      number
+    )
+      ? Math.round(number)
+      : null;
+  }
+
+
+  const automaticValue =
+    automaticRow?.[
+      metric
+    ];
+
+
+  if (
+    automaticValue === null ||
+    automaticValue === undefined
+  ) {
+    return null;
+  }
+
+
+  const number =
+    Number(
+      automaticValue
+    );
+
+
+  return Number.isFinite(
+    number
+  )
+    ? Math.round(number)
+    : null;
+}
+
+
+function studentPassState(
+  assignment,
+  maps
+) {
+
+  if (
+    assignment.pass_enabled !== true
+  ) {
+
+    return {
+      configured: false,
+      passed: false,
+      hasScore: false,
+      accuracy: null,
+      wpm: null,
+      comprehension: null,
+      targets: {
+        accuracy: null,
+        wpm: null,
+        comprehension: null
+      }
+    };
+  }
+
+
+  const normalize =
+    value => {
+
+      if (
+        value === null ||
+        value === undefined ||
+        value === ''
+      ) {
+        return null;
+      }
+
+
+      const number =
+        Number(value);
+
+
+      return Number.isFinite(
+        number
+      )
+        ? number
+        : null;
+    };
+
+
+  const targets = {
+
+    accuracy:
+      normalize(
+        assignment.pass_accuracy
+      ),
+
+    wpm:
+      normalize(
+        assignment.pass_wpm
+      ),
+
+    comprehension:
+      normalize(
+        assignment.pass_comprehension
+      )
+
+  };
+
+
+  const configured =
+    targets.accuracy !== null ||
+    targets.wpm !== null ||
+    targets.comprehension !== null;
+
+
+  if (!configured) {
+
+    return {
+      configured: false,
+      passed: false,
+      hasScore: false,
+      accuracy: null,
+      wpm: null,
+      comprehension: null,
+      targets
+    };
+  }
+
+
+  const manualRow =
+    maps.manual.get(
+      assignment.id
+    );
+
+
+  const accuracy =
+    studentEffectiveMetric(
+      manualRow,
+      maps.accuracy.get(
+        assignment.id
+      ),
+      'accuracy'
+    );
+
+
+  const wpm =
+    studentEffectiveMetric(
+      manualRow,
+      maps.wpm.get(
+        assignment.id
+      ),
+      'wpm'
+    );
+
+
+  const comprehension =
+    studentEffectiveMetric(
+      manualRow,
+      maps.comprehension.get(
+        assignment.id
+      ),
+      'comprehension'
+    );
+
+
+  const checks =
+    [];
+
+
+  if (
+    targets.accuracy !== null
+  ) {
+
+    checks.push(
+      accuracy !== null &&
+      accuracy >=
+        targets.accuracy
+    );
+  }
+
+
+  if (
+    targets.wpm !== null
+  ) {
+
+    checks.push(
+      wpm !== null &&
+      wpm >=
+        targets.wpm
+    );
+  }
+
+
+  if (
+    targets.comprehension !== null
+  ) {
+
+    checks.push(
+      comprehension !== null &&
+      comprehension >=
+        targets.comprehension
+    );
+  }
+
+
+  return {
+
+    configured:
+      true,
+
+    passed:
+      checks.length > 0 &&
+      checks.every(Boolean),
+
+    hasScore:
+      accuracy !== null ||
+      wpm !== null ||
+      comprehension !== null,
+
+    accuracy,
+    wpm,
+    comprehension,
+    targets
+  };
+}
+
+
+function studentGaugeMetricHtml({
+  label,
+  current,
+  target,
+  unit = '',
+  maximum = 100
+}) {
+
+  if (
+    target === null ||
+    target === undefined
+  ) {
+    return '';
+  }
+
+
+  const safeMaximum =
+    Math.max(
+      1,
+      Number(maximum) ||
+      100
+    );
+
+
+  const currentNumber =
+    current === null ||
+    current === undefined
+
+      ? null
+
+      : Number(current);
+
+
+  const targetNumber =
+    Number(target);
+
+
+  const currentPosition =
+    currentNumber === null ||
+    !Number.isFinite(
+      currentNumber
+    )
+
+      ? 0
+
+      : Math.max(
+          0,
+          Math.min(
+            100,
+            currentNumber /
+            safeMaximum *
+            100
+          )
+        );
+
+
+  const targetPosition =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        targetNumber /
+        safeMaximum *
+        100
+      )
+    );
+
+
+  const reached =
+    currentNumber !== null &&
+    Number.isFinite(
+      currentNumber
+    ) &&
+    currentNumber >=
+      targetNumber;
+
+
+  const gap =
+    currentNumber === null ||
+    !Number.isFinite(
+      currentNumber
+    )
+
+      ? targetNumber
+
+      : Math.max(
+          0,
+          targetNumber -
+          currentNumber
+        );
+
+
+  const formatValue =
+    value =>
+      Math.round(
+        Number(value) ||
+        0
+      );
+
+
+  let gapText;
+
+
+  if (
+    currentNumber === null ||
+    !Number.isFinite(
+      currentNumber
+    )
+  ) {
+
+    gapText =
+      activeLanguage === 'ja'
+
+        ? `目標 ${formatValue(
+            targetNumber
+          )}${unit}`
+
+        : `Goal ${formatValue(
+            targetNumber
+          )}${unit}`;
+  }
+
+  else if (reached) {
+
+    gapText =
+      activeLanguage === 'ja'
+        ? '✓ 達成'
+        : '✓ Reached';
+  }
+
+  else {
+
+    gapText =
+      activeLanguage === 'ja'
+
+        ? `あと ${formatValue(
+            gap
+          )}${unit}`
+
+        : `${formatValue(
+            gap
+          )}${unit} to go`;
+  }
+
+
+  const goalText =
+    activeLanguage === 'ja'
+
+      ? `合格 ${formatValue(
+          targetNumber
+        )}${unit}`
+
+      : `Goal ${formatValue(
+          targetNumber
+        )}${unit}`;
+
+
+  const currentText =
+    currentNumber === null ||
+    !Number.isFinite(
+      currentNumber
+    )
+
+      ? '—'
+
+      : `${formatValue(
+          currentNumber
+        )}${unit}`;
+
+
+  return `
+    <div
+      class="student-gauge-card ${
+        reached
+          ? 'reached'
+          : 'not-reached'
+      }">
+
+      <div class="student-gauge-head">
+
+        <span class="student-gauge-label">
+          ${escapeHtml(
+            label
+          )}
+        </span>
+
+
+        <strong class="student-gauge-value">
+          ${escapeHtml(
+            currentText
+          )}
+        </strong>
+
+      </div>
+
+
+      <div class="student-gauge-sub">
+
+        <span class="student-gauge-goal-text">
+          ${escapeHtml(
+            goalText
+          )}
+        </span>
+
+        <span
+          class="student-gauge-gap ${
+            reached
+              ? 'reached'
+              : ''
+          }">
+
+          ${escapeHtml(
+            gapText
+          )}
+
+        </span>
+
+      </div>
+
+
+      <div
+        class="student-gauge-track"
+        style="
+          --current:${currentPosition}%;
+          --goal:${targetPosition}%;
+        ">
+
+        <div class="student-gauge-fill">
+        </div>
+
+
+        <div
+          class="student-gauge-goal-line"
+          title="${escapeHtml(
+            goalText
+          )}">
+
+          <span>
+            ${
+              activeLanguage === 'ja'
+                ? '合格'
+                : 'GOAL'
+            }
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+function studentPassPanelHtml(
+  state
+) {
+
+  if (
+    !state.configured
+  ) {
+    return '';
+  }
+
+
+  const accuracyGauge =
+    state.targets.accuracy !== null
+
+      ? studentGaugeMetricHtml({
+
+          label:
+            'Accuracy',
+
+          current:
+            state.accuracy,
+
+          target:
+            state.targets.accuracy,
+
+          unit:
+            '%',
+
+          maximum:
+            100
+        })
+
+      : '';
+
+
+  const comprehensionGauge =
+    state.targets.comprehension !== null
+
+      ? studentGaugeMetricHtml({
+
+          label:
+            'Comprehension',
+
+          current:
+            state.comprehension,
+
+          target:
+            state.targets.comprehension,
+
+          unit:
+            '%',
+
+          maximum:
+            100
+        })
+
+      : '';
+
+
+  const wpmMaximum =
+    state.targets.wpm !== null
+
+      ? Math.max(
+          120,
+          state.targets.wpm *
+            1.25,
+          (
+            state.wpm ||
+            0
+          ) *
+            1.1
+        )
+
+      : 120;
+
+
+  const wpmGauge =
+    state.targets.wpm !== null
+
+      ? studentGaugeMetricHtml({
+
+          label:
+            'WPM',
+
+          current:
+            state.wpm,
+
+          target:
+            state.targets.wpm,
+
+          unit:
+            '',
+
+          maximum:
+            wpmMaximum
+        })
+
+      : '';
+
+
+  let statusText;
+
+
+  if (state.passed) {
+
+    statusText =
+      activeLanguage === 'ja'
+        ? '✓ 合格'
+        : '✓ PASS';
+  }
+
+  else if (state.hasScore) {
+
+    statusText =
+      activeLanguage === 'ja'
+        ? 'あと少し'
+        : 'Not Yet';
+  }
+
+  else {
+
+    statusText =
+      activeLanguage === 'ja'
+        ? '未挑戦'
+        : 'Not Attempted';
+  }
+
+
+  return `
+    <div
+      class="student-pass-panel ${
+        state.passed
+          ? 'passed'
+          : state.hasScore
+            ? 'pending'
+            : 'waiting'
+      }">
+
+      <div class="student-pass-head">
+
+        <div>
+
+          <div class="student-pass-title">
+            🎯 ${
+              activeLanguage === 'ja'
+                ? '合格基準'
+                : 'Pass Criteria'
+            }
+          </div>
+
+          <div class="student-pass-guide">
+
+            ${
+              activeLanguage === 'ja'
+
+                ? '赤いラインが合格ラインです'
+
+                : 'The red marker shows the goal'
+            }
+
+          </div>
+
+        </div>
+
+
+        <div
+          class="student-pass-status ${
+            state.passed
+              ? 'passed'
+              : state.hasScore
+                ? 'pending'
+                : 'waiting'
+          }">
+
+          ${escapeHtml(
+            statusText
+          )}
+
+        </div>
+
+      </div>
+
+
+      <div class="student-pass-gauges">
+
+        ${accuracyGauge}
+
+        ${wpmGauge}
+
+        ${comprehensionGauge}
+
+      </div>
+
+    </div>
+  `;
+}
+
 function assignmentStatus(
   assignment,
   submission
@@ -1699,6 +2491,33 @@ function renderAssignmentList(
   map
 ) {
 
+  const passMaps = {
+
+    accuracy:
+      bestStudentMetricMap(
+        submissions,
+        'accuracy'
+      ),
+
+    wpm:
+      bestStudentMetricMap(
+        submissions,
+        'wpm'
+      ),
+
+    comprehension:
+      bestStudentMetricMap(
+        submissions,
+        'comprehension'
+      ),
+
+    manual:
+      studentManualScoreMap(
+        manualScores
+      )
+  };
+
+
   const visibleAssignments =
     assignments
       .filter(
@@ -1902,9 +2721,21 @@ function renderAssignmentList(
               'late';
 
 
+          const passState =
+            studentPassState(
+              assignment,
+              passMaps
+            );
+
+
+          const passPanel =
+            studentPassPanelHtml(
+              passState
+            );
+
           return `
             <article
-              class="assignment student-assignment-card"
+              class="assignment student-assignment-card ${passState.configured ? 'has-pass-criteria' : ''}"
               data-status="${status.key}">
 
               <div class="weekbox">
@@ -2034,7 +2865,9 @@ function renderAssignmentList(
               </div>
 
 
-              <div
+                            ${passPanel}
+
+<div
                 class="assignment-score student-assignment-result">
 
 
@@ -2051,32 +2884,7 @@ function renderAssignmentList(
                       </strong>
 
 
-                      <div class="tiny muted">
 
-                        ${escapeHtml(
-                          t(
-                            'scoreAccuracy'
-                          )
-                        )}
-
-                        · WPM
-                        ${Math.round(
-                          submission.wpm ||
-                          0
-                        )}
-
-                        ·
-                        ${escapeHtml(
-                          t(
-                            'comprehension'
-                          )
-                        )}
-
-                        ${pct(
-                          submission.comprehension
-                        )}
-
-                      </div>
                     `
 
                     : `
@@ -3487,6 +4295,38 @@ async function loadLive() {
 
   submissions =
     submissionRows ||
+    [];
+
+  // ========================================
+  // TEACHER MANUAL SCORE OVERRIDES
+  // ========================================
+
+  const {
+    data: manualRows,
+    error: manualError
+  } =
+    await sb
+      .from(
+        'manual_scores'
+      )
+      .select(
+        'assignment_id,student_id,score,wpm,comprehension'
+      )
+      .eq(
+        'student_id',
+        ctx.user.id
+      );
+
+
+  if (
+    manualError
+  ) {
+    throw manualError;
+  }
+
+
+  manualScores =
+    manualRows ||
     [];
 }
 
