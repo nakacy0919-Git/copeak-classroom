@@ -32,6 +32,8 @@ let assignments = [];
 
 let submissions = [];
 
+let manualScores = [];
+
 let editingAssignmentId = null;
 
 $('#signOut').onclick =
@@ -346,6 +348,27 @@ function attemptCountMap(
 // PUBLISHED ASSIGNMENTS
 // ==========================================
 
+function manualScoreMap(
+  rows
+) {
+
+  const map =
+    new Map();
+
+  rows.forEach(
+    row => {
+
+      map.set(
+        `${row.student_id}|${row.assignment_id}`,
+        row
+      );
+
+    }
+  );
+
+  return map;
+}
+
 function visibleAssignments() {
 
   return assignments
@@ -610,24 +633,89 @@ function renderAssignmentManager() {
 function renderSummary() {
 
   const best =
-  bestSubmissionMap(
-    submissions
-  );
+    bestSubmissionMap(
+      submissions
+    );
 
+  const manual =
+    manualScoreMap(
+      manualScores
+    );
 
   const activeAssignments =
     visibleAssignments();
 
-
   const released =
-    activeAssignments
-      .filter(
-        assignment =>
-          new Date(
-            assignment.release_at
-          ) <=
-          new Date()
+    activeAssignments.filter(
+      assignment =>
+        new Date(
+          assignment.release_at
+        ) <=
+        new Date()
+    );
+
+
+  let done = 0;
+
+  const values = [];
+
+
+  students.forEach(
+    student => {
+
+      released.forEach(
+        assignment => {
+
+          const key =
+            `${student.id}|${assignment.id}`;
+
+          if (
+            manual.has(key) ||
+            best.has(key)
+          ) {
+            done++;
+          }
+
+        }
       );
+
+
+      activeAssignments.forEach(
+        assignment => {
+
+          const key =
+            `${student.id}|${assignment.id}`;
+
+          const manualRow =
+            manual.get(key);
+
+          const result =
+            best.get(key);
+
+
+          if (manualRow) {
+
+            values.push(
+              Number(
+                manualRow.score
+              )
+            );
+
+          } else if (result) {
+
+            values.push(
+              Number(
+                result.accuracy ||
+                0
+              )
+            );
+          }
+
+        }
+      );
+
+    }
+  );
 
 
   const possible =
@@ -635,69 +723,23 @@ function renderSummary() {
     released.length;
 
 
-  let done =
-    0;
-
-
-  best.forEach(
-    submission => {
-
-      if (
-        released.some(
-          assignment =>
-            assignment.id ===
-            submission.assignment_id
-        )
-      ) {
-
-        done++;
-
-      }
-    }
-  );
-
-
   $('#studentCount').textContent =
     students.length;
-
 
   $('#assignmentCount').textContent =
     activeAssignments.length;
 
-
   $('#submissionRate').textContent =
     possible
-
       ? `${Math.round(
           done /
           possible *
           100
         )}%`
-
       : '—';
-
-
-  const values =
-    [...best.values()]
-      .filter(
-        row =>
-          activeAssignments.some(
-            assignment =>
-              assignment.id ===
-              row.assignment_id
-          )
-      )
-      .map(
-        row =>
-          Number(
-            row.accuracy || 0
-          )
-      );
-
 
   $('#classAverage').textContent =
     values.length
-
       ? `${Math.round(
           values.reduce(
             (a, b) =>
@@ -706,26 +748,23 @@ function renderSummary() {
           ) /
           values.length
         )}%`
-
       : '—';
 }
-
-
-// ==========================================
-// GRADEBOOK
-// ==========================================
 
 function renderTable() {
 
   const activeAssignments =
     visibleAssignments();
 
-
   const best =
     bestSubmissionMap(
       submissions
     );
 
+  const manual =
+    manualScoreMap(
+      manualScores
+    );
 
   const attempts =
     attemptCountMap(
@@ -743,19 +782,14 @@ function renderTable() {
   const visibleStudents =
     students.filter(
       student =>
-        student
-          .display_name
+        student.display_name
           .toLowerCase()
-          .includes(
-            query
-          )
+          .includes(query)
         ||
         String(
           student.student_number ||
           ''
-        ).includes(
-          query
-        )
+        ).includes(query)
     );
 
 
@@ -763,9 +797,7 @@ function renderTable() {
     `
       <tr>
 
-        <th>
-          Student
-        </th>
+        <th>Student</th>
 
         ${
           activeAssignments
@@ -783,38 +815,59 @@ function renderTable() {
             .join('')
         }
 
-        <th>
-          Reads
-        </th>
-
-        <th>
-          Done
-        </th>
-
-        <th>
-          Avg.
-        </th>
+        <th>Reads</th>
+        <th>Done</th>
+        <th>Avg.</th>
 
       </tr>
     `;
 
+
+  const gradeTable =
+    $('#gradeBody')
+      ?.closest(
+        'table'
+      );
+
+
+  if (
+    gradeTable &&
+    !$('#gradeScoreEditHint')
+  ) {
+
+    const hint =
+      document.createElement(
+        'div'
+      );
+
+    hint.id =
+      'gradeScoreEditHint';
+
+    hint.className =
+      'tiny muted';
+
+    hint.style.marginTop =
+      '10px';
+
+    hint.textContent =
+      '💡 スコアをクリックすると、先生が手動で修正できます。Enterで保存、Escでキャンセルできます。';
+
+
+    gradeTable.insertAdjacentElement(
+      'afterend',
+      hint
+    );
+  }
 
   $('#gradeBody').innerHTML =
     visibleStudents
       .map(
         student => {
 
-          let done =
-            0;
-
-          let total =
-            0;
-
-          let sum =
-            0;
-
-          let totalReads =
-            0;
+          let done = 0;
+          let total = 0;
+          let sum = 0;
+          let totalReads = 0;
 
 
           const cells =
@@ -825,34 +878,67 @@ function renderTable() {
                   const key =
                     `${student.id}|${assignment.id}`;
 
-
                   const result =
-                    best.get(
-                      key
-                    );
+                    best.get(key);
 
+                  const manualRow =
+                    manual.get(key);
 
                   const readCount =
-                    attempts.get(
-                      key
-                    ) || 0;
-
+                    attempts.get(key) ||
+                    0;
 
                   totalReads +=
                     readCount;
 
 
-                  if (!result) {
+                  const hasManual =
+                    Boolean(
+                      manualRow
+                    );
+
+
+                  const value =
+                    hasManual
+
+                      ? Math.round(
+                          Number(
+                            manualRow.score
+                          )
+                        )
+
+                      : result
+
+                        ? Math.round(
+                            Number(
+                              result.accuracy ||
+                              0
+                            )
+                          )
+
+                        : null;
+
+
+                  if (
+                    value === null
+                  ) {
 
                     return `
                       <td>
 
-                        <span class="grade missing">
+                        <button
+                          type="button"
+                          class="grade grade-score-edit missing"
+                          data-score-edit="1"
+                          data-student-id="${student.id}"
+                          data-assignment-id="${assignment.id}"
+                          data-current-score=""
+                          title="クリックしてスコアを入力">
                           —
-                        </span>
+                        </button>
 
                         <div class="tiny muted">
-                          0 reads
+                          ${readCount} reads
                         </div>
 
                       </td>
@@ -861,51 +947,39 @@ function renderTable() {
 
 
                   done++;
-
                   total++;
-
-                  sum +=
-                    Number(
-                      result.accuracy || 0
-                    );
-
-
-                  const value =
-                    Math.round(
-                      result.accuracy || 0
-                    );
+                  sum += value;
 
 
                   const gradeClass =
                     value >= 90
-
                       ? 'good'
-
                       : value >= 75
-
                         ? 'mid'
-
                         : 'low';
 
 
                   return `
-                    <td
-                      title="Best Accuracy ${value}% / ${readCount} reads / WPM ${Math.round(
-                        result.wpm || 0
-                      )} / Comp ${pct(
-                        result.comprehension
-                      )}">
+                    <td>
 
-                      <span
-                        class="grade ${gradeClass}">
+                      <button
+                        type="button"
+                        class="grade grade-score-edit ${gradeClass}"
+                        data-score-edit="1"
+                        data-student-id="${student.id}"
+                        data-assignment-id="${assignment.id}"
+                        data-current-score="${value}"
+                        title="クリックしてスコアを修正">
 
                         ${value}
 
-                      </span>
+                      </button>
 
                       <div class="tiny muted">
+
                         ${readCount}
                         read${readCount === 1 ? '' : 's'}
+
                       </div>
 
                     </td>
@@ -954,12 +1028,10 @@ function renderTable() {
 
                   ${
                     total
-
                       ? Math.round(
                           sum /
                           total
                         )
-
                       : '—'
                   }
 
@@ -979,10 +1051,6 @@ function renderTable() {
       )
       .join('');
 }
-
-// ==========================================
-// MAIN RENDER
-// ==========================================
 
 function render() {
 
@@ -1031,6 +1099,300 @@ function esc(
 // SEARCH
 // ==========================================
 
+async function saveManualScore(
+  studentId,
+  assignmentId,
+  score
+) {
+
+  const {
+    error
+  } =
+    await getClient(
+      'teacher'
+    )
+      .rpc(
+        'set_manual_score',
+        {
+
+          p_assignment_id:
+            assignmentId,
+
+          p_student_id:
+            studentId,
+
+          p_score:
+            score
+
+        }
+      );
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  const index =
+    manualScores.findIndex(
+      row =>
+        row.student_id ===
+          studentId &&
+        row.assignment_id ===
+          assignmentId
+    );
+
+
+  if (
+    score === null
+  ) {
+
+    if (
+      index >= 0
+    ) {
+
+      manualScores.splice(
+        index,
+        1
+      );
+    }
+
+  } else if (
+    index >= 0
+  ) {
+
+    manualScores[index].score =
+      score;
+
+  } else {
+
+    manualScores.push({
+
+      student_id:
+        studentId,
+
+      assignment_id:
+        assignmentId,
+
+      score
+
+    });
+  }
+
+
+  render();
+}
+
+
+function beginManualScoreEdit(
+  button
+) {
+
+  const studentId =
+    button.dataset.studentId;
+
+  const assignmentId =
+    button.dataset.assignmentId;
+
+  const current =
+    button.dataset.currentScore ||
+    '';
+
+
+  const input =
+    document.createElement(
+      'input'
+    );
+
+
+  input.type =
+    'number';
+
+  input.min =
+    '0';
+
+  input.max =
+    '100';
+
+  input.step =
+    '1';
+
+  input.value =
+    current;
+
+  input.className =
+    'grade-score-input';
+
+
+  button.replaceWith(
+    input
+  );
+
+
+  input.focus();
+  input.select();
+
+
+  let finished =
+    false;
+
+
+  const finish =
+    async save => {
+
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+
+
+      if (!save) {
+
+        renderTable();
+
+        return;
+      }
+
+
+      const raw =
+        input.value.trim();
+
+
+      const score =
+        raw === ''
+          ? null
+          : Math.round(
+              Number(raw)
+            );
+
+
+      if (
+        score !== null &&
+        (
+          !Number.isFinite(score) ||
+          score < 0 ||
+          score > 100
+        )
+      ) {
+
+        finished = false;
+
+        input.focus();
+        input.select();
+
+        return;
+      }
+
+
+      input.disabled =
+        true;
+
+
+      try {
+
+        await saveManualScore(
+          studentId,
+          assignmentId,
+          score
+        );
+
+      } catch (
+        error
+      ) {
+
+        console.error(
+          error
+        );
+
+
+        await showInfoModal({
+
+          badge:
+            'Error',
+
+          badgeType:
+            'danger',
+
+          title:
+            'スコアを保存できませんでした',
+
+          message:
+            error.message ||
+            String(error)
+
+        });
+
+
+        renderTable();
+      }
+    };
+
+
+  input.addEventListener(
+    'keydown',
+    event => {
+
+      if (
+        event.key ===
+        'Enter'
+      ) {
+
+        event.preventDefault();
+
+        finish(true);
+      }
+
+
+      if (
+        event.key ===
+        'Escape'
+      ) {
+
+        event.preventDefault();
+
+        finish(false);
+      }
+    }
+  );
+
+
+  input.addEventListener(
+    'blur',
+    () => {
+
+      finish(true);
+    }
+  );
+}
+
+
+$('#gradeBody')
+  ?.addEventListener(
+    'click',
+    event => {
+
+      const button =
+        event.target.closest(
+          '[data-score-edit]'
+        );
+
+
+      if (!button) {
+        return;
+      }
+
+
+      beginManualScoreEdit(
+        button
+      );
+    }
+  );
+
+
+// ==========================================
+// SEARCH
+// ==========================================
 $('#studentSearch').oninput =
   renderTable;
 
@@ -2301,8 +2663,8 @@ function openAssignmentEditor(
 
     audioStatus.textContent =
       hasRegisteredAudio
-        ? `✓ 登録済み: ${assignment?.audio_file_name || 'MP3 Audio'}`
-        : 'MP3 only · Max 5 MB · Cloud copy expires after 14 days';
+        ? `✓ 登録済み: ${assignment?.audio_file_name || 'Audio File'}`
+        : 'MP3 / WAV · Max 5 MB · Cloud copy expires after 14 days';
   }
 
   if (removeAudioButton) {
@@ -2490,7 +2852,7 @@ function updateDueDate() {
 
 // ==========================================
 // ASSIGNMENT AUDIO
-// MP3 → R2
+// MP3 / WAV → R2
 // ==========================================
 
 const MAX_ASSIGNMENT_AUDIO_SIZE =
@@ -2504,6 +2866,24 @@ function getSelectedAssignmentAudio() {
       ?.files?.[0] ||
     null
   );
+}
+
+
+function getAssignmentAudioContentType(
+  file
+) {
+
+  const fileName =
+    String(
+      file?.name || ''
+    )
+      .trim()
+      .toLowerCase();
+
+
+  return fileName.endsWith('.wav')
+    ? 'audio/wav'
+    : 'audio/mpeg';
 }
 
 
@@ -2524,14 +2904,15 @@ function validateAssignmentAudio(
       .toLowerCase();
 
 
-  if (
-    !fileName.endsWith(
-      '.mp3'
-    )
-  ) {
+  const supported =
+    fileName.endsWith('.mp3') ||
+    fileName.endsWith('.wav');
+
+
+  if (!supported) {
 
     throw new Error(
-      'MP3ファイルを選択してください。'
+      'MP3またはWAVファイルを選択してください。'
     );
   }
 
@@ -2542,11 +2923,10 @@ function validateAssignmentAudio(
   ) {
 
     throw new Error(
-      'MP3は5 MB以下にしてください。'
+      '音声ファイルは5 MB以下にしてください。'
     );
   }
 }
-
 
 async function uploadAssignmentAudio(
   file
@@ -2557,7 +2937,12 @@ async function uploadAssignmentAudio(
   );
 
 
-  const sb =
+    const contentType =
+    getAssignmentAudioContentType(
+      file
+    );
+
+const sb =
     getClient(
       'teacher'
     );
@@ -2610,7 +2995,7 @@ async function uploadAssignmentAudio(
               file.name,
 
             contentType:
-              'audio/mpeg',
+              contentType,
 
             fileSize:
               file.size
@@ -2642,7 +3027,7 @@ async function uploadAssignmentAudio(
 
     throw new Error(
       signed.error ||
-      'MP3のアップロード準備に失敗しました。'
+      '音声ファイルのアップロード準備に失敗しました。'
     );
   }
 
@@ -2656,7 +3041,7 @@ async function uploadAssignmentAudio(
 
         headers: {
           'Content-Type':
-            'audio/mpeg'
+            contentType
         },
 
         body:
@@ -2670,7 +3055,7 @@ async function uploadAssignmentAudio(
   ) {
 
     throw new Error(
-      `MP3 upload failed (${uploadResponse.status}).`
+      `Audio upload failed (${uploadResponse.status}).`
     );
   }
 
@@ -2684,8 +3069,7 @@ async function uploadAssignmentAudio(
       signed.audioExpiresAt,
 
     contentType:
-      signed.contentType ||
-      'audio/mpeg',
+      signed.contentType || contentType,
 
     fileName:
       file.name,
@@ -2734,7 +3118,7 @@ async function removeAssignmentAudio() {
         '登録済みMP3を削除しますか？',
 
       message:
-        `「${assignment.audio_file_name || 'MP3 Audio'}」をこの課題から削除します。
+        `「${assignment.audio_file_name || 'Audio File'}」をこの課題から削除します。
 
 生徒はこの音声を利用できなくなります。`,
 
@@ -2982,7 +3366,7 @@ try {
 
   msg.textContent =
     error.message ||
-    'MP3ファイルを確認してください。';
+    'MP3 / WAVファイルを確認してください。';
 
   return;
 }
@@ -4303,6 +4687,47 @@ students =
   } else {
 
     submissions =
+      [];
+  }
+
+  if (
+    assignments.length
+  ) {
+
+    const {
+      data: manualRows,
+      error: manualError
+    } =
+      await sb
+        .from(
+          'manual_scores'
+        )
+        .select(
+          'assignment_id,student_id,score,updated_at'
+        )
+        .in(
+          'assignment_id',
+          assignments.map(
+            assignment =>
+              assignment.id
+          )
+        );
+
+
+    if (
+      manualError
+    ) {
+      throw manualError;
+    }
+
+
+    manualScores =
+      manualRows ||
+      [];
+
+  } else {
+
+    manualScores =
       [];
   }
 }
@@ -6554,8 +6979,5 @@ $('#assignmentRelease').onchange =
     });
   }
 );
-
-
-
 
 
