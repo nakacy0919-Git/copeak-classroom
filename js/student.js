@@ -2160,6 +2160,11 @@ function render() {
   renderAssignmentList(
     map
   );
+
+
+  // 次に開く可能性が高い教材を
+  // Dashboard表示中に裏で準備
+  warmAssignmentMediaCache();
 }
 
 
@@ -3267,6 +3272,404 @@ async function getAssignmentImageUrl(
 
 
 // ==========================================
+// Copeak Launch Media Cache v1
+//
+// R2署名URLは5分有効なので
+// 約3分半だけClassroom内で再利用する。
+// ==========================================
+
+const assignmentMediaUrlCache =
+  new Map();
+
+
+const ASSIGNMENT_MEDIA_CACHE_MS =
+  210000;
+
+
+function getAssignmentMediaUrls(
+  assignment
+) {
+
+  if (
+    !assignment
+  ) {
+
+    return Promise.resolve({
+      audioUrl: null,
+      imageUrl: null
+    });
+  }
+
+
+  const key =
+    String(
+      assignment.id
+    );
+
+
+  const cached =
+    assignmentMediaUrlCache.get(
+      key
+    );
+
+
+  if (
+    cached &&
+    Date.now() -
+      cached.createdAt <
+      ASSIGNMENT_MEDIA_CACHE_MS
+  ) {
+
+    return cached.promise;
+  }
+
+
+  // ========================================
+  // 音声・画像を同時取得
+  // ========================================
+
+  const promise =
+    Promise.all([
+
+      assignment.audio_object_key
+
+        ? getAssignmentAudioUrl(
+            assignment
+          )
+
+        : Promise.resolve(
+            null
+          ),
+
+
+      assignment.image_object_key
+
+        ? getAssignmentImageUrl(
+            assignment
+          )
+
+        : Promise.resolve(
+            null
+          )
+
+    ])
+      .then(
+        ([
+          audioUrl,
+          imageUrl
+        ]) => ({
+
+          audioUrl:
+            audioUrl ||
+            null,
+
+          imageUrl:
+            imageUrl ||
+            null
+
+        })
+      )
+      .catch(
+        error => {
+
+          console.warn(
+            '[Copeak Classroom] media preparation failed:',
+            error
+          );
+
+
+          return {
+            audioUrl: null,
+            imageUrl: null
+          };
+        }
+      );
+
+
+  assignmentMediaUrlCache.set(
+    key,
+    {
+      createdAt:
+        Date.now(),
+
+      promise
+    }
+  );
+
+
+  return promise;
+}
+
+
+// ==========================================
+// Dashboard表示中に先読み
+//
+// いま開始できる課題のうち
+// 上位2件だけ先に準備する。
+// ==========================================
+
+let assignmentMediaWarmTimer =
+  null;
+
+
+function warmAssignmentMediaCache() {
+
+  if (
+    assignmentMediaWarmTimer
+  ) {
+
+    clearTimeout(
+      assignmentMediaWarmTimer
+    );
+  }
+
+
+  assignmentMediaWarmTimer =
+    setTimeout(
+      () => {
+
+        assignmentMediaWarmTimer =
+          null;
+
+
+        const now =
+          Date.now();
+
+
+        const targets =
+          assignments
+            .filter(
+              assignment => {
+
+                if (
+                  !assignment ||
+                  (
+                    !assignment
+                      .audio_object_key &&
+                    !assignment
+                      .image_object_key
+                  )
+                ) {
+
+                  return false;
+                }
+
+
+                const release =
+                  validTime(
+                    assignment.release_at
+                  );
+
+
+                const due =
+                  validTime(
+                    assignment.due_at
+                  );
+
+
+                return (
+                  (
+                    release === null ||
+                    now >= release
+                  ) &&
+                  (
+                    due === null ||
+                    now < due
+                  )
+                );
+              }
+            )
+            .slice(
+              0,
+              2
+            );
+
+
+        targets.forEach(
+          assignment => {
+
+            void getAssignmentMediaUrls(
+              assignment
+            );
+          }
+        );
+
+      },
+      250
+    );
+}
+
+
+// ==========================================
+// 白画面対策
+// ==========================================
+
+function showCopeakLaunchScreen(
+  popup
+) {
+
+  if (
+    !popup
+  ) {
+    return;
+  }
+
+
+  const message =
+    activeLanguage ===
+      'ja'
+
+      ? '教材を準備しています…'
+
+      : 'Preparing your lesson…';
+
+
+  try {
+
+    popup.document.open();
+
+
+    popup.document.write(
+      `<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1">
+<title>Copeak</title>
+
+<style>
+
+html,
+body {
+  width:100%;
+  height:100%;
+  margin:0;
+}
+
+body {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#faf8f5;
+  color:#292524;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.launch {
+  text-align:center;
+  padding:32px;
+}
+
+.logo {
+  width:64px;
+  height:64px;
+  margin:0 auto 18px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border-radius:18px;
+
+  background:#065f46;
+  color:white;
+
+  font-family:Georgia,serif;
+  font-size:38px;
+  font-weight:700;
+
+  box-shadow:
+    0 12px 30px
+    rgba(6,95,70,.18);
+}
+
+h1 {
+  margin:0;
+  font-size:27px;
+  letter-spacing:.02em;
+}
+
+p {
+  margin:10px 0 0;
+  color:#78716c;
+  font-size:14px;
+}
+
+.loader {
+  width:34px;
+  height:34px;
+
+  margin:24px auto 0;
+
+  border:
+    4px solid #d6d3d1;
+
+  border-top-color:
+    #047857;
+
+  border-radius:
+    50%;
+
+  animation:
+    spin .75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform:
+      rotate(360deg);
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="launch">
+
+  <div class="logo">
+    C
+  </div>
+
+  <h1>
+    Copeak
+  </h1>
+
+  <p>
+    ${message}
+  </p>
+
+  <div class="loader"></div>
+
+</div>
+
+</body>
+</html>`
+    );
+
+
+    popup.document.close();
+
+  } catch (
+    error
+  ) {
+
+    console.warn(
+      '[Copeak Classroom] loading screen unavailable:',
+      error
+    );
+  }
+}
+
+
+// ==========================================
 // OPEN COPEAK
 // ==========================================
 
@@ -3571,11 +3974,27 @@ if (
 
 
   // ========================================
-  // AUDIO
+  // 空白画面を出さない
   // ========================================
 
-  const audioUrl =
-    await getAssignmentAudioUrl(
+  showCopeakLaunchScreen(
+    popup
+  );
+
+
+  // ========================================
+  // AUDIO + IMAGE
+  //
+  // 直列ではなく同時取得。
+  // Dashboardで先読み済みなら
+  // Cacheから即取得。
+  // ========================================
+
+  const {
+    audioUrl,
+    imageUrl
+  } =
+    await getAssignmentMediaUrls(
       assignment
     );
 
@@ -3589,16 +4008,6 @@ if (
       audioUrl
     );
   }
-
-
-  // ========================================
-  // SUPPORT IMAGE
-  // ========================================
-
-  const imageUrl =
-    await getAssignmentImageUrl(
-      assignment
-    );
 
 
   if (
