@@ -6489,3 +6489,134 @@ strong {
     height:220px;
   }
 }
+
+
+
+/* ==========================================
+   Assignment Editor Media Sidebar Fix v1
+   Right sidebar??
+========================================== */
+
+/*
+  ?????????????
+  YouTube / Audio / Image ???????
+*/
+
+.assignment-editor-sidebar
+.assignment-media-tools {
+  padding: 14px;
+  border-radius: 14px;
+}
+
+
+.assignment-editor-sidebar
+.assignment-media-tools-header {
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+
+.assignment-editor-sidebar
+.assignment-media-tools-title {
+  font-size: 16px;
+}
+
+
+.assignment-editor-sidebar
+.assignment-media-grid {
+  grid-template-columns: 1fr !important;
+  gap: 9px;
+}
+
+
+/*
+  1???:
+  [icon] [title + description] [>]
+*/
+
+.assignment-editor-sidebar
+.assignment-media-card {
+  display: grid;
+  grid-template-columns:
+    52px
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 12px;
+
+  min-height: 76px;
+
+  padding: 11px 13px;
+
+  border-radius: 12px;
+}
+
+
+.assignment-editor-sidebar
+.assignment-media-icon {
+  width: 48px;
+  height: 48px;
+
+  flex: 0 0 48px;
+
+  border-radius: 12px;
+}
+
+
+.assignment-editor-sidebar
+.assignment-media-icon svg {
+  width: 25px;
+  height: 25px;
+}
+
+
+.assignment-editor-sidebar
+.assignment-media-text {
+  min-width: 0;
+}
+
+
+.assignment-editor-sidebar
+.assignment-media-label {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+
+.assignment-editor-sidebar
+.assignment-media-desc {
+  margin-top: 2px;
+
+  font-size: 11px;
+  line-height: 1.45;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+
+.assignment-editor-sidebar
+.assignment-media-chevron {
+  margin-left: 0;
+
+  font-size: 17px;
+}
+
+
+/*
+  ?????????
+  ???????????????????
+*/
+
+.assignment-editor-sidebar
+.assignment-media-panel {
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 12px;
+}
+
+
+/* Assignment Editor Media Sidebar Fix v1 */
+
