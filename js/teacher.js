@@ -1137,6 +1137,120 @@ function csvEscape(
 }
 
 
+function assignmentPassResult(
+  assignment,
+  accuracy,
+  wpm,
+  comprehension
+) {
+
+  if (
+    assignment.pass_enabled !== true
+  ) {
+
+    return {
+      configured: false,
+      passed: false
+    };
+  }
+
+
+  const normalize =
+    value => {
+
+      if (
+        value === null ||
+        value === undefined ||
+        value === ''
+      ) {
+        return null;
+      }
+
+
+      const number =
+        Number(value);
+
+
+      return Number.isFinite(number)
+        ? number
+        : null;
+    };
+
+
+  const accuracyTarget =
+    normalize(
+      assignment.pass_accuracy
+    );
+
+
+  const wpmTarget =
+    normalize(
+      assignment.pass_wpm
+    );
+
+
+  const comprehensionTarget =
+    normalize(
+      assignment.pass_comprehension
+    );
+
+
+  const configured =
+    accuracyTarget !== null ||
+    wpmTarget !== null ||
+    comprehensionTarget !== null;
+
+
+  if (!configured) {
+
+    return {
+      configured: false,
+      passed: false
+    };
+  }
+
+
+  const checks = [];
+
+
+  if (accuracyTarget !== null) {
+
+    checks.push(
+      accuracy !== null &&
+      accuracy >= accuracyTarget
+    );
+  }
+
+
+  if (wpmTarget !== null) {
+
+    checks.push(
+      wpm !== null &&
+      wpm >= wpmTarget
+    );
+  }
+
+
+  if (
+    comprehensionTarget !== null
+  ) {
+
+    checks.push(
+      comprehension !== null &&
+      comprehension >=
+        comprehensionTarget
+    );
+  }
+
+
+  return {
+    configured: true,
+    passed:
+      checks.length > 0 &&
+      checks.every(Boolean)
+  };
+}
+
 function exportGradebookCsv() {
 
   const activeAssignments =
@@ -1186,7 +1300,8 @@ function exportGradebookCsv() {
         `#${assignment.week_no} Accuracy`,
         `#${assignment.week_no} WPM`,
         `#${assignment.week_no} Comprehension`,
-        `#${assignment.week_no} Reads`
+        `#${assignment.week_no} Reads`,
+        `#${assignment.week_no} Pass`
       );
 
     }
@@ -1289,12 +1404,34 @@ function exportGradebookCsv() {
               );
 
 
+            const passResultCsv =
+              assignmentPassResult(
+                assignment,
+                accuracy === ''
+                  ? null
+                  : accuracy,
+                wpm === ''
+                  ? null
+                  : wpm,
+                comprehension === ''
+                  ? null
+                  : comprehension
+              );
+
+
             row.push(
               accuracy,
               wpm,
               comprehension,
               attempts.get(key) ||
-                0
+                0,
+              passResultCsv.configured
+                ? (
+                    passResultCsv.passed
+                      ? 'PASS'
+                      : 'NOT YET'
+                  )
+                : ''
             );
 
           }
@@ -1611,6 +1748,30 @@ function renderTable() {
                     } / Reads ${reads}`;
 
 
+                  const passResult =
+                    assignmentPassResult(
+                      assignment,
+                      accuracy,
+                      wpm,
+                      comprehension
+                    );
+
+
+                  const passHtml =
+                    passResult.passed
+
+                      ? `
+                          <div
+                            class="grade-pass-badge"
+                            title="設定された合格基準をすべてクリア">
+
+                            ✓ PASS
+
+                          </div>
+                        `
+
+                      : '';
+
                   const metricButton =
                     (
                       metric,
@@ -1730,6 +1891,8 @@ function renderTable() {
                       )}">
 
                       ${display}
+
+                      ${passHtml}
 
                       <div class="tiny muted">
                         ${reads}
@@ -3373,6 +3536,42 @@ function resetAssignmentOcr() {
   }
 }
 
+function updateAssignmentPassCriteriaState() {
+
+  const enabled =
+    $('#assignmentPassEnabled')
+      ?.checked ===
+    true;
+
+
+  [
+    '#assignmentPassAccuracy',
+    '#assignmentPassWpm',
+    '#assignmentPassComprehension'
+  ]
+    .forEach(
+      selector => {
+
+        const input =
+          $(selector);
+
+
+        if (input) {
+          input.disabled =
+            !enabled;
+        }
+      }
+    );
+
+
+  $('#assignmentPassCriteriaFields')
+    ?.classList
+    .toggle(
+      'is-disabled',
+      !enabled
+    );
+}
+
 function openAssignmentEditor(
   assignment = null
 ) {
@@ -3587,7 +3786,46 @@ $('#assignmentDue').value =
   );
 
 
-  $('#assignmentPublished').checked =
+    $('#assignmentPassAccuracy').value =
+    assignment?.pass_accuracy ??
+    '';
+
+
+  $('#assignmentPassWpm').value =
+    assignment?.pass_wpm ??
+    '';
+
+
+  $('#assignmentPassComprehension').value =
+    assignment?.pass_comprehension ??
+    '';
+
+
+  const passEnabledForEditor =
+    assignment
+
+      ? (
+          assignment.pass_enabled === true ||
+          (
+            assignment.pass_enabled === undefined &&
+            (
+              assignment.pass_accuracy !== null ||
+              assignment.pass_wpm !== null ||
+              assignment.pass_comprehension !== null
+            )
+          )
+        )
+
+      : false;
+
+
+  $('#assignmentPassEnabled').checked =
+    passEnabledForEditor;
+
+
+  updateAssignmentPassCriteriaState();
+
+$('#assignmentPublished').checked =
     assignment
       ? assignment.is_published !== false
       : true;
@@ -4180,6 +4418,108 @@ let youtubeClip =
 
   msg.style.color =
     '#b91c1c';
+  const optionalNumber =
+    selector => {
+
+      const raw =
+        $(selector)
+          ?.value
+          ?.trim() ||
+        '';
+
+
+      if (raw === '') {
+        return null;
+      }
+
+
+      return Number(raw);
+    };
+
+
+  const passAccuracy =
+    optionalNumber(
+      '#assignmentPassAccuracy'
+    );
+
+
+  const passWpm =
+    optionalNumber(
+      '#assignmentPassWpm'
+    );
+
+
+  const passComprehension =
+    optionalNumber(
+      '#assignmentPassComprehension'
+    );
+
+
+  const passEnabled =
+    $('#assignmentPassEnabled')
+      ?.checked ===
+    true;
+
+
+  if (
+    passEnabled &&
+    passAccuracy === null &&
+    passWpm === null &&
+    passComprehension === null
+  ) {
+
+    msg.textContent =
+      '合格基準を使用する場合は、Accuracy・WPM・Comprehensionのいずれかを設定してください。';
+
+    return;
+  }
+
+  if (
+    passAccuracy !== null &&
+    (
+      !Number.isFinite(passAccuracy) ||
+      passAccuracy < 0 ||
+      passAccuracy > 100
+    )
+  ) {
+
+    msg.textContent =
+      'Accuracyの合格基準は0〜100で入力してください。';
+
+    return;
+  }
+
+
+  if (
+    passWpm !== null &&
+    (
+      !Number.isFinite(passWpm) ||
+      passWpm < 0
+    )
+  ) {
+
+    msg.textContent =
+      'WPMの合格基準は0以上で入力してください。';
+
+    return;
+  }
+
+
+  if (
+    passComprehension !== null &&
+    (
+      !Number.isFinite(passComprehension) ||
+      passComprehension < 0 ||
+      passComprehension > 100
+    )
+  ) {
+
+    msg.textContent =
+      'Comprehensionの合格基準は0〜100で入力してください。';
+
+    return;
+  }
+
   const audienceType =
     $('#assignmentAudienceTargeted')
       ?.checked === true
@@ -4516,6 +4856,18 @@ let uploadedAudio =
 
 lesson_lang:
   language,
+
+pass_accuracy:
+  passAccuracy,
+
+pass_wpm:
+  passWpm,
+
+pass_comprehension:
+  passComprehension,
+
+pass_enabled:
+  passEnabled,
 
 
 youtube_url:
@@ -7622,6 +7974,12 @@ $('#removeAssignmentAudio')
         });
       }
     }
+  );
+
+$('#assignmentPassEnabled')
+  ?.addEventListener(
+    'change',
+    updateAssignmentPassCriteriaState
   );
 
 $('#assignmentRelease').onchange =

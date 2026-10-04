@@ -2578,7 +2578,118 @@
 
 
 
-        <div class="assignment-editor-sidebar-card">
+        <div
+  class="assignment-editor-sidebar-card"
+  id="assignmentPassCriteriaCard">
+
+  <div class="assignment-editor-sidebar-title">
+    🎯 合格基準 / Pass Criteria
+  </div>
+
+  <div
+    class="tiny muted"
+    style="margin-bottom:12px">
+
+    空欄の項目は判定対象にしません。
+    設定したすべての基準をクリアすると
+    Gradebookに ✓ PASS が表示されます。
+
+  </div>
+
+
+  <label
+  class="publish-check assignment-pass-toggle">
+
+  <input
+    id="assignmentPassEnabled"
+    type="checkbox">
+
+  <span>
+
+    <strong>
+      合格基準を使用する
+    </strong>
+
+    <small>
+      ONにするとGradebookと生徒画面で合否を判定します
+    </small>
+
+  </span>
+
+</label>
+
+
+<div
+  id="assignmentPassCriteriaFields"
+  class="assignment-pass-grid">
+
+    <div class="field">
+
+      <label>
+        Accuracy (%)
+      </label>
+
+      <input
+        id="assignmentPassAccuracy"
+        type="number"
+        min="0"
+        max="100"
+        step="1"
+        class="input"
+        placeholder="90">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        WPM
+      </label>
+
+      <input
+        id="assignmentPassWpm"
+        type="number"
+        min="0"
+        step="1"
+        class="input"
+        placeholder="110">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        Comprehension (%)
+      </label>
+
+      <input
+        id="assignmentPassComprehension"
+        type="number"
+        min="0"
+        max="100"
+        step="1"
+        class="input"
+        placeholder="80">
+
+    </div>
+
+  </div>
+
+
+  <div
+    class="tiny muted"
+    style="margin-top:8px">
+
+    例：Accuracy 90以上 ＋ WPM 110以上
+    → 両方達成でPASS
+
+  </div>
+
+</div>
+
+<div class="assignment-editor-sidebar-card">
 
   <div class="assignment-editor-sidebar-title">
     🌐 Language

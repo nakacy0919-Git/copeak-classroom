@@ -5813,3 +5813,626 @@ strong {
   padding-right:5px;
 }
 
+
+
+/* Assignment pass criteria */
+
+.assignment-pass-grid {
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+
+.grade-pass-badge {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:5px;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#dcfce7;
+  color:#15803d;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+
+
+/* Pass criteria ON / OFF */
+
+.assignment-pass-toggle {
+  margin-bottom:12px;
+}
+
+.assignment-pass-grid.is-disabled {
+  opacity:.45;
+}
+
+
+/* Student pass criteria */
+
+.student-pass-panel {
+  margin-top:12px;
+  padding:13px 15px;
+  border:1px solid #dbe3ee;
+  border-radius:14px;
+  background:#f8fafc;
+}
+
+.student-pass-panel.passed {
+  border:2px solid #86efac;
+  background:#f0fdf4;
+}
+
+.student-pass-panel.pending {
+  border-color:#fde68a;
+  background:#fffbeb;
+}
+
+.student-pass-heading {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.student-pass-main {
+  min-width:0;
+}
+
+.student-pass-title {
+  margin-bottom:7px;
+  font-size:12px;
+  font-weight:800;
+  color:#475569;
+}
+
+.student-pass-criteria {
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.student-pass-criteria span {
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid #e2e8f0;
+  background:#fff;
+  font-size:11px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.student-pass-mark {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex-shrink:0;
+  padding:9px 14px;
+  border-radius:999px;
+  background:#16a34a;
+  color:#fff;
+  font-size:15px;
+  font-weight:900;
+  white-space:nowrap;
+  box-shadow:
+    0 6px 16px
+    rgba(22,163,74,.22);
+}
+
+.student-pass-check {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:27px;
+  height:27px;
+  border-radius:50%;
+  background:#fff;
+  color:#16a34a;
+  font-size:20px;
+  line-height:1;
+}
+
+.student-pass-notyet {
+  flex-shrink:0;
+  padding:7px 11px;
+  border-radius:999px;
+  background:#fef3c7;
+  color:#92400e;
+  font-size:12px;
+  font-weight:800;
+}
+
+.student-pass-current {
+  margin-top:10px;
+  padding-top:9px;
+  border-top:1px dashed #cbd5e1;
+  font-size:12px;
+  color:#475569;
+}
+/* ==========================================
+   Student Pass Panel - Premium UI
+========================================== */
+
+.student-pass-panel {
+  margin-top: 12px;
+  padding: 16px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.student-pass-panel.passed {
+  border-color: #86efac;
+  background: linear-gradient(180deg, #f7fff9 0%, #f0fdf4 100%);
+}
+
+.student-pass-panel.pending {
+  border-color: #fcd34d;
+  background: linear-gradient(180deg, #fffdf7 0%, #fffbeb 100%);
+}
+
+.student-pass-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.student-pass-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.student-pass-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.student-pass-status.passed {
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.22);
+}
+
+.student-pass-status.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.student-pass-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.student-pass-metric {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.student-pass-metric-label {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: .02em;
+}
+
+.student-pass-metric-value {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.student-pass-criteria-line {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #cbd5e1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.student-pass-criteria-caption {
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+}
+
+.student-pass-criteria-text {
+  font-size: 12px;
+  color: #334155;
+  font-weight: 600;
+}
+
+@media (max-width: 780px) {
+  .student-pass-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .student-pass-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ==========================================
+   Student Pass Gauge v2
+========================================== */
+
+.student-pass-panel {
+  margin-top:14px;
+  padding:18px;
+  border:1px solid #e2e8f0;
+  border-radius:18px;
+  background:#ffffff;
+  box-shadow:
+    0 10px 30px
+    rgba(15,23,42,.06);
+}
+
+.student-pass-panel.pending {
+  border-color:#f6c453;
+  background:
+    linear-gradient(
+      180deg,
+      #fffefa 0%,
+      #fffcf2 100%
+    );
+}
+
+.student-pass-panel.passed {
+  border-color:#86d9b4;
+  background:
+    linear-gradient(
+      180deg,
+      #fbfffd 0%,
+      #f1fcf7 100%
+    );
+}
+
+.student-pass-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:17px;
+}
+
+.student-pass-title {
+  margin:0;
+  font-size:15px;
+  line-height:1.2;
+  font-weight:900;
+  color:#0f172a;
+}
+
+.student-pass-guide {
+  margin-top:5px;
+  font-size:11px;
+  font-weight:600;
+  color:#94a3b8;
+}
+
+.student-pass-status {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:36px;
+  padding:0 14px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.student-pass-status.pending {
+  color:#92400e;
+  background:#fef3c7;
+}
+
+.student-pass-status.waiting {
+  color:#475569;
+  background:#f1f5f9;
+}
+
+.student-pass-status.passed {
+  color:#ffffff;
+  background:#14805e;
+  box-shadow:
+    0 6px 16px
+    rgba(20,128,94,.18);
+}
+
+
+/* 3 metric gauges */
+
+.student-pass-gauges {
+  display:grid;
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0,1fr)
+    );
+  gap:12px;
+}
+
+.student-gauge-card {
+  min-width:0;
+  padding:13px 14px 15px;
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  background:rgba(
+    255,
+    255,
+    255,
+    .94
+  );
+}
+
+.student-gauge-card.reached {
+  border-color:#bbdfce;
+}
+
+.student-gauge-head {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.student-gauge-label {
+  overflow:hidden;
+  color:#64748b;
+  font-size:11px;
+  font-weight:800;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.student-gauge-value {
+  color:#0f172a;
+  font-size:24px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:-.03em;
+}
+
+.student-gauge-sub {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:26px;
+  margin-top:8px;
+  font-size:10px;
+}
+
+.student-gauge-goal-text {
+  color:#64748b;
+  font-weight:700;
+}
+
+.student-gauge-gap {
+  color:#b45309;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.student-gauge-gap.reached {
+  color:#14805e;
+}
+
+
+/* Gauge */
+
+.student-gauge-track {
+  position:relative;
+  height:11px;
+  margin-top:15px;
+  overflow:visible;
+  border-radius:999px;
+  background:#e8edf3;
+}
+
+.student-gauge-fill {
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:0;
+  width:
+    min(
+      100%,
+      var(--current)
+    );
+  border-radius:999px;
+  background:
+    linear-gradient(
+      90deg,
+      #d6a72a,
+      #e7bd4d
+    );
+  transition:
+    width .25s ease;
+}
+
+.student-gauge-card.reached
+.student-gauge-fill {
+  background:
+    linear-gradient(
+      90deg,
+      #159570,
+      #35b58b
+    );
+}
+
+
+/* Red goal marker */
+
+.student-gauge-goal-line {
+  position:absolute;
+  z-index:3;
+  top:-5px;
+  bottom:-5px;
+  left:
+    clamp(
+      2%,
+      var(--goal),
+      98%
+    );
+  width:2px;
+  border-radius:2px;
+  background:#dc2626;
+  transform:
+    translateX(-1px);
+}
+
+.student-gauge-goal-line::after {
+  content:'';
+  position:absolute;
+  top:-4px;
+  left:50%;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#dc2626;
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+}
+
+.student-gauge-goal-line span {
+  position:absolute;
+  left:50%;
+  bottom:16px;
+  padding:2px 5px;
+  border-radius:5px;
+  color:#b91c1c;
+  background:#fff;
+  font-size:8px;
+  line-height:1;
+  font-weight:900;
+  white-space:nowrap;
+  transform:
+    translateX(-50%);
+}
+
+
+/* ==========================================
+   Assignment card with pass criteria
+========================================== */
+
+.student-assignment-card.has-pass-criteria {
+  position:relative;
+  padding-bottom:72px;
+}
+
+
+/*
+  合格基準カードに数字があるので
+  左下の重複スコアは隠す
+*/
+
+.student-assignment-card.has-pass-criteria
+.student-assignment-result
+> strong,
+
+.student-assignment-card.has-pass-criteria
+.student-assignment-result
+> .tiny {
+  display:none;
+}
+
+
+/*
+  Retry CTA → card right-bottom
+*/
+
+.student-assignment-card.has-pass-criteria
+.student-assignment-result {
+  position:absolute;
+  right:18px;
+  bottom:16px;
+  z-index:5;
+  margin:0;
+  padding:0;
+  width:auto;
+}
+
+.student-assignment-card.has-pass-criteria
+.assignment-actions {
+  margin:0;
+}
+
+.student-assignment-card.has-pass-criteria
+.start-btn {
+  min-height:38px;
+  padding:8px 15px;
+  border-color:#163f3a;
+  border-radius:10px;
+  color:#ffffff;
+  background:#163f3a;
+  font-size:12px;
+  font-weight:800;
+  box-shadow:
+    0 5px 14px
+    rgba(15,23,42,.12);
+}
+
+.student-assignment-card.has-pass-criteria
+.start-btn:hover {
+  color:#ffffff;
+  background:#0e312d;
+}
+
+
+/* responsive */
+
+@media (
+  max-width:900px
+) {
+
+  .student-pass-gauges {
+    grid-template-columns:1fr;
+  }
+
+  .student-assignment-card.has-pass-criteria {
+    padding-bottom:78px;
+  }
+}
+
+/* ==========================================
+   Goal label position fix
+   合格ラベルを赤ラインの下へ移動
+========================================== */
+
+.student-gauge-track {
+  margin-bottom: 24px;
+}
+
+.student-gauge-goal-line span {
+  top: 16px;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
