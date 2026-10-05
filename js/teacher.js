@@ -2244,6 +2244,7 @@ function renderClassLeaderboard() {
         'section'
       );
 
+
   if (!metricsSection) {
     return;
   }
@@ -2260,11 +2261,14 @@ function renderClassLeaderboard() {
         'section'
       );
 
+
     root.id =
       'classReadingLeaderboard';
 
+
     root.className =
       'paper section class-reading-leaderboard';
+
 
     metricsSection
       .insertAdjacentElement(
@@ -2293,10 +2297,6 @@ function renderClassLeaderboard() {
             課題別 Reading Ranking
           </h2>
 
-          <p class="muted">
-            課題ごとのランキングを確認できます。
-          </p>
-
         </div>
 
       </div>
@@ -2307,14 +2307,15 @@ function renderClassLeaderboard() {
       </div>
     `;
 
+
     return;
   }
 
 
   if (
     !rankAssignments.some(
-      item =>
-        item.id ===
+      assignment =>
+        assignment.id ===
         activeReadingRankAssignmentId
     )
   ) {
@@ -2326,8 +2327,8 @@ function renderClassLeaderboard() {
 
   const selectedAssignment =
     rankAssignments.find(
-      item =>
-        item.id ===
+      assignment =>
+        assignment.id ===
         activeReadingRankAssignmentId
     ) ||
     rankAssignments[0];
@@ -2345,7 +2346,8 @@ function renderClassLeaderboard() {
     Math.max(
       0,
       Number(
-        selectedRows[0]?.total_students
+        selectedRows[0]
+          ?.total_students
       ) || 0
     );
 
@@ -2357,6 +2359,38 @@ function renderClassLeaderboard() {
           row.total_attempts
         ) > 0
     ).length;
+
+
+  const signature =
+    [
+      selectedAssignment.id,
+      totalStudents,
+      submittedStudents,
+      JSON.stringify(
+        selectedRows
+      ),
+      rankAssignments
+        .map(
+          assignment =>
+            `${assignment.id}:${assignment.week_no}:${assignment.title}`
+        )
+        .join('|')
+    ].join('::');
+
+
+  if (
+    root.dataset
+      .rankSignature ===
+    signature
+  ) {
+
+    return;
+  }
+
+
+  root.dataset
+    .rankSignature =
+    signature;
 
 
   const options =
@@ -2385,12 +2419,13 @@ function renderClassLeaderboard() {
 
 
   const audienceLabel =
-    selectedAssignment.audience_type ===
+    selectedAssignment
+      .audience_type ===
       'targeted'
 
-      ? '個別配布・対象者内順位'
+      ? '個別配布'
 
-      : 'クラス配布・クラス内順位';
+      : 'クラス配布';
 
 
   root.innerHTML = `
@@ -2407,7 +2442,7 @@ function renderClassLeaderboard() {
         </h2>
 
         <p class="muted">
-          課題を選択してAccuracy・WPM・音読回数の順位を確認できます。
+          課題を選択してTop 5を確認します。
         </p>
 
       </div>
@@ -2420,7 +2455,7 @@ function renderClassLeaderboard() {
     </div>
 
 
-    <div class="reading-rank-picker teacher-rank-picker">
+    <div class="reading-rank-picker ranking-picker-v4">
 
       <div class="reading-rank-picker-icon">
         📊
@@ -2451,46 +2486,31 @@ function renderClassLeaderboard() {
     </div>
 
 
-    <div class="reading-rank-selected">
+    <div class="teacher-rank-meta-bar">
 
-      <div>
+      <strong>
+        No.${esc(
+          selectedAssignment.week_no
+        )}
+      </strong>
 
-        <span class="reading-rank-selected-no">
+      <span class="teacher-rank-meta-title">
+        ${esc(
+          selectedAssignment.title
+        )}
+      </span>
 
-          選択中 ・ No.${esc(
-            selectedAssignment.week_no
-          )}
+      <span>
+        ${audienceLabel}
+      </span>
 
-        </span>
+      <span>
+        対象 ${totalStudents}人
+      </span>
 
-        <strong>
-
-          ${esc(
-            selectedAssignment.title
-          )}
-
-        </strong>
-
-      </div>
-
-
-      <div class="reading-rank-selected-meta">
-
-        <span class="reading-rank-audience">
-          ${esc(
-            audienceLabel
-          )}
-        </span>
-
-        <span class="reading-rank-target-count">
-          対象 ${totalStudents}人
-        </span>
-
-        <span class="reading-rank-submitted-count">
-          提出 ${submittedStudents} / ${totalStudents}
-        </span>
-
-      </div>
+      <span class="submitted">
+        提出 ${submittedStudents}/${totalStudents}
+      </span>
 
     </div>
 
@@ -2504,8 +2524,10 @@ function renderClassLeaderboard() {
         'accuracy_rank',
         'best_accuracy',
         value =>
-          value === null ||
-          value === undefined
+          value ===
+              null ||
+          value ===
+              undefined
 
             ? '—'
 
@@ -2524,8 +2546,10 @@ function renderClassLeaderboard() {
         'wpm_rank',
         'best_wpm',
         value =>
-          value === null ||
-          value === undefined
+          value ===
+              null ||
+          value ===
+              undefined
 
             ? '—'
 
@@ -2547,7 +2571,8 @@ function renderClassLeaderboard() {
           `${
             Math.max(
               0,
-              Number(value) || 0
+              Number(value) ||
+              0
             )
           } reads`
       )}
@@ -2562,11 +2587,11 @@ function renderClassLeaderboard() {
           <div class="teacher-rank-no-submissions">
 
             <strong>
-              まだこの課題の提出はありません。
+              まだ提出はありません。
             </strong>
 
             <span>
-              生徒が最初の音読結果を保存するとランキングが表示されます。
+              最初の結果が保存されるとランキングが表示されます。
             </span>
 
           </div>
@@ -2587,6 +2612,12 @@ function renderClassLeaderboard() {
 
         activeReadingRankAssignmentId =
           event.target.value;
+
+
+        root.dataset
+          .rankSignature =
+          '';
+
 
         renderClassLeaderboard();
       }

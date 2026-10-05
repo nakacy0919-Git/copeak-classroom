@@ -7655,3 +7655,652 @@ strong {
   }
 
 }
+
+/* ==========================================
+   ASSIGNMENT RANKING VISUAL v4
+========================================== */
+
+
+/* ----------------------------------------------------------
+   Stable native selector
+---------------------------------------------------------- */
+
+.ranking-picker-v4 {
+  grid-template-columns:
+    48px
+    minmax(0,1fr);
+
+  padding:
+    12px 14px;
+
+  border-radius:
+    15px;
+}
+
+
+.ranking-picker-v4
+.reading-rank-select {
+  min-height:
+    48px;
+
+  font-family:
+    var(--ranking-ui-font);
+
+  font-size:
+    14px;
+
+  font-weight:
+    700;
+
+  line-height:
+    1.4;
+}
+
+
+/* ----------------------------------------------------------
+   Main student ranking
+---------------------------------------------------------- */
+
+.student-rank-focus {
+  margin-top:
+    14px;
+
+  padding:
+    18px;
+
+  border:
+    1px solid
+    #dce7e3;
+
+  border-radius:
+    18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff 0%,
+      #f7fbf9 100%
+    );
+
+  box-shadow:
+    0 10px 28px
+    rgba(
+      15,
+      23,
+      42,
+      .045
+    );
+}
+
+
+.student-rank-focus-head {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    14px;
+}
+
+
+.student-rank-focus-kicker {
+  color:
+    #059669;
+
+  font-size:
+    9px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .14em;
+}
+
+
+.student-rank-focus-head
+h3 {
+  margin:
+    3px 0 0;
+
+  color:
+    #12221d;
+
+  font-family:
+    var(--ranking-ui-font);
+
+  font-size:
+    18px;
+
+  font-weight:
+    900;
+}
+
+
+.student-rank-focus-target {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  min-height:
+    30px;
+
+  padding:
+    5px 11px;
+
+  border-radius:
+    999px;
+
+  color:
+    #475569;
+
+  background:
+    #eef4f2;
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+}
+
+
+.student-rank-focus-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0,1fr)
+    );
+
+  gap:
+    10px;
+
+  margin-top:
+    14px;
+}
+
+
+.student-rank-focus-card {
+  min-width:
+    0;
+
+  padding:
+    16px 12px;
+
+  border:
+    1px solid
+    #e1e9e6;
+
+  border-radius:
+    15px;
+
+  background:
+    #ffffff;
+
+  text-align:
+    center;
+}
+
+
+.student-rank-focus-label {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    5px;
+
+  color:
+    #64748b;
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+}
+
+
+.student-rank-focus-label
+span {
+  font-size:
+    17px;
+}
+
+
+.student-rank-focus-place {
+  display:
+    flex;
+
+  align-items:
+    baseline;
+
+  justify-content:
+    center;
+
+  gap:
+    3px;
+
+  min-height:
+    52px;
+
+  margin-top:
+    8px;
+
+  color:
+    #0f172a;
+}
+
+
+.student-rank-focus-place
+strong {
+  font-family:
+    var(--ranking-ui-font);
+
+  font-size:
+    42px;
+
+  line-height:
+    1;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    -.055em;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+.student-rank-focus-place
+span {
+  font-size:
+    13px;
+
+  font-weight:
+    900;
+}
+
+
+.student-rank-focus-total {
+  margin-top:
+    1px;
+
+  color:
+    #94a3b8;
+
+  font-size:
+    10px;
+
+  font-weight:
+    700;
+}
+
+
+.student-rank-focus-detail {
+  margin-top:
+    9px;
+
+  padding-top:
+    8px;
+
+  border-top:
+    1px solid
+    #edf2f0;
+
+  color:
+    #42534d;
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+}
+
+
+/* ----------------------------------------------------------
+   Compact unsubmitted
+---------------------------------------------------------- */
+
+.student-rank-unsubmitted.compact {
+  margin-top:
+    14px;
+
+  padding:
+    16px 18px;
+}
+
+
+/* ----------------------------------------------------------
+   Rank chips inside assignment cards
+---------------------------------------------------------- */
+
+.student-assignment-rank-mini {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    6px;
+
+  flex-wrap:
+    wrap;
+
+  margin-top:
+    9px;
+}
+
+
+.student-assignment-rank-chip {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  min-height:
+    25px;
+
+  padding:
+    4px 8px;
+
+  border:
+    1px solid
+    #dce6e2;
+
+  border-radius:
+    999px;
+
+  color:
+    #3d514a;
+
+  background:
+    #f8fbfa;
+
+  font-size:
+    9px;
+
+  font-weight:
+    900;
+
+  white-space:
+    nowrap;
+}
+
+
+.student-assignment-rank-chip.accuracy {
+  color:
+    #047857;
+
+  background:
+    #ecfdf5;
+
+  border-color:
+    #c8eddf;
+}
+
+
+.student-assignment-rank-chip.wpm {
+  color:
+    #1d4ed8;
+
+  background:
+    #eff6ff;
+
+  border-color:
+    #d9e8ff;
+}
+
+
+.student-assignment-rank-chip.practice {
+  color:
+    #b45309;
+
+  background:
+    #fffbeb;
+
+  border-color:
+    #fce7b2;
+}
+
+
+.student-assignment-rank-chip.pending {
+  color:
+    #64748b;
+
+  background:
+    #f1f5f9;
+
+  border-color:
+    #e2e8f0;
+}
+
+
+/* ----------------------------------------------------------
+   Teacher selected assignment summary
+---------------------------------------------------------- */
+
+.teacher-rank-meta-bar {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+  flex-wrap:
+    wrap;
+
+  margin-top:
+    10px;
+
+  padding:
+    9px 11px;
+
+  border-radius:
+    12px;
+
+  background:
+    #f8fafc;
+
+  color:
+    #64748b;
+
+  font-size:
+    10px;
+
+  font-weight:
+    700;
+}
+
+
+.teacher-rank-meta-bar
+strong {
+  color:
+    #059669;
+
+  font-weight:
+    900;
+}
+
+
+.teacher-rank-meta-title {
+  max-width:
+    460px;
+
+  overflow:
+    hidden;
+
+  color:
+    #263832;
+
+  font-size:
+    11px;
+
+  font-weight:
+    900;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+
+.teacher-rank-meta-bar
+.submitted {
+  color:
+    #047857;
+
+  background:
+    #ecfdf5;
+
+  padding:
+    4px 8px;
+
+  border-radius:
+    999px;
+}
+
+
+/* Teacher leaderboard slightly lighter */
+
+.teacher-rank-grid {
+  gap:
+    10px;
+
+  margin-top:
+    12px;
+}
+
+
+.teacher-rank-column {
+  border-radius:
+    14px;
+
+  box-shadow:
+    0 5px 15px
+    rgba(
+      15,
+      23,
+      42,
+      .03
+    );
+}
+
+
+/* ----------------------------------------------------------
+   Tablet / mobile
+---------------------------------------------------------- */
+
+@media (
+  max-width: 760px
+) {
+
+  .student-rank-focus-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .student-rank-focus-card {
+    display:
+      grid;
+
+    grid-template-columns:
+      minmax(90px,1fr)
+      auto
+      minmax(80px,1fr);
+
+    align-items:
+      center;
+
+    gap:
+      10px;
+
+    padding:
+      12px 14px;
+
+    text-align:
+      left;
+  }
+
+
+  .student-rank-focus-label {
+    justify-content:
+      flex-start;
+  }
+
+
+  .student-rank-focus-place {
+    min-height:
+      0;
+
+    margin-top:
+      0;
+  }
+
+
+  .student-rank-focus-place
+  strong {
+    font-size:
+      32px;
+  }
+
+
+  .student-rank-focus-total {
+    display:
+      none;
+  }
+
+
+  .student-rank-focus-detail {
+    margin-top:
+      0;
+
+    padding-top:
+      0;
+
+    border-top:
+      0;
+
+    text-align:
+      right;
+  }
+
+
+  .teacher-rank-meta-title {
+    width:
+      100%;
+
+    max-width:
+      none;
+
+    white-space:
+      normal;
+  }
+
+}
