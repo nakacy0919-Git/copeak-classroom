@@ -34,6 +34,8 @@ let submissions = [];
 
 let manualScores = [];
 
+let readingRankings = [];
+
 let gradebookDefaultMetric =
   localStorage.getItem(
     'copeak_gradebook_default_metric'
@@ -1582,6 +1584,7 @@ function renderTable() {
             .join('')
         }
 
+        <th>Class Rank</th>
         <th>Reads</th>
         <th>Done</th>
         <th>Avg.</th>
@@ -1991,6 +1994,10 @@ function renderTable() {
 
               ${cells}
 
+              ${readingRankCell(
+                student.id
+              )}
+
               <td>
                 <strong>
                   ${totalReads}
@@ -2017,9 +2024,389 @@ function renderTable() {
       .join('');
 }
 
+
+// ==========================================
+// CLASS READING LEADERBOARD
+// ==========================================
+
+function teacherRankStudent(
+  studentId
+) {
+
+  return students.find(
+    student =>
+      student.id ===
+      studentId
+  ) ||
+  null;
+}
+
+
+function teacherRankBadge(
+  value
+) {
+
+  const rank =
+    Number(value);
+
+
+  if (
+    !Number.isFinite(rank) ||
+    rank <= 0
+  ) {
+
+    return '—';
+  }
+
+
+  if (rank === 1) {
+    return '🥇';
+  }
+
+
+  if (rank === 2) {
+    return '🥈';
+  }
+
+
+  if (rank === 3) {
+    return '🥉';
+  }
+
+
+  return `#${Math.round(rank)}`;
+}
+
+
+function leaderboardColumn(
+  title,
+  icon,
+  rankKey,
+  valueKey,
+  formatter
+) {
+
+  const rows =
+    readingRankings
+      .filter(
+        row =>
+          row[rankKey] !==
+            null &&
+          row[rankKey] !==
+            undefined
+      )
+      .sort(
+        (a, b) =>
+          Number(
+            a[rankKey]
+          ) -
+          Number(
+            b[rankKey]
+          )
+      )
+      .slice(
+        0,
+        5
+      );
+
+
+  const items =
+    rows.length
+
+      ? rows
+          .map(
+            row => {
+
+              const student =
+                teacherRankStudent(
+                  row.student_id
+                );
+
+
+              const name =
+                student
+                  ?.display_name ||
+                'Student';
+
+
+              const number =
+                student
+                  ?.student_number
+
+                  ? `No.${student.student_number}`
+
+                  : '';
+
+
+              return `
+                <div class="teacher-rank-row">
+
+                  <div class="teacher-rank-place">
+
+                    ${teacherRankBadge(
+                      row[rankKey]
+                    )}
+
+                  </div>
+
+                  <div class="teacher-rank-student">
+
+                    <strong>
+                      ${esc(name)}
+                    </strong>
+
+                    <span>
+                      ${esc(number)}
+                    </span>
+
+                  </div>
+
+                  <div class="teacher-rank-score">
+
+                    ${formatter(
+                      row[valueKey]
+                    )}
+
+                  </div>
+
+                </div>
+              `;
+            }
+          )
+          .join('')
+
+      : `
+          <div class="teacher-rank-empty">
+            まだ記録がありません。
+          </div>
+        `;
+
+
+  return `
+    <div class="teacher-rank-column">
+
+      <div class="teacher-rank-column-title">
+
+        <span>
+          ${icon}
+        </span>
+
+        <strong>
+          ${title}
+        </strong>
+
+      </div>
+
+      ${items}
+
+    </div>
+  `;
+}
+
+
+function renderClassLeaderboard() {
+
+  const metricsSection =
+    $('#classAverage')
+      ?.closest(
+        'section'
+      );
+
+
+  if (!metricsSection) {
+    return;
+  }
+
+
+  let root =
+    $('#classReadingLeaderboard');
+
+
+  if (!root) {
+
+    root =
+      document.createElement(
+        'section'
+      );
+
+
+    root.id =
+      'classReadingLeaderboard';
+
+
+    root.className =
+      'paper section class-reading-leaderboard';
+
+
+    metricsSection
+      .insertAdjacentElement(
+        'afterend',
+        root
+      );
+  }
+
+
+  root.innerHTML =
+    `
+      <div class="panel-title">
+
+        <div>
+
+          <div class="eyebrow">
+            CLASS LEADERBOARD
+          </div>
+
+          <h2>
+            Reading Ranking
+          </h2>
+
+          <p class="muted">
+            公開済みのクラス共通課題をもとに集計しています。
+          </p>
+
+        </div>
+
+        <div class="teacher-rank-note">
+          Top 5
+        </div>
+
+      </div>
+
+
+      <div class="teacher-rank-grid">
+
+        ${leaderboardColumn(
+          'Accuracy',
+          '🎯',
+          'accuracy_rank',
+          'avg_accuracy',
+          value =>
+            value ===
+              null ||
+            value ===
+              undefined
+
+              ? '—'
+
+              : `${
+                  Number(
+                    value
+                  ).toFixed(1)
+                }%`
+        )}
+
+
+        ${leaderboardColumn(
+          'WPM',
+          '⚡',
+          'wpm_rank',
+          'avg_wpm',
+          value =>
+            value ===
+              null ||
+            value ===
+              undefined
+
+              ? '—'
+
+              : Math.round(
+                  Number(
+                    value
+                  )
+                )
+        )}
+
+
+        ${leaderboardColumn(
+          'Practice',
+          '🔥',
+          'practice_rank',
+          'total_attempts',
+          value =>
+            `${
+              Math.max(
+                0,
+                Number(value) ||
+                0
+              )
+            } reads`
+        )}
+
+      </div>
+    `;
+}
+
+
+function readingRankCell(
+  studentId
+) {
+
+  const row =
+    readingRankings.find(
+      item =>
+        item.student_id ===
+        studentId
+    );
+
+
+  if (!row) {
+
+    return `
+      <td class="grade-rank-cell">
+        —
+      </td>
+    `;
+  }
+
+
+  const accuracyRank =
+    row.accuracy_rank
+      ? `#${row.accuracy_rank}`
+      : '—';
+
+
+  const wpmRank =
+    row.wpm_rank
+      ? `#${row.wpm_rank}`
+      : '—';
+
+
+  const practiceRank =
+    row.practice_rank
+      ? `#${row.practice_rank}`
+      : '—';
+
+
+  return `
+    <td class="grade-rank-cell">
+
+      <div>
+        <span>A</span>
+        <strong>
+          ${accuracyRank}
+        </strong>
+      </div>
+
+      <div>
+        <span>W</span>
+        <strong>
+          ${wpmRank}
+        </strong>
+      </div>
+
+      <div class="grade-practice-rank">
+        🔥 ${practiceRank}
+      </div>
+
+    </td>
+  `;
+}
+
 function render() {
 
   renderSummary();
+
+  renderClassLeaderboard();
 
   renderTable();
 
@@ -6565,6 +6952,41 @@ students =
   } else {
 
     manualScores =
+      [];
+  }
+
+
+  // ========================================
+  // CLASS READING RANKINGS
+  // ========================================
+
+  const {
+    data: rankingRows,
+    error: rankingError
+  } =
+    await sb.rpc(
+      'get_teacher_class_reading_rankings',
+      {
+        p_class_id:
+          selectedClass.id
+      }
+    );
+
+
+  if (rankingError) {
+
+    console.warn(
+      '[Copeak Classroom] ranking load failed:',
+      rankingError
+    );
+
+    readingRankings =
+      [];
+
+  } else {
+
+    readingRankings =
+      rankingRows ||
       [];
   }
 }

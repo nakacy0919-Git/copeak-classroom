@@ -17,6 +17,7 @@ let assignments = [];
 let submissions = [];
 let manualScores = [];
 let currentClass = null;
+let readingRank = null;
 let activeAssignmentFilter = 'all';
 
 let activeLanguage =
@@ -2041,6 +2042,472 @@ document
   );
 
 
+
+// ==========================================
+// CLASS READING RANK
+// ==========================================
+
+async function loadReadingRank() {
+
+  if (
+    !currentClass?.id ||
+    ctx?.demo
+  ) {
+    return;
+  }
+
+
+  const {
+    data,
+    error
+  } =
+    await getClient(
+      'student'
+    )
+      .rpc(
+        'get_my_class_reading_rank',
+        {
+          p_class_id:
+            currentClass.id
+        }
+      );
+
+
+  if (error) {
+
+    console.warn(
+      '[Copeak Classroom] ranking load failed:',
+      error
+    );
+
+    readingRank =
+      null;
+
+    return;
+  }
+
+
+  readingRank =
+    Array.isArray(data) &&
+    data.length
+
+      ? data[0]
+
+      : null;
+}
+
+
+function readingRankFraction(
+  value,
+  total
+) {
+
+  const rank =
+    Number(value);
+
+  const count =
+    Number(total);
+
+
+  if (
+    !Number.isFinite(rank) ||
+    rank <= 0
+  ) {
+
+    return '—';
+  }
+
+
+  return (
+    `${Math.round(rank)} / ` +
+    `${
+      Number.isFinite(count) &&
+      count > 0
+
+        ? Math.round(count)
+
+        : '—'
+    }`
+  );
+}
+
+
+function renderReadingRankCard() {
+
+  const metrics =
+    document.querySelector(
+      '.student-metrics'
+    );
+
+
+  if (!metrics) {
+    return;
+  }
+
+
+  let card =
+    $('#studentReadingRankCard');
+
+
+  if (!card) {
+
+    card =
+      document.createElement(
+        'section'
+      );
+
+
+    card.id =
+      'studentReadingRankCard';
+
+
+    card.className =
+      'paper section student-reading-rank-card';
+
+
+    card.setAttribute(
+      'aria-live',
+      'polite'
+    );
+
+
+    metrics.insertAdjacentElement(
+      'afterend',
+      card
+    );
+  }
+
+
+  const signature =
+    `${activeLanguage}|${
+      JSON.stringify(
+        readingRank
+      )
+    }`;
+
+
+  if (
+    card.dataset
+      .rankSignature ===
+    signature
+  ) {
+
+    return;
+  }
+
+
+  card.dataset
+    .rankSignature =
+    signature;
+
+
+  const isJa =
+    activeLanguage ===
+    'ja';
+
+
+  if (!readingRank) {
+
+    card.innerHTML =
+      `
+        <div class="student-rank-heading">
+
+          <div>
+
+            <div class="eyebrow">
+              CLASS RANKING
+            </div>
+
+            <h2>
+              ${
+                isJa
+                  ? 'クラス内ランキング'
+                  : 'Class Ranking'
+              }
+            </h2>
+
+          </div>
+
+        </div>
+
+        <div class="student-rank-empty">
+
+          ${
+            isJa
+              ? 'ランキングデータを準備しています。'
+              : 'Ranking data is being prepared.'
+          }
+
+        </div>
+      `;
+
+
+    return;
+  }
+
+
+  const totalStudents =
+    Number(
+      readingRank
+        .total_students
+    ) ||
+    0;
+
+
+  const avgAccuracy =
+    readingRank
+      .avg_accuracy ===
+      null ||
+    readingRank
+      .avg_accuracy ===
+      undefined
+
+      ? '—'
+
+      : `${
+          Number(
+            readingRank
+              .avg_accuracy
+          ).toFixed(1)
+        }%`;
+
+
+  const avgWpm =
+    readingRank
+      .avg_wpm ===
+      null ||
+    readingRank
+      .avg_wpm ===
+      undefined
+
+      ? '—'
+
+      : Math.round(
+          Number(
+            readingRank
+              .avg_wpm
+          )
+        );
+
+
+  const totalAttempts =
+    Math.max(
+      0,
+      Number(
+        readingRank
+          .total_attempts
+      ) ||
+      0
+    );
+
+
+  const completedAssignments =
+    Math.max(
+      0,
+      Number(
+        readingRank
+          .completed_assignments
+      ) ||
+      0
+    );
+
+
+  card.innerHTML =
+    `
+      <div class="student-rank-heading">
+
+        <div>
+
+          <div class="eyebrow">
+            CLASS RANKING
+          </div>
+
+          <h2>
+            ${
+              isJa
+                ? '現在のクラス順位'
+                : 'Your Current Class Rank'
+            }
+          </h2>
+
+          <p class="muted">
+
+            ${
+              isJa
+
+                ? 'あなた自身の順位だけが表示されます。'
+
+                : 'Only your own class position is shown.'
+            }
+
+          </p>
+
+        </div>
+
+
+        <div class="student-rank-class-size">
+
+          ${
+            isJa
+              ? 'クラス'
+              : 'Class'
+          }
+
+          <strong>
+            ${totalStudents}
+          </strong>
+
+          ${
+            isJa
+              ? '人'
+              : 'students'
+          }
+
+        </div>
+
+      </div>
+
+
+      <div class="student-rank-grid">
+
+
+        <div class="student-rank-item">
+
+          <div class="student-rank-icon">
+            🎯
+          </div>
+
+          <div class="student-rank-label">
+            Accuracy
+          </div>
+
+          <div class="student-rank-position">
+
+            ${
+              readingRankFraction(
+                readingRank
+                  .accuracy_rank,
+                totalStudents
+              )
+            }
+
+          </div>
+
+          <div class="student-rank-detail">
+
+            ${
+              isJa
+                ? '平均'
+                : 'Average'
+            }
+
+            ${avgAccuracy}
+
+          </div>
+
+        </div>
+
+
+        <div class="student-rank-item">
+
+          <div class="student-rank-icon">
+            ⚡
+          </div>
+
+          <div class="student-rank-label">
+            WPM
+          </div>
+
+          <div class="student-rank-position">
+
+            ${
+              readingRankFraction(
+                readingRank
+                  .wpm_rank,
+                totalStudents
+              )
+            }
+
+          </div>
+
+          <div class="student-rank-detail">
+
+            ${
+              isJa
+                ? '平均'
+                : 'Average'
+            }
+
+            ${avgWpm}
+
+          </div>
+
+        </div>
+
+
+        <div class="student-rank-item">
+
+          <div class="student-rank-icon">
+            🔥
+          </div>
+
+          <div class="student-rank-label">
+
+            ${
+              isJa
+                ? '音読回数'
+                : 'Practice'
+            }
+
+          </div>
+
+          <div class="student-rank-position">
+
+            ${
+              readingRankFraction(
+                readingRank
+                  .practice_rank,
+                totalStudents
+              )
+            }
+
+          </div>
+
+          <div class="student-rank-detail">
+
+            ${totalAttempts}
+
+            ${
+              isJa
+                ? '回'
+                : 'reads'
+            }
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="student-rank-footnote">
+
+        ${
+          isJa
+
+            ? `公開済みのクラス共通課題 ${
+                completedAssignments
+              }件をもとに算出しています。`
+
+            : `Calculated from ${
+                completedAssignments
+              } shared published assignments.`
+        }
+
+      </div>
+    `;
+}
+
 // ==========================================
 // DASHBOARD RENDER
 // ==========================================
@@ -2050,6 +2517,8 @@ function render() {
   applyStaticLanguage();
 
   syncFilterButtons();
+
+  renderReadingRankCard();
 
 
   const map =
@@ -4379,6 +4848,13 @@ async function saveCopeakResult(
 
 
     // ======================================
+    // REFRESH RANKING
+    // ======================================
+
+    await loadReadingRank();
+
+
+    // ======================================
     // REFRESH DASHBOARD
     // ======================================
 
@@ -4871,6 +5347,9 @@ async function loadLive() {
   manualScores =
     manualRows ||
     [];
+
+
+  await loadReadingRank();
 }
 
 

@@ -6620,3 +6620,253 @@ strong {
 
 /* Assignment Editor Media Sidebar Fix v1 */
 
+
+
+/* ==========================================
+   CLASS READING RANKINGS v1
+========================================== */
+
+.student-reading-rank-card {
+  margin-top: 16px;
+}
+
+.student-rank-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.student-rank-heading h2 {
+  margin: 5px 0 4px;
+}
+
+.student-rank-heading p {
+  margin: 0;
+}
+
+.student-rank-class-size {
+  flex: 0 0 auto;
+  padding: 9px 13px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #f8fafc;
+  font-size: 12px;
+}
+
+.student-rank-class-size strong {
+  margin: 0 4px;
+  font-size: 18px;
+}
+
+.student-rank-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.student-rank-item {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+}
+
+.student-rank-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.student-rank-label {
+  margin-top: 9px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.student-rank-position {
+  margin-top: 7px;
+  color: #0f172a;
+  font-size: clamp(24px, 4vw, 38px);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.student-rank-detail {
+  margin-top: 7px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.student-rank-footnote {
+  margin-top: 12px;
+  color: #64748b;
+  font-size: 12px;
+  text-align: right;
+}
+
+.student-rank-empty {
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #64748b;
+  text-align: center;
+}
+
+
+/* Teacher */
+
+.class-reading-leaderboard {
+  margin-top: 16px;
+}
+
+.teacher-rank-note {
+  padding: 7px 11px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.teacher-rank-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.teacher-rank-column {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.teacher-rank-column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.teacher-rank-column-title span {
+  font-size: 19px;
+}
+
+.teacher-rank-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.teacher-rank-row:last-child {
+  border-bottom: 0;
+}
+
+.teacher-rank-place {
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.teacher-rank-student {
+  min-width: 0;
+}
+
+.teacher-rank-student strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-rank-student span {
+  display: block;
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.teacher-rank-score {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.teacher-rank-empty {
+  padding: 18px;
+  color: #94a3b8;
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Gradebook rank */
+
+.grade-rank-cell {
+  min-width: 92px;
+  white-space: nowrap;
+}
+
+.grade-rank-cell > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.grade-rank-cell > div + div {
+  margin-top: 3px;
+}
+
+.grade-rank-cell span {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.grade-practice-rank {
+  margin-top: 5px !important;
+  padding-top: 5px;
+  border-top: 1px solid #f1f5f9;
+  color: #64748b;
+}
+
+
+@media (max-width: 900px) {
+
+  .student-rank-grid,
+  .teacher-rank-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+@media (max-width: 640px) {
+
+  .student-rank-heading {
+    flex-direction: column;
+  }
+
+  .student-rank-class-size {
+    align-self: flex-start;
+  }
+
+}
+
