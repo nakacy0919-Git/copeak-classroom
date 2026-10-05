@@ -6873,126 +6873,785 @@ strong {
 
 
 /* ==========================================
-   ASSIGNMENT RANKING TABS v2
+   ASSIGNMENT RANKING SELECTOR v3
 ========================================== */
 
-.reading-rank-tabs {
-  display: flex;
-  gap: 8px;
-  margin-top: 18px;
-  padding: 3px 0 8px;
-  overflow-x: auto;
-  scrollbar-width: thin;
+:root {
+  --ranking-ui-font:
+    "Noto Sans JP",
+    "Yu Gothic UI",
+    "Yu Gothic",
+    "Hiragino Kaku Gothic ProN",
+    "Hiragino Sans",
+    Meiryo,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
-.reading-rank-tab {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  max-width: 260px;
-  padding: 9px 13px;
-  border: 1px solid #dbe2ea;
-  border-radius: 999px;
-  background: #fff;
-  color: #475569;
-  cursor: pointer;
+
+/* Ranking typography */
+
+.student-reading-rank-card,
+.class-reading-leaderboard,
+.student-reading-rank-card h2,
+.student-reading-rank-card h3,
+.class-reading-leaderboard h2,
+.class-reading-leaderboard h3,
+.student-rank-position,
+.teacher-rank-score,
+.reading-rank-select {
+  font-family:
+    var(--ranking-ui-font);
+}
+
+
+.student-reading-rank-card h2,
+.student-reading-rank-card h3,
+.class-reading-leaderboard h2,
+.class-reading-leaderboard h3 {
+  letter-spacing:
+    -.025em;
+}
+
+
+/* Assignment selector */
+
+.reading-rank-picker {
+  display:
+    grid;
+
+  grid-template-columns:
+    48px
+    minmax(0, 1fr);
+
+  align-items:
+    center;
+
+  gap:
+    14px;
+
+  margin-top:
+    18px;
+
+  padding:
+    14px 16px;
+
+  border:
+    1px solid #dce7e3;
+
+  border-radius:
+    16px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f8fcfa 0%,
+      #f1f8f5 100%
+    );
+
+  box-shadow:
+    0 7px 20px
+    rgba(15,23,42,.035);
+}
+
+
+.reading-rank-picker-icon {
+  display:
+    grid;
+
+  width:
+    48px;
+
+  height:
+    48px;
+
+  place-items:
+    center;
+
+  border-radius:
+    14px;
+
+  background:
+    #ffffff;
+
+  box-shadow:
+    0 5px 16px
+    rgba(15,118,110,.10);
+
+  font-size:
+    22px;
+}
+
+
+.reading-rank-picker-copy {
+  display:
+    block;
+
+  min-width:
+    0;
+}
+
+
+.reading-rank-picker-copy > span {
+  display:
+    block;
+
+  margin-bottom:
+    6px;
+
+  color:
+    #64748b;
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    .08em;
+}
+
+
+.reading-rank-select-wrap {
+  position:
+    relative;
+
+  width:
+    100%;
+}
+
+
+.reading-rank-select-wrap::after {
+  content:
+    "⌄";
+
+  position:
+    absolute;
+
+  top:
+    50%;
+
+  right:
+    15px;
+
+  color:
+    #047857;
+
+  font-size:
+    21px;
+
+  font-weight:
+    900;
+
+  pointer-events:
+    none;
+
+  transform:
+    translateY(-58%);
+}
+
+
+.reading-rank-select {
+  width:
+    100%;
+
+  min-height:
+    48px;
+
+  padding:
+    9px 44px 9px 14px;
+
+  appearance:
+    none;
+
+  -webkit-appearance:
+    none;
+
+  border:
+    1px solid #cbdcd5;
+
+  border-radius:
+    11px;
+
+  outline:
+    none;
+
+  color:
+    #16231f;
+
+  background:
+    #ffffff;
+
+  font-size:
+    14px;
+
+  font-weight:
+    700;
+
+  cursor:
+    pointer;
+
   transition:
-    border-color .15s ease,
-    background .15s ease,
-    color .15s ease,
-    transform .15s ease;
+    .16s ease;
 }
 
-.reading-rank-tab:hover {
-  border-color: #94a3b8;
-  transform: translateY(-1px);
+
+.reading-rank-select:hover {
+  border-color:
+    #8bb9a8;
+
+  background:
+    #fcfffd;
 }
 
-.reading-rank-tab.active {
-  border-color: #0f766e;
-  background: #ecfdf5;
-  color: #065f46;
+
+.reading-rank-select:focus {
+  border-color:
+    #059669;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(5,150,105,.10);
 }
 
-.reading-rank-tab span {
-  flex: 0 0 auto;
-  font-size: 11px;
-  font-weight: 800;
-  opacity: .72;
-}
 
-.reading-rank-tab strong {
-  overflow: hidden;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* Selected assignment */
 
 .reading-rank-selected {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  margin-top: 8px;
-  padding: 12px 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #f8fafc;
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+
+  margin-top:
+    12px;
+
+  padding:
+    13px 15px;
+
+  border:
+    1px solid #e2e8f0;
+
+  border-radius:
+    14px;
+
+  background:
+    #ffffff;
 }
 
-.reading-rank-selected > div {
-  min-width: 0;
+
+.reading-rank-selected
+> div:first-child {
+  min-width:
+    0;
 }
+
 
 .reading-rank-selected strong {
-  display: block;
-  margin-top: 3px;
-  overflow: hidden;
-  color: #0f172a;
-  font-size: 15px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  overflow:
+    hidden;
+
+  color:
+    #0f172a;
+
+  font-size:
+    15px;
+
+  font-weight:
+    800;
+
+  line-height:
+    1.45;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
 }
+
 
 .reading-rank-selected-no {
-  display: block;
-  color: #0f766e;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+  display:
+    block;
+
+  color:
+    #059669;
+
+  font-size:
+    10px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .06em;
 }
+
+
+.reading-rank-selected-meta {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    flex-end;
+
+  gap:
+    7px;
+
+  flex-wrap:
+    wrap;
+}
+
+
+.reading-rank-audience,
+.reading-rank-target-count,
+.reading-rank-submitted-count {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  min-height:
+    29px;
+
+  padding:
+    5px 10px;
+
+  border-radius:
+    999px;
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+
+  white-space:
+    nowrap;
+}
+
 
 .reading-rank-audience {
-  flex: 0 0 auto;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #fff;
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 700;
+  color:
+    #475569;
+
+  background:
+    #f1f5f9;
 }
 
-.teacher-reading-rank-tabs {
-  margin-top: 14px;
+
+.reading-rank-target-count {
+  color:
+    #0369a1;
+
+  background:
+    #e0f2fe;
 }
 
-@media (max-width: 640px) {
+
+.reading-rank-submitted-count {
+  color:
+    #047857;
+
+  background:
+    #ecfdf5;
+}
+
+
+/* Student ranking */
+
+.student-rank-grid {
+  margin-top:
+    15px;
+}
+
+
+.student-rank-item {
+  border:
+    1px solid #e2e8f0;
+
+  border-radius:
+    17px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #fbfdfc 100%
+    );
+
+  box-shadow:
+    0 6px 18px
+    rgba(15,23,42,.035);
+}
+
+
+.student-rank-position {
+  font-weight:
+    900;
+
+  font-variant-numeric:
+    tabular-nums;
+
+  letter-spacing:
+    -.04em;
+}
+
+
+.student-rank-detail strong {
+  color:
+    #0f172a;
+
+  font-weight:
+    900;
+}
+
+
+/* Student not submitted */
+
+.student-rank-unsubmitted {
+  display:
+    grid;
+
+  grid-template-columns:
+    56px
+    minmax(0, 1fr)
+    auto;
+
+  align-items:
+    center;
+
+  gap:
+    16px;
+
+  margin-top:
+    15px;
+
+  padding:
+    20px;
+
+  border:
+    1px dashed #b9ccc5;
+
+  border-radius:
+    17px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fafdfc,
+      #f4f9f7
+    );
+}
+
+
+.student-rank-unsubmitted-icon {
+  display:
+    grid;
+
+  width:
+    56px;
+
+  height:
+    56px;
+
+  place-items:
+    center;
+
+  border-radius:
+    16px;
+
+  background:
+    #ffffff;
+
+  box-shadow:
+    0 5px 16px
+    rgba(15,23,42,.06);
+
+  font-size:
+    25px;
+}
+
+
+.student-rank-unsubmitted-label {
+  color:
+    #d97706;
+
+  font-size:
+    9px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .12em;
+}
+
+
+.student-rank-unsubmitted-copy h3 {
+  margin-top:
+    4px;
+
+  color:
+    #1e293b;
+
+  font-size:
+    17px;
+
+  font-weight:
+    900;
+}
+
+
+.student-rank-unsubmitted-copy p {
+  margin:
+    6px 0 0;
+
+  color:
+    #64748b;
+
+  font-size:
+    12px;
+
+  font-weight:
+    600;
+
+  line-height:
+    1.7;
+}
+
+
+.student-rank-unsubmitted-target {
+  min-width:
+    90px;
+
+  padding:
+    11px 14px;
+
+  border-radius:
+    13px;
+
+  background:
+    #ffffff;
+
+  text-align:
+    center;
+
+  box-shadow:
+    0 4px 14px
+    rgba(15,23,42,.045);
+}
+
+
+.student-rank-unsubmitted-target span {
+  display:
+    block;
+
+  color:
+    #94a3b8;
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+}
+
+
+.student-rank-unsubmitted-target strong {
+  display:
+    inline-block;
+
+  margin-top:
+    2px;
+
+  color:
+    #0f172a;
+
+  font-size:
+    25px;
+
+  font-weight:
+    900;
+}
+
+
+.student-rank-unsubmitted-target small {
+  margin-left:
+    2px;
+
+  color:
+    #64748b;
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+}
+
+
+/* Teacher */
+
+.teacher-rank-no-submissions {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+
+  margin-top:
+    14px;
+
+  padding:
+    13px 15px;
+
+  border:
+    1px solid #e2e8f0;
+
+  border-radius:
+    12px;
+
+  background:
+    #f8fafc;
+
+  color:
+    #64748b;
+
+  font-size:
+    11px;
+}
+
+
+.teacher-rank-no-submissions strong {
+  color:
+    #334155;
+
+  font-weight:
+    900;
+}
+
+
+/* Responsive */
+
+@media (max-width:760px) {
+
+  .reading-rank-picker {
+    grid-template-columns:
+      40px
+      minmax(0, 1fr);
+
+    gap:
+      10px;
+
+    padding:
+      12px;
+  }
+
+
+  .reading-rank-picker-icon {
+    width:
+      40px;
+
+    height:
+      40px;
+
+    font-size:
+      19px;
+  }
+
+
+  .reading-rank-select {
+    min-height:
+      44px;
+
+    font-size:
+      12px;
+  }
+
 
   .reading-rank-selected {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+
+    gap:
+      9px;
   }
 
-  .reading-rank-audience {
-    align-self: flex-start;
+
+  .reading-rank-selected strong {
+    white-space:
+      normal;
   }
 
-  .reading-rank-tab {
-    max-width: 210px;
+
+  .reading-rank-selected-meta {
+    justify-content:
+      flex-start;
+  }
+
+
+  .student-rank-unsubmitted {
+    grid-template-columns:
+      48px
+      minmax(0, 1fr);
+
+    padding:
+      16px;
+  }
+
+
+  .student-rank-unsubmitted-icon {
+    width:
+      48px;
+
+    height:
+      48px;
+  }
+
+
+  .student-rank-unsubmitted-target {
+    grid-column:
+      1 / -1;
+
+    width:
+      100%;
+  }
+
+
+  .teacher-rank-no-submissions {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
   }
 
 }
-

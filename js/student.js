@@ -2173,7 +2173,6 @@ function renderReadingRankCard() {
       '.student-metrics'
     );
 
-
   if (!metrics) {
     return;
   }
@@ -2190,20 +2189,16 @@ function renderReadingRankCard() {
         'section'
       );
 
-
     card.id =
       'studentReadingRankCard';
 
-
     card.className =
       'paper section student-reading-rank-card';
-
 
     card.setAttribute(
       'aria-live',
       'polite'
     );
-
 
     metrics.insertAdjacentElement(
       'afterend',
@@ -2221,248 +2216,9 @@ function renderReadingRankCard() {
     rankableStudentAssignments();
 
 
-  if (
-    rankAssignments.length ===
-    0
-  ) {
+  if (!rankAssignments.length) {
 
-    const signature =
-      `${activeLanguage}|empty`;
-
-
-    if (
-      card.dataset
-        .rankSignature ===
-      signature
-    ) {
-      return;
-    }
-
-
-    card.dataset
-      .rankSignature =
-      signature;
-
-
-    card.innerHTML =
-      `
-        <div class="student-rank-heading">
-
-          <div>
-
-            <div class="eyebrow">
-              ASSIGNMENT RANKING
-            </div>
-
-            <h2>
-              ${
-                isJa
-                  ? '課題別クラス順位'
-                  : 'Assignment Rankings'
-              }
-            </h2>
-
-          </div>
-
-        </div>
-
-
-        <div class="student-rank-empty">
-
-          ${
-            isJa
-              ? '順位を表示できる公開済み課題はまだありません。'
-              : 'There are no released assignments with rankings yet.'
-          }
-
-        </div>
-      `;
-
-
-    return;
-  }
-
-
-  const activeStillExists =
-    rankAssignments.some(
-      assignment =>
-        assignment.id ===
-        activeReadingRankAssignmentId
-    );
-
-
-  if (!activeStillExists) {
-
-    activeReadingRankAssignmentId =
-      rankAssignments[0].id;
-  }
-
-
-  const selectedAssignment =
-    rankAssignments.find(
-      assignment =>
-        assignment.id ===
-        activeReadingRankAssignmentId
-    ) ||
-    rankAssignments[0];
-
-
-  const readingRank =
-    assignmentReadingRankings.find(
-      row =>
-        row.assignment_id ===
-        selectedAssignment.id
-    ) ||
-    null;
-
-
-  const signature =
-    [
-      activeLanguage,
-      activeReadingRankAssignmentId,
-      JSON.stringify(
-        assignmentReadingRankings
-      ),
-      rankAssignments
-        .map(
-          assignment =>
-            `${assignment.id}:${assignment.week_no}:${assignment.title}`
-        )
-        .join('|')
-    ].join('::');
-
-
-  if (
-    card.dataset
-      .rankSignature ===
-    signature
-  ) {
-
-    return;
-  }
-
-
-  card.dataset
-    .rankSignature =
-    signature;
-
-
-  const tabs =
-    rankAssignments
-      .map(
-        assignment => {
-
-          const active =
-            assignment.id ===
-            selectedAssignment.id;
-
-
-          return `
-            <button
-              type="button"
-              class="reading-rank-tab ${
-                active
-                  ? 'active'
-                  : ''
-              }"
-              data-reading-rank-assignment="${
-                assignment.id
-              }">
-
-              <span>
-                No.${escapeHtml(
-                  assignment.week_no
-                )}
-              </span>
-
-              <strong>
-                ${escapeHtml(
-                  assignment.title
-                )}
-              </strong>
-
-            </button>
-          `;
-        }
-      )
-      .join('');
-
-
-  const totalStudents =
-    Number(
-      readingRank
-        ?.total_students
-    ) ||
-    0;
-
-
-  const bestAccuracy =
-    readingRank
-      ?.best_accuracy ===
-        null ||
-    readingRank
-      ?.best_accuracy ===
-        undefined
-
-      ? '—'
-
-      : `${
-          Number(
-            readingRank
-              .best_accuracy
-          ).toFixed(1)
-        }%`;
-
-
-  const bestWpm =
-    readingRank
-      ?.best_wpm ===
-        null ||
-    readingRank
-      ?.best_wpm ===
-        undefined
-
-      ? '—'
-
-      : Math.round(
-          Number(
-            readingRank
-              .best_wpm
-          )
-        );
-
-
-  const totalAttempts =
-    Math.max(
-      0,
-      Number(
-        readingRank
-          ?.total_attempts
-      ) ||
-      0
-    );
-
-
-  const audienceLabel =
-    selectedAssignment
-      .audience_type ===
-      'targeted'
-
-      ? (
-          isJa
-            ? '個別配布・対象者内順位'
-            : 'Targeted assignment · rank among assigned students'
-        )
-
-      : (
-          isJa
-            ? 'クラス配布・クラス内順位'
-            : 'Class assignment · class ranking'
-        );
-
-
-  card.innerHTML =
-    `
+    card.innerHTML = `
       <div class="student-rank-heading">
 
         <div>
@@ -2482,8 +2238,8 @@ function renderReadingRankCard() {
           <p class="muted">
             ${
               isJa
-                ? '課題を切り替えて、自分の現在順位を確認できます。'
-                : 'Switch assignments to see your current position.'
+                ? '課題ごとのAccuracy・WPM・音読回数を確認できます。'
+                : 'Check Accuracy, WPM, and practice rankings for each assignment.'
             }
           </p>
 
@@ -2491,208 +2247,501 @@ function renderReadingRankCard() {
 
       </div>
 
-
-      <div class="reading-rank-tabs">
-        ${tabs}
-      </div>
-
-
-      <div class="reading-rank-selected">
-
-        <div>
-
-          <span class="reading-rank-selected-no">
-
-            ${
-              isJa
-                ? '課題'
-                : 'Assignment'
-            }
-
-            No.${escapeHtml(
-              selectedAssignment.week_no
-            )}
-
-          </span>
-
-          <strong>
-            ${escapeHtml(
-              selectedAssignment.title
-            )}
-          </strong>
-
-        </div>
-
-
-        <span class="reading-rank-audience">
-          ${escapeHtml(
-            audienceLabel
-          )}
-        </span>
-
-      </div>
-
-
-      <div class="student-rank-grid">
-
-
-        <div class="student-rank-item">
-
-          <div class="student-rank-icon">
-            🎯
-          </div>
-
-          <div class="student-rank-label">
-            Accuracy
-          </div>
-
-          <div class="student-rank-position">
-
-            ${
-              readingRankFraction(
-                readingRank
-                  ?.accuracy_rank,
-                totalStudents
-              )
-            }
-
-          </div>
-
-          <div class="student-rank-detail">
-
-            ${
-              isJa
-                ? '自己ベスト'
-                : 'Best'
-            }
-
-            ${bestAccuracy}
-
-          </div>
-
-        </div>
-
-
-        <div class="student-rank-item">
-
-          <div class="student-rank-icon">
-            ⚡
-          </div>
-
-          <div class="student-rank-label">
-            WPM
-          </div>
-
-          <div class="student-rank-position">
-
-            ${
-              readingRankFraction(
-                readingRank
-                  ?.wpm_rank,
-                totalStudents
-              )
-            }
-
-          </div>
-
-          <div class="student-rank-detail">
-
-            ${
-              isJa
-                ? '自己ベスト'
-                : 'Best'
-            }
-
-            ${bestWpm}
-
-          </div>
-
-        </div>
-
-
-        <div class="student-rank-item">
-
-          <div class="student-rank-icon">
-            🔥
-          </div>
-
-          <div class="student-rank-label">
-
-            ${
-              isJa
-                ? '音読回数'
-                : 'Practice'
-            }
-
-          </div>
-
-          <div class="student-rank-position">
-
-            ${
-              readingRankFraction(
-                readingRank
-                  ?.practice_rank,
-                totalStudents
-              )
-            }
-
-          </div>
-
-          <div class="student-rank-detail">
-
-            ${totalAttempts}
-
-            ${
-              isJa
-                ? '回'
-                : 'reads'
-            }
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div class="student-rank-footnote">
+      <div class="student-rank-empty">
 
         ${
           isJa
-
-            ? `この課題の参加対象者 ${totalStudents}人中の順位です。`
-
-            : `Ranked among ${totalStudents} students assigned to this task.`
+            ? '現在、ランキング対象の公開済み課題はありません。'
+            : 'There are no released assignments available for ranking yet.'
         }
 
       </div>
     `;
 
+    return;
+  }
+
+
+  if (
+    !rankAssignments.some(
+      item =>
+        item.id ===
+        activeReadingRankAssignmentId
+    )
+  ) {
+
+    activeReadingRankAssignmentId =
+      rankAssignments[0].id;
+  }
+
+
+  const selectedAssignment =
+    rankAssignments.find(
+      item =>
+        item.id ===
+        activeReadingRankAssignmentId
+    ) ||
+    rankAssignments[0];
+
+
+  const readingRank =
+    assignmentReadingRankings.find(
+      row =>
+        row.assignment_id ===
+        selectedAssignment.id
+    ) ||
+    null;
+
+
+  const totalAttempts =
+    Math.max(
+      0,
+      Number(
+        readingRank?.total_attempts
+      ) || 0
+    );
+
+
+  const hasSubmission =
+    totalAttempts > 0;
+
+
+  const totalStudents =
+    Math.max(
+      0,
+      Number(
+        readingRank?.total_students
+      ) || 0
+    );
+
+
+  const bestAccuracy =
+    readingRank?.best_accuracy === null ||
+    readingRank?.best_accuracy === undefined
+
+      ? '—'
+
+      : `${
+          Number(
+            readingRank.best_accuracy
+          ).toFixed(1)
+        }%`;
+
+
+  const bestWpm =
+    readingRank?.best_wpm === null ||
+    readingRank?.best_wpm === undefined
+
+      ? '—'
+
+      : Math.round(
+          Number(
+            readingRank.best_wpm
+          )
+        );
+
+
+  const audienceLabel =
+    selectedAssignment.audience_type ===
+      'targeted'
+
+      ? (
+          isJa
+            ? '個別配布・対象者内順位'
+            : 'Targeted assignment'
+        )
+
+      : (
+          isJa
+            ? 'クラス配布・クラス内順位'
+            : 'Class assignment'
+        );
+
+
+  const options =
+    rankAssignments
+      .map(
+        assignment => `
+          <option
+            value="${assignment.id}"
+            ${
+              assignment.id ===
+              selectedAssignment.id
+                ? 'selected'
+                : ''
+            }>
+
+            No.${escapeHtml(
+              assignment.week_no
+            )} — ${escapeHtml(
+              assignment.title
+            )}
+
+          </option>
+        `
+      )
+      .join('');
+
+
+  const rankingBody =
+    hasSubmission
+
+      ? `
+        <div class="student-rank-grid">
+
+          <div class="student-rank-item">
+
+            <div class="student-rank-icon">
+              🎯
+            </div>
+
+            <div class="student-rank-label">
+              Accuracy
+            </div>
+
+            <div class="student-rank-position">
+
+              ${
+                readingRankFraction(
+                  readingRank?.accuracy_rank,
+                  totalStudents
+                )
+              }
+
+            </div>
+
+            <div class="student-rank-detail">
+
+              ${
+                isJa
+                  ? '自己ベスト'
+                  : 'Your Best'
+              }
+
+              <strong>
+                ${bestAccuracy}
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <div class="student-rank-item">
+
+            <div class="student-rank-icon">
+              ⚡
+            </div>
+
+            <div class="student-rank-label">
+              WPM
+            </div>
+
+            <div class="student-rank-position">
+
+              ${
+                readingRankFraction(
+                  readingRank?.wpm_rank,
+                  totalStudents
+                )
+              }
+
+            </div>
+
+            <div class="student-rank-detail">
+
+              ${
+                isJa
+                  ? '自己ベスト'
+                  : 'Your Best'
+              }
+
+              <strong>
+                ${bestWpm}
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <div class="student-rank-item">
+
+            <div class="student-rank-icon">
+              🔥
+            </div>
+
+            <div class="student-rank-label">
+
+              ${
+                isJa
+                  ? '音読回数'
+                  : 'Practice'
+              }
+
+            </div>
+
+            <div class="student-rank-position">
+
+              ${
+                readingRankFraction(
+                  readingRank?.practice_rank,
+                  totalStudents
+                )
+              }
+
+            </div>
+
+            <div class="student-rank-detail">
+
+              <strong>
+                ${totalAttempts}
+              </strong>
+
+              ${
+                isJa
+                  ? '回'
+                  : ' reads'
+              }
+
+            </div>
+
+          </div>
+
+        </div>
+      `
+
+      : `
+        <div class="student-rank-unsubmitted">
+
+          <div class="student-rank-unsubmitted-icon">
+            🗣️
+          </div>
+
+
+          <div class="student-rank-unsubmitted-copy">
+
+            <div class="student-rank-unsubmitted-label">
+              NOT SUBMITTED YET
+            </div>
+
+            <h3>
+
+              ${
+                isJa
+                  ? 'この課題はまだ未提出です'
+                  : 'You have not submitted this assignment yet'
+              }
+
+            </h3>
+
+            <p>
+
+              ${
+                isJa
+                  ? '1回音読して結果を保存すると、Accuracy・WPM・音読回数のクラス順位がここに表示されます。'
+                  : 'Complete one reading and save your result to unlock your Accuracy, WPM, and practice rankings.'
+              }
+
+            </p>
+
+          </div>
+
+
+          <div class="student-rank-unsubmitted-target">
+
+            <span>
+
+              ${
+                isJa
+                  ? 'ランキング対象'
+                  : 'Ranking group'
+              }
+
+            </span>
+
+            <strong>
+              ${totalStudents}
+            </strong>
+
+            <small>
+
+              ${
+                isJa
+                  ? '人'
+                  : 'students'
+              }
+
+            </small>
+
+          </div>
+
+        </div>
+      `;
+
+
+  card.innerHTML = `
+    <div class="student-rank-heading">
+
+      <div>
+
+        <div class="eyebrow">
+          ASSIGNMENT RANKING
+        </div>
+
+        <h2>
+
+          ${
+            isJa
+              ? '課題別クラス順位'
+              : 'Assignment Rankings'
+          }
+
+        </h2>
+
+        <p class="muted">
+
+          ${
+            isJa
+              ? '課題を選ぶと、その課題での自分の順位を確認できます。'
+              : 'Choose an assignment to see your ranking for that task.'
+          }
+
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="reading-rank-picker">
+
+      <div class="reading-rank-picker-icon">
+        📘
+      </div>
+
+
+      <label class="reading-rank-picker-copy">
+
+        <span>
+
+          ${
+            isJa
+              ? 'ランキングを見る課題'
+              : 'Choose an assignment'
+          }
+
+        </span>
+
+
+        <div class="reading-rank-select-wrap">
+
+          <select
+            class="reading-rank-select"
+            data-reading-rank-select>
+
+            ${options}
+
+          </select>
+
+        </div>
+
+      </label>
+
+    </div>
+
+
+    <div class="reading-rank-selected">
+
+      <div>
+
+        <span class="reading-rank-selected-no">
+
+          ${
+            isJa
+              ? '選択中'
+              : 'Selected'
+          }
+
+          ・ No.${escapeHtml(
+            selectedAssignment.week_no
+          )}
+
+        </span>
+
+        <strong>
+
+          ${escapeHtml(
+            selectedAssignment.title
+          )}
+
+        </strong>
+
+      </div>
+
+
+      <div class="reading-rank-selected-meta">
+
+        <span class="reading-rank-audience">
+
+          ${escapeHtml(
+            audienceLabel
+          )}
+
+        </span>
+
+        <span class="reading-rank-target-count">
+
+          ${
+            isJa
+              ? `対象 ${totalStudents}人`
+              : `${totalStudents} students`
+          }
+
+        </span>
+
+      </div>
+
+    </div>
+
+
+    ${rankingBody}
+
+
+    <div class="student-rank-footnote">
+
+      ${
+        hasSubmission
+
+          ? (
+              isJa
+                ? `この課題の対象者 ${totalStudents}人の中で、あなたの自己ベストをもとに算出しています。`
+                : `Your rank is calculated from your best result among ${totalStudents} assigned students.`
+            )
+
+          : (
+              isJa
+                ? '最初の音読結果をClassroomに保存すると順位が表示されます。'
+                : 'Your ranking will appear after your first result is saved to Classroom.'
+            )
+      }
+
+    </div>
+  `;
+
 
   card
-    .querySelectorAll(
-      '[data-reading-rank-assignment]'
+    .querySelector(
+      '[data-reading-rank-select]'
     )
-    .forEach(
-      button => {
+    ?.addEventListener(
+      'change',
+      event => {
 
-        button.addEventListener(
-          'click',
-          () => {
+        activeReadingRankAssignmentId =
+          event.target.value;
 
-            activeReadingRankAssignmentId =
-              button.dataset
-                .readingRankAssignment;
-
-
-            card.dataset
-              .rankSignature =
-              '';
-
-
-            renderReadingRankCard();
-          }
-        );
+        renderReadingRankCard();
       }
     );
 }

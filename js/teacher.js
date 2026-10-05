@@ -2244,7 +2244,6 @@ function renderClassLeaderboard() {
         'section'
       );
 
-
   if (!metricsSection) {
     return;
   }
@@ -2261,14 +2260,11 @@ function renderClassLeaderboard() {
         'section'
       );
 
-
     root.id =
       'classReadingLeaderboard';
 
-
     root.className =
       'paper section class-reading-leaderboard';
-
 
     metricsSection
       .insertAdjacentElement(
@@ -2282,48 +2278,46 @@ function renderClassLeaderboard() {
     teacherRankableAssignments();
 
 
-  if (
-    rankAssignments.length ===
-    0
-  ) {
+  if (!rankAssignments.length) {
 
-    root.innerHTML =
-      `
-        <div class="panel-title">
+    root.innerHTML = `
+      <div class="panel-title">
 
-          <div>
+        <div>
 
-            <div class="eyebrow">
-              ASSIGNMENT LEADERBOARD
-            </div>
-
-            <h2>
-              課題別 Reading Ranking
-            </h2>
-
+          <div class="eyebrow">
+            ASSIGNMENT LEADERBOARD
           </div>
 
+          <h2>
+            課題別 Reading Ranking
+          </h2>
+
+          <p class="muted">
+            課題ごとのランキングを確認できます。
+          </p>
+
         </div>
 
-        <div class="teacher-rank-empty">
-          順位を表示できる公開済み課題はまだありません。
-        </div>
-      `;
+      </div>
 
+
+      <div class="teacher-rank-empty">
+        順位を表示できる公開済み課題はまだありません。
+      </div>
+    `;
 
     return;
   }
 
 
-  const activeStillExists =
-    rankAssignments.some(
-      assignment =>
-        assignment.id ===
+  if (
+    !rankAssignments.some(
+      item =>
+        item.id ===
         activeReadingRankAssignmentId
-    );
-
-
-  if (!activeStillExists) {
+    )
+  ) {
 
     activeReadingRankAssignmentId =
       rankAssignments[0].id;
@@ -2332,8 +2326,8 @@ function renderClassLeaderboard() {
 
   const selectedAssignment =
     rankAssignments.find(
-      assignment =>
-        assignment.id ===
+      item =>
+        item.id ===
         activeReadingRankAssignmentId
     ) ||
     rankAssignments[0];
@@ -2348,57 +2342,50 @@ function renderClassLeaderboard() {
 
 
   const totalStudents =
-    Number(
-      selectedRows[0]
-        ?.total_students
-    ) ||
-    0;
+    Math.max(
+      0,
+      Number(
+        selectedRows[0]?.total_students
+      ) || 0
+    );
 
 
-  const tabs =
+  const submittedStudents =
+    selectedRows.filter(
+      row =>
+        Number(
+          row.total_attempts
+        ) > 0
+    ).length;
+
+
+  const options =
     rankAssignments
       .map(
-        assignment => {
+        assignment => `
+          <option
+            value="${assignment.id}"
+            ${
+              assignment.id ===
+              selectedAssignment.id
+                ? 'selected'
+                : ''
+            }>
 
-          const active =
-            assignment.id ===
-            selectedAssignment.id;
+            No.${esc(
+              assignment.week_no
+            )} — ${esc(
+              assignment.title
+            )}
 
-
-          return `
-            <button
-              type="button"
-              class="reading-rank-tab ${
-                active
-                  ? 'active'
-                  : ''
-              }"
-              data-teacher-rank-assignment="${
-                assignment.id
-              }">
-
-              <span>
-                No.${esc(
-                  assignment.week_no
-                )}
-              </span>
-
-              <strong>
-                ${esc(
-                  assignment.title
-                )}
-              </strong>
-
-            </button>
-          `;
-        }
+          </option>
+        `
       )
       .join('');
 
 
   const audienceLabel =
-    selectedAssignment
-      .audience_type ===
+    selectedAssignment.audience_type ===
       'targeted'
 
       ? '個別配布・対象者内順位'
@@ -2406,156 +2393,202 @@ function renderClassLeaderboard() {
       : 'クラス配布・クラス内順位';
 
 
-  root.innerHTML =
-    `
-      <div class="panel-title">
+  root.innerHTML = `
+    <div class="panel-title">
 
-        <div>
+      <div>
 
-          <div class="eyebrow">
-            ASSIGNMENT LEADERBOARD
-          </div>
-
-          <h2>
-            課題別 Reading Ranking
-          </h2>
-
-          <p class="muted">
-            課題を切り替えてAccuracy・WPM・音読回数を確認できます。
-          </p>
-
+        <div class="eyebrow">
+          ASSIGNMENT LEADERBOARD
         </div>
 
+        <h2>
+          課題別 Reading Ranking
+        </h2>
 
-        <div class="teacher-rank-note">
-          Top 5
-        </div>
+        <p class="muted">
+          課題を選択してAccuracy・WPM・音読回数の順位を確認できます。
+        </p>
 
       </div>
 
 
-      <div class="reading-rank-tabs teacher-reading-rank-tabs">
-        ${tabs}
+      <div class="teacher-rank-note">
+        TOP 5
+      </div>
+
+    </div>
+
+
+    <div class="reading-rank-picker teacher-rank-picker">
+
+      <div class="reading-rank-picker-icon">
+        📊
       </div>
 
 
-      <div class="reading-rank-selected">
+      <label class="reading-rank-picker-copy">
 
-        <div>
+        <span>
+          ランキングを見る課題
+        </span>
 
-          <span class="reading-rank-selected-no">
-            課題 No.${esc(
-              selectedAssignment.week_no
-            )}
-          </span>
 
-          <strong>
-            ${esc(
-              selectedAssignment.title
-            )}
-          </strong>
+        <div class="reading-rank-select-wrap">
+
+          <select
+            class="reading-rank-select"
+            data-teacher-rank-select>
+
+            ${options}
+
+          </select>
 
         </div>
 
+      </label>
+
+    </div>
+
+
+    <div class="reading-rank-selected">
+
+      <div>
+
+        <span class="reading-rank-selected-no">
+
+          選択中 ・ No.${esc(
+            selectedAssignment.week_no
+          )}
+
+        </span>
+
+        <strong>
+
+          ${esc(
+            selectedAssignment.title
+          )}
+
+        </strong>
+
+      </div>
+
+
+      <div class="reading-rank-selected-meta">
 
         <span class="reading-rank-audience">
-
           ${esc(
             audienceLabel
           )}
+        </span>
 
-          ・対象 ${totalStudents}人
+        <span class="reading-rank-target-count">
+          対象 ${totalStudents}人
+        </span>
 
+        <span class="reading-rank-submitted-count">
+          提出 ${submittedStudents} / ${totalStudents}
         </span>
 
       </div>
 
-
-      <div class="teacher-rank-grid">
-
-        ${leaderboardColumn(
-          selectedRows,
-          'Accuracy',
-          '🎯',
-          'accuracy_rank',
-          'best_accuracy',
-          value =>
-            value ===
-              null ||
-            value ===
-              undefined
-
-              ? '—'
-
-              : `${
-                  Number(
-                    value
-                  ).toFixed(1)
-                }%`
-        )}
+    </div>
 
 
-        ${leaderboardColumn(
-          selectedRows,
-          'WPM',
-          '⚡',
-          'wpm_rank',
-          'best_wpm',
-          value =>
-            value ===
-              null ||
-            value ===
-              undefined
+    <div class="teacher-rank-grid">
 
-              ? '—'
+      ${leaderboardColumn(
+        selectedRows,
+        'Accuracy',
+        '🎯',
+        'accuracy_rank',
+        'best_accuracy',
+        value =>
+          value === null ||
+          value === undefined
 
-              : Math.round(
-                  Number(
-                    value
-                  )
+            ? '—'
+
+            : `${
+                Number(
+                  value
+                ).toFixed(1)
+              }%`
+      )}
+
+
+      ${leaderboardColumn(
+        selectedRows,
+        'WPM',
+        '⚡',
+        'wpm_rank',
+        'best_wpm',
+        value =>
+          value === null ||
+          value === undefined
+
+            ? '—'
+
+            : Math.round(
+                Number(
+                  value
                 )
-        )}
-
-
-        ${leaderboardColumn(
-          selectedRows,
-          'Practice',
-          '🔥',
-          'practice_rank',
-          'total_attempts',
-          value =>
-            `${
-              Math.max(
-                0,
-                Number(value) ||
-                0
               )
-            } reads`
-        )}
+      )}
 
-      </div>
-    `;
+
+      ${leaderboardColumn(
+        selectedRows,
+        'Practice',
+        '🔥',
+        'practice_rank',
+        'total_attempts',
+        value =>
+          `${
+            Math.max(
+              0,
+              Number(value) || 0
+            )
+          } reads`
+      )}
+
+    </div>
+
+
+    ${
+      submittedStudents === 0
+
+        ? `
+          <div class="teacher-rank-no-submissions">
+
+            <strong>
+              まだこの課題の提出はありません。
+            </strong>
+
+            <span>
+              生徒が最初の音読結果を保存するとランキングが表示されます。
+            </span>
+
+          </div>
+        `
+
+        : ''
+    }
+  `;
 
 
   root
-    .querySelectorAll(
-      '[data-teacher-rank-assignment]'
+    .querySelector(
+      '[data-teacher-rank-select]'
     )
-    .forEach(
-      button => {
+    ?.addEventListener(
+      'change',
+      event => {
 
-        button.addEventListener(
-          'click',
-          () => {
+        activeReadingRankAssignmentId =
+          event.target.value;
 
-            activeReadingRankAssignmentId =
-              button.dataset
-                .teacherRankAssignment;
-
-
-            renderClassLeaderboard();
-          }
-        );
+        renderClassLeaderboard();
       }
     );
 }
