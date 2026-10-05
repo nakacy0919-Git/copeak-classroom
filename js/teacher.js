@@ -39,6 +39,27 @@ let readingRankings = [];
 let activeReadingRankAssignmentId =
   null;
 
+
+// ==========================================
+// PROJECTOR LEADERBOARD v5
+// ==========================================
+
+let leaderboardVisibleMetrics =
+  new Set([
+    'accuracy',
+    'wpm',
+    'practice'
+  ]);
+
+
+let leaderboardHiddenStudentIds =
+  new Set();
+
+
+let leaderboardStudentFilterOpen =
+  false;
+
+
 let gradebookDefaultMetric =
   localStorage.getItem(
     'copeak_gradebook_default_metric'
@@ -2236,6 +2257,199 @@ function leaderboardColumn(
 }
 
 
+function leaderboardPresentationActive() {
+
+  const root =
+    $('#classReadingLeaderboard');
+
+
+  return Boolean(
+    root &&
+    (
+      document.fullscreenElement ===
+        root ||
+      document.body.classList.contains(
+        'leaderboard-presenting'
+      )
+    )
+  );
+}
+
+
+async function toggleLeaderboardPresentation() {
+
+  const root =
+    $('#classReadingLeaderboard');
+
+
+  if (!root) {
+    return;
+  }
+
+
+  const active =
+    leaderboardPresentationActive();
+
+
+  if (active) {
+
+    if (
+      document.fullscreenElement &&
+      typeof document.exitFullscreen ===
+        'function'
+    ) {
+
+      try {
+        await document.exitFullscreen();
+      } catch (error) {
+
+        console.warn(
+          '[Copeak Classroom] fullscreen exit failed',
+          error
+        );
+      }
+    }
+
+
+    document.body.classList.remove(
+      'leaderboard-presenting'
+    );
+
+
+    root.dataset.rankSignature =
+      '';
+
+
+    renderClassLeaderboard();
+
+    return;
+  }
+
+
+  document.body.classList.add(
+    'leaderboard-presenting'
+  );
+
+
+  root.dataset.rankSignature =
+    '';
+
+
+  renderClassLeaderboard();
+
+
+  if (
+    typeof root.requestFullscreen ===
+    'function'
+  ) {
+
+    try {
+
+      await root.requestFullscreen({
+        navigationUI:
+          'hide'
+      });
+
+    } catch (error) {
+
+      // requestFullscreen非対応・拒否時も
+      // fixedレイアウトの投影モードは維持する。
+      console.warn(
+        '[Copeak Classroom] native fullscreen unavailable',
+        error
+      );
+    }
+  }
+}
+
+
+function leaderboardStudentOptions(
+  rows
+) {
+
+  const map =
+    new Map();
+
+
+  rows.forEach(
+    row => {
+
+      if (
+        map.has(
+          row.student_id
+        )
+      ) {
+        return;
+      }
+
+
+      const student =
+        teacherRankStudent(
+          row.student_id
+        );
+
+
+      map.set(
+        row.student_id,
+        {
+          id:
+            row.student_id,
+
+          name:
+            student
+              ?.display_name ||
+            'Student',
+
+          number:
+            student
+              ?.student_number ||
+            ''
+        }
+      );
+    }
+  );
+
+
+  return [
+    ...map.values()
+  ].sort(
+    (a, b) => {
+
+      const numberA =
+        Number(
+          a.number
+        );
+
+      const numberB =
+        Number(
+          b.number
+        );
+
+
+      if (
+        Number.isFinite(numberA) &&
+        Number.isFinite(numberB) &&
+        numberA !== numberB
+      ) {
+
+        return numberA -
+          numberB;
+      }
+
+
+      return String(
+        a.name
+      ).localeCompare(
+        String(
+          b.name
+        ),
+        'ja'
+      );
+    }
+  );
+}
+
+
 function renderClassLeaderboard() {
 
   const metricsSection =
@@ -2342,6 +2556,22 @@ function renderClassLeaderboard() {
     );
 
 
+  const filterStudents =
+    leaderboardStudentOptions(
+      selectedRows
+    );
+
+
+  const visibleRows =
+    selectedRows.filter(
+      row =>
+        !leaderboardHiddenStudentIds
+          .has(
+            row.student_id
+          )
+    );
+
+
   const totalStudents =
     Math.max(
       0,
@@ -2361,6 +2591,28 @@ function renderClassLeaderboard() {
     ).length;
 
 
+  const hiddenCount =
+    filterStudents.filter(
+      student =>
+        leaderboardHiddenStudentIds
+          .has(
+            student.id
+          )
+    ).length;
+
+
+  const visibleMetricCount =
+    Math.max(
+      1,
+      leaderboardVisibleMetrics
+        .size
+    );
+
+
+  const isPresenting =
+    leaderboardPresentationActive();
+
+
   const signature =
     [
       selectedAssignment.id,
@@ -2369,6 +2621,22 @@ function renderClassLeaderboard() {
       JSON.stringify(
         selectedRows
       ),
+      [
+        ...leaderboardVisibleMetrics
+      ]
+        .sort()
+        .join(','),
+      [
+        ...leaderboardHiddenStudentIds
+      ]
+        .sort()
+        .join(','),
+      leaderboardStudentFilterOpen
+        ? 'filter-open'
+        : 'filter-closed',
+      isPresenting
+        ? 'presenting'
+        : 'normal',
       rankAssignments
         .map(
           assignment =>
@@ -2388,8 +2656,7 @@ function renderClassLeaderboard() {
   }
 
 
-  root.dataset
-    .rankSignature =
+  root.dataset.rankSignature =
     signature;
 
 
@@ -2428,8 +2695,185 @@ function renderClassLeaderboard() {
       : 'クラス配布';
 
 
+  const metricToggle =
+    (
+      key,
+      icon,
+      label
+    ) => {
+
+      const active =
+        leaderboardVisibleMetrics
+          .has(
+            key
+          );
+
+
+      const lastActive =
+        active &&
+        leaderboardVisibleMetrics
+          .size ===
+          1;
+
+
+      return `
+        <button
+          type="button"
+          class="
+            teacher-rank-display-toggle
+            ${active ? 'active' : ''}
+          "
+          data-rank-metric="${key}"
+          ${lastActive ? 'disabled' : ''}>
+
+          <span>
+            ${icon}
+          </span>
+
+          ${label}
+
+        </button>
+      `;
+    };
+
+
+  const studentCheckboxes =
+    filterStudents
+      .map(
+        student => {
+
+          const hidden =
+            leaderboardHiddenStudentIds
+              .has(
+                student.id
+              );
+
+
+          return `
+            <label class="teacher-rank-student-option">
+
+              <input
+                type="checkbox"
+                data-rank-student-id="${esc(
+                  student.id
+                )}"
+                ${hidden ? '' : 'checked'}>
+
+              <span class="teacher-rank-student-option-number">
+                ${
+                  student.number
+                    ? `No.${esc(
+                        student.number
+                      )}`
+                    : '—'
+                }
+              </span>
+
+              <strong>
+                ${esc(
+                  student.name
+                )}
+              </strong>
+
+            </label>
+          `;
+        }
+      )
+      .join('');
+
+
+  const columns = [];
+
+
+  if (
+    leaderboardVisibleMetrics
+      .has(
+        'accuracy'
+      )
+  ) {
+
+    columns.push(
+      leaderboardColumn(
+        visibleRows,
+        'Accuracy',
+        '🎯',
+        'accuracy_rank',
+        'best_accuracy',
+        value =>
+          value === null ||
+          value === undefined
+
+            ? '—'
+
+            : `${
+                Number(
+                  value
+                ).toFixed(1)
+              }%`
+      )
+    );
+  }
+
+
+  if (
+    leaderboardVisibleMetrics
+      .has(
+        'wpm'
+      )
+  ) {
+
+    columns.push(
+      leaderboardColumn(
+        visibleRows,
+        'WPM',
+        '⚡',
+        'wpm_rank',
+        'best_wpm',
+        value =>
+          value === null ||
+          value === undefined
+
+            ? '—'
+
+            : Math.round(
+                Number(
+                  value
+                )
+              )
+      )
+    );
+  }
+
+
+  if (
+    leaderboardVisibleMetrics
+      .has(
+        'practice'
+      )
+  ) {
+
+    columns.push(
+      leaderboardColumn(
+        visibleRows,
+        'Practice',
+        '🔥',
+        'practice_rank',
+        'total_attempts',
+        value =>
+          `${
+            Math.max(
+              0,
+              Number(value) ||
+              0
+            )
+          } reads`
+      )
+    );
+  }
+
+
   root.innerHTML = `
-    <div class="panel-title">
+    <div class="panel-title teacher-rank-main-title">
 
       <div>
 
@@ -2438,50 +2882,167 @@ function renderClassLeaderboard() {
         </div>
 
         <h2>
-          課題別 Reading Ranking
+          ${
+            isPresenting
+              ? `No.${esc(
+                  selectedAssignment.week_no
+                )} ${esc(
+                  selectedAssignment.title
+                )}`
+              : '課題別 Reading Ranking'
+          }
         </h2>
 
         <p class="muted">
-          課題を選択してTop 5を確認します。
+          ${
+            isPresenting
+              ? 'READING LEADERBOARD'
+              : '課題を選択してTop 5を確認します。'
+          }
         </p>
 
       </div>
 
 
-      <div class="teacher-rank-note">
-        TOP 5
-      </div>
+      <button
+        type="button"
+        class="
+          btn
+          ${
+            isPresenting
+              ? 'btn-danger'
+              : 'btn-dark'
+          }
+          teacher-rank-present-button
+        "
+        data-rank-present>
+
+        ${
+          isPresenting
+            ? '✕ 投影を終了'
+            : '🖥 投影モード'
+        }
+
+      </button>
 
     </div>
 
 
-    <div class="reading-rank-picker ranking-picker-v4">
+    <div class="teacher-rank-toolbar">
 
-      <div class="reading-rank-picker-icon">
-        📊
+      <div class="reading-rank-picker ranking-picker-v4 teacher-rank-picker-compact">
+
+        <div class="reading-rank-picker-icon">
+          📊
+        </div>
+
+
+        <label class="reading-rank-picker-copy">
+
+          <span>
+            ランキングを見る課題
+          </span>
+
+
+          <div class="reading-rank-select-wrap">
+
+            <select
+              class="reading-rank-select"
+              data-teacher-rank-select>
+
+              ${options}
+
+            </select>
+
+          </div>
+
+        </label>
+
       </div>
 
 
-      <label class="reading-rank-picker-copy">
+      <div class="teacher-rank-view-controls">
 
-        <span>
-          ランキングを見る課題
-        </span>
+        ${metricToggle(
+          'accuracy',
+          '🎯',
+          'Accuracy'
+        )}
+
+        ${metricToggle(
+          'wpm',
+          '⚡',
+          'WPM'
+        )}
+
+        ${metricToggle(
+          'practice',
+          '🔥',
+          'Practice'
+        )}
 
 
-        <div class="reading-rank-select-wrap">
+        <details
+          class="teacher-rank-student-filter"
+          ${
+            leaderboardStudentFilterOpen
+              ? 'open'
+              : ''
+          }>
 
-          <select
-            class="reading-rank-select"
-            data-teacher-rank-select>
+          <summary>
 
-            ${options}
+            👤 生徒
 
-          </select>
+            ${
+              hiddenCount
+                ? `<b>${hiddenCount}人非表示</b>`
+                : ''
+            }
 
-        </div>
+          </summary>
 
-      </label>
+
+          <div class="teacher-rank-student-menu">
+
+            <div class="teacher-rank-student-menu-head">
+
+              <div>
+
+                <strong>
+                  表示する生徒
+                </strong>
+
+                <span>
+                  チェックを外すと投影画面から非表示になります。
+                </span>
+
+              </div>
+
+              ${
+                hiddenCount
+                  ? `
+                    <button
+                      type="button"
+                      data-rank-reset-students>
+                      全員表示
+                    </button>
+                  `
+                  : ''
+              }
+
+            </div>
+
+
+            <div class="teacher-rank-student-list">
+              ${studentCheckboxes}
+            </div>
+
+          </div>
+
+        </details>
+
+      </div>
 
     </div>
 
@@ -2512,70 +3073,26 @@ function renderClassLeaderboard() {
         提出 ${submittedStudents}/${totalStudents}
       </span>
 
+      ${
+        hiddenCount
+          ? `
+            <span class="teacher-rank-hidden-count">
+              非表示 ${hiddenCount}人
+            </span>
+          `
+          : ''
+      }
+
     </div>
 
 
-    <div class="teacher-rank-grid">
+    <div
+      class="
+        teacher-rank-grid
+        metrics-${visibleMetricCount}
+      ">
 
-      ${leaderboardColumn(
-        selectedRows,
-        'Accuracy',
-        '🎯',
-        'accuracy_rank',
-        'best_accuracy',
-        value =>
-          value ===
-              null ||
-          value ===
-              undefined
-
-            ? '—'
-
-            : `${
-                Number(
-                  value
-                ).toFixed(1)
-              }%`
-      )}
-
-
-      ${leaderboardColumn(
-        selectedRows,
-        'WPM',
-        '⚡',
-        'wpm_rank',
-        'best_wpm',
-        value =>
-          value ===
-              null ||
-          value ===
-              undefined
-
-            ? '—'
-
-            : Math.round(
-                Number(
-                  value
-                )
-              )
-      )}
-
-
-      ${leaderboardColumn(
-        selectedRows,
-        'Practice',
-        '🔥',
-        'practice_rank',
-        'total_attempts',
-        value =>
-          `${
-            Math.max(
-              0,
-              Number(value) ||
-              0
-            )
-          } reads`
-      )}
+      ${columns.join('')}
 
     </div>
 
@@ -2614,15 +3131,256 @@ function renderClassLeaderboard() {
           event.target.value;
 
 
-        root.dataset
-          .rankSignature =
+        root.dataset.rankSignature =
           '';
 
 
         renderClassLeaderboard();
       }
     );
+
+
+  root
+    .querySelectorAll(
+      '[data-rank-metric]'
+    )
+    .forEach(
+      button => {
+
+        button.addEventListener(
+          'click',
+          () => {
+
+            const metric =
+              button.dataset
+                .rankMetric;
+
+
+            if (
+              leaderboardVisibleMetrics
+                .has(
+                  metric
+                )
+            ) {
+
+              if (
+                leaderboardVisibleMetrics
+                  .size <= 1
+              ) {
+                return;
+              }
+
+
+              leaderboardVisibleMetrics
+                .delete(
+                  metric
+                );
+
+            } else {
+
+              leaderboardVisibleMetrics
+                .add(
+                  metric
+                );
+            }
+
+
+            root.dataset.rankSignature =
+              '';
+
+
+            renderClassLeaderboard();
+          }
+        );
+      }
+    );
+
+
+  const studentDetails =
+    root.querySelector(
+      '.teacher-rank-student-filter'
+    );
+
+
+  studentDetails
+    ?.addEventListener(
+      'toggle',
+      () => {
+
+        leaderboardStudentFilterOpen =
+          studentDetails.open;
+      }
+    );
+
+
+  root
+    .querySelectorAll(
+      '[data-rank-student-id]'
+    )
+    .forEach(
+      checkbox => {
+
+        checkbox.addEventListener(
+          'change',
+          () => {
+
+            const studentId =
+              checkbox.dataset
+                .rankStudentId;
+
+
+            if (
+              checkbox.checked
+            ) {
+
+              leaderboardHiddenStudentIds
+                .delete(
+                  studentId
+                );
+
+            } else {
+
+              leaderboardHiddenStudentIds
+                .add(
+                  studentId
+                );
+            }
+
+
+            leaderboardStudentFilterOpen =
+              true;
+
+
+            root.dataset.rankSignature =
+              '';
+
+
+            renderClassLeaderboard();
+          }
+        );
+      }
+    );
+
+
+  root
+    .querySelector(
+      '[data-rank-reset-students]'
+    )
+    ?.addEventListener(
+      'click',
+      event => {
+
+        event.preventDefault();
+
+
+        leaderboardHiddenStudentIds
+          .clear();
+
+
+        leaderboardStudentFilterOpen =
+          true;
+
+
+        root.dataset.rankSignature =
+          '';
+
+
+        renderClassLeaderboard();
+      }
+    );
+
+
+  root
+    .querySelector(
+      '[data-rank-present]'
+    )
+    ?.addEventListener(
+      'click',
+      toggleLeaderboardPresentation
+    );
 }
+
+
+document.addEventListener(
+  'fullscreenchange',
+  () => {
+
+    const root =
+      $('#classReadingLeaderboard');
+
+
+    if (!root) {
+      return;
+    }
+
+
+    if (
+      document.fullscreenElement !==
+      root
+    ) {
+
+      document.body.classList.remove(
+        'leaderboard-presenting'
+      );
+    }
+
+
+    root.dataset.rankSignature =
+      '';
+
+
+    renderClassLeaderboard();
+  }
+);
+
+
+document.addEventListener(
+  'keydown',
+  event => {
+
+    if (
+      event.key !==
+      'Escape'
+    ) {
+      return;
+    }
+
+
+    if (
+      document.fullscreenElement
+    ) {
+      return;
+    }
+
+
+    if (
+      !document.body.classList.contains(
+        'leaderboard-presenting'
+      )
+    ) {
+      return;
+    }
+
+
+    document.body.classList.remove(
+      'leaderboard-presenting'
+    );
+
+
+    const root =
+      $('#classReadingLeaderboard');
+
+
+    if (root) {
+
+      root.dataset.rankSignature =
+        '';
+
+
+      renderClassLeaderboard();
+    }
+  }
+);
 
 function render() {
 
