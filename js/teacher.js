@@ -36,6 +36,9 @@ let manualScores = [];
 
 let readingRankings = [];
 
+let activeReadingRankAssignmentId =
+  null;
+
 let gradebookDefaultMetric =
   localStorage.getItem(
     'copeak_gradebook_default_metric'
@@ -1584,7 +1587,6 @@ function renderTable() {
             .join('')
         }
 
-        <th>Class Rank</th>
         <th>Reads</th>
         <th>Done</th>
         <th>Avg.</th>
@@ -1994,10 +1996,6 @@ function renderTable() {
 
               ${cells}
 
-              ${readingRankCell(
-                student.id
-              )}
-
               <td>
                 <strong>
                   ${totalReads}
@@ -2026,7 +2024,7 @@ function renderTable() {
 
 
 // ==========================================
-// CLASS READING LEADERBOARD
+// ASSIGNMENT READING LEADERBOARD
 // ==========================================
 
 function teacherRankStudent(
@@ -2078,7 +2076,41 @@ function teacherRankBadge(
 }
 
 
+function teacherRankableAssignments() {
+
+  const rankIds =
+    new Set(
+      readingRankings.map(
+        row =>
+          row.assignment_id
+      )
+    );
+
+
+  return assignments
+    .filter(
+      assignment =>
+        assignment
+          .is_published !==
+          false &&
+        rankIds.has(
+          assignment.id
+        )
+    )
+    .sort(
+      (a, b) =>
+        Number(
+          b.week_no || 0
+        ) -
+        Number(
+          a.week_no || 0
+        )
+    );
+}
+
+
 function leaderboardColumn(
+  sourceRows,
   title,
   icon,
   rankKey,
@@ -2087,7 +2119,7 @@ function leaderboardColumn(
 ) {
 
   const rows =
-    readingRankings
+    sourceRows
       .filter(
         row =>
           row[rankKey] !==
@@ -2246,6 +2278,134 @@ function renderClassLeaderboard() {
   }
 
 
+  const rankAssignments =
+    teacherRankableAssignments();
+
+
+  if (
+    rankAssignments.length ===
+    0
+  ) {
+
+    root.innerHTML =
+      `
+        <div class="panel-title">
+
+          <div>
+
+            <div class="eyebrow">
+              ASSIGNMENT LEADERBOARD
+            </div>
+
+            <h2>
+              課題別 Reading Ranking
+            </h2>
+
+          </div>
+
+        </div>
+
+        <div class="teacher-rank-empty">
+          順位を表示できる公開済み課題はまだありません。
+        </div>
+      `;
+
+
+    return;
+  }
+
+
+  const activeStillExists =
+    rankAssignments.some(
+      assignment =>
+        assignment.id ===
+        activeReadingRankAssignmentId
+    );
+
+
+  if (!activeStillExists) {
+
+    activeReadingRankAssignmentId =
+      rankAssignments[0].id;
+  }
+
+
+  const selectedAssignment =
+    rankAssignments.find(
+      assignment =>
+        assignment.id ===
+        activeReadingRankAssignmentId
+    ) ||
+    rankAssignments[0];
+
+
+  const selectedRows =
+    readingRankings.filter(
+      row =>
+        row.assignment_id ===
+        selectedAssignment.id
+    );
+
+
+  const totalStudents =
+    Number(
+      selectedRows[0]
+        ?.total_students
+    ) ||
+    0;
+
+
+  const tabs =
+    rankAssignments
+      .map(
+        assignment => {
+
+          const active =
+            assignment.id ===
+            selectedAssignment.id;
+
+
+          return `
+            <button
+              type="button"
+              class="reading-rank-tab ${
+                active
+                  ? 'active'
+                  : ''
+              }"
+              data-teacher-rank-assignment="${
+                assignment.id
+              }">
+
+              <span>
+                No.${esc(
+                  assignment.week_no
+                )}
+              </span>
+
+              <strong>
+                ${esc(
+                  assignment.title
+                )}
+              </strong>
+
+            </button>
+          `;
+        }
+      )
+      .join('');
+
+
+  const audienceLabel =
+    selectedAssignment
+      .audience_type ===
+      'targeted'
+
+      ? '個別配布・対象者内順位'
+
+      : 'クラス配布・クラス内順位';
+
+
   root.innerHTML =
     `
       <div class="panel-title">
@@ -2253,18 +2413,19 @@ function renderClassLeaderboard() {
         <div>
 
           <div class="eyebrow">
-            CLASS LEADERBOARD
+            ASSIGNMENT LEADERBOARD
           </div>
 
           <h2>
-            Reading Ranking
+            課題別 Reading Ranking
           </h2>
 
           <p class="muted">
-            公開済みのクラス共通課題をもとに集計しています。
+            課題を切り替えてAccuracy・WPM・音読回数を確認できます。
           </p>
 
         </div>
+
 
         <div class="teacher-rank-note">
           Top 5
@@ -2273,13 +2434,51 @@ function renderClassLeaderboard() {
       </div>
 
 
+      <div class="reading-rank-tabs teacher-reading-rank-tabs">
+        ${tabs}
+      </div>
+
+
+      <div class="reading-rank-selected">
+
+        <div>
+
+          <span class="reading-rank-selected-no">
+            課題 No.${esc(
+              selectedAssignment.week_no
+            )}
+          </span>
+
+          <strong>
+            ${esc(
+              selectedAssignment.title
+            )}
+          </strong>
+
+        </div>
+
+
+        <span class="reading-rank-audience">
+
+          ${esc(
+            audienceLabel
+          )}
+
+          ・対象 ${totalStudents}人
+
+        </span>
+
+      </div>
+
+
       <div class="teacher-rank-grid">
 
         ${leaderboardColumn(
+          selectedRows,
           'Accuracy',
           '🎯',
           'accuracy_rank',
-          'avg_accuracy',
+          'best_accuracy',
           value =>
             value ===
               null ||
@@ -2297,10 +2496,11 @@ function renderClassLeaderboard() {
 
 
         ${leaderboardColumn(
+          selectedRows,
           'WPM',
           '⚡',
           'wpm_rank',
-          'avg_wpm',
+          'best_wpm',
           value =>
             value ===
               null ||
@@ -2318,6 +2518,7 @@ function renderClassLeaderboard() {
 
 
         ${leaderboardColumn(
+          selectedRows,
           'Practice',
           '🔥',
           'practice_rank',
@@ -2334,72 +2535,29 @@ function renderClassLeaderboard() {
 
       </div>
     `;
-}
 
 
-function readingRankCell(
-  studentId
-) {
+  root
+    .querySelectorAll(
+      '[data-teacher-rank-assignment]'
+    )
+    .forEach(
+      button => {
 
-  const row =
-    readingRankings.find(
-      item =>
-        item.student_id ===
-        studentId
+        button.addEventListener(
+          'click',
+          () => {
+
+            activeReadingRankAssignmentId =
+              button.dataset
+                .teacherRankAssignment;
+
+
+            renderClassLeaderboard();
+          }
+        );
+      }
     );
-
-
-  if (!row) {
-
-    return `
-      <td class="grade-rank-cell">
-        —
-      </td>
-    `;
-  }
-
-
-  const accuracyRank =
-    row.accuracy_rank
-      ? `#${row.accuracy_rank}`
-      : '—';
-
-
-  const wpmRank =
-    row.wpm_rank
-      ? `#${row.wpm_rank}`
-      : '—';
-
-
-  const practiceRank =
-    row.practice_rank
-      ? `#${row.practice_rank}`
-      : '—';
-
-
-  return `
-    <td class="grade-rank-cell">
-
-      <div>
-        <span>A</span>
-        <strong>
-          ${accuracyRank}
-        </strong>
-      </div>
-
-      <div>
-        <span>W</span>
-        <strong>
-          ${wpmRank}
-        </strong>
-      </div>
-
-      <div class="grade-practice-rank">
-        🔥 ${practiceRank}
-      </div>
-
-    </td>
-  `;
 }
 
 function render() {
@@ -6965,7 +7123,7 @@ students =
     error: rankingError
   } =
     await sb.rpc(
-      'get_teacher_class_reading_rankings',
+      'get_teacher_assignment_reading_rankings',
       {
         p_class_id:
           selectedClass.id
