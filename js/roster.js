@@ -300,7 +300,11 @@ function renderRoster() {
 
 
           return `
-            <tr>
+            <tr
+              class="roster-project-row"
+              data-roster-project-id="${student.id}"
+              tabindex="0"
+              title="クリックしてログイン情報を大きく表示">
 
               <td>
 
@@ -361,6 +365,17 @@ function renderRoster() {
               <td>
 
                 <div class="roster-actions">
+
+                  <button
+                    class="btn btn-sm btn-primary"
+                    data-roster-action="project"
+                    data-roster-id="${student.id}"
+                    title="ログイン情報を大きく表示">
+
+                    🖥 Project
+
+                  </button>
+
 
                   <button
                     class="btn btn-sm btn-light"
@@ -755,6 +770,748 @@ async function importRoster() {
 
 
 // ==========================================
+// ROSTER LOGIN PROJECTOR v1
+// ==========================================
+
+let rosterProjectorStudentId =
+  null;
+
+
+let rosterProjectorPinVisible = false;
+
+
+function rosterProjectorStudents() {
+
+  return sortRoster(
+    roster
+  );
+}
+
+
+function currentRosterProjectorStudent() {
+
+  return roster.find(
+    student =>
+      student.id ===
+      rosterProjectorStudentId
+  ) || null;
+}
+
+
+function ensureRosterProjector() {
+
+  let root =
+    $('#rosterLoginProjector');
+
+
+  if (root) {
+    return root;
+  }
+
+
+  root =
+    document.createElement(
+      'div'
+    );
+
+
+  root.id =
+    'rosterLoginProjector';
+
+
+  root.className =
+    'roster-login-projector';
+
+
+  root.setAttribute(
+    'aria-hidden',
+    'true'
+  );
+
+
+  document.body.appendChild(
+    root
+  );
+
+
+  root.addEventListener(
+    'click',
+    async event => {
+
+      const action =
+        event.target.closest(
+          '[data-roster-projector-action]'
+        )
+        ?.dataset
+        .rosterProjectorAction;
+
+
+      if (!action) {
+        return;
+      }
+
+
+      if (action === 'close') {
+
+        await closeRosterProjector();
+        return;
+      }
+
+
+      if (action === 'prev') {
+
+        shiftRosterProjector(
+          -1
+        );
+
+        return;
+      }
+
+
+      if (action === 'next') {
+
+        shiftRosterProjector(
+          1
+        );
+
+        return;
+      }
+
+
+      if (action === 'pin') {
+
+        rosterProjectorPinVisible =
+          !rosterProjectorPinVisible;
+
+
+        renderRosterProjector();
+
+        return;
+      }
+
+
+      if (action === 'fullscreen') {
+
+        await toggleRosterProjectorFullscreen();
+      }
+    }
+  );
+
+
+  return root;
+}
+
+
+function renderRosterProjector() {
+
+  const root =
+    ensureRosterProjector();
+
+
+  const student =
+    currentRosterProjectorStudent();
+
+
+  if (
+    !student ||
+    !activeClass
+  ) {
+
+    return;
+  }
+
+
+  const ordered =
+    rosterProjectorStudents();
+
+
+  const index =
+    ordered.findIndex(
+      item =>
+        item.id ===
+        student.id
+    );
+
+
+  const hasMultiple =
+    ordered.length > 1;
+
+
+  const className =
+    activeClass.name ||
+    'Class';
+
+
+  const classCode =
+    activeClass.class_code ||
+    '------';
+
+
+  const studentNumber =
+    student.student_number ||
+    '—';
+
+
+  const pin =
+    rosterProjectorPinVisible
+
+      ? student.join_pin
+
+      : '••••••';
+
+
+  const fullscreen =
+    document.fullscreenElement ===
+    root;
+
+
+  root.innerHTML = `
+    <div class="roster-projector-stage">
+
+      <div class="roster-projector-top">
+
+        <div class="roster-projector-brand">
+
+          <div class="roster-projector-brand-mark">
+            C
+          </div>
+
+          <div>
+
+            <strong>
+              Copeak Classroom
+            </strong>
+
+            <span>
+              LOGIN HELP
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="roster-projector-close"
+          data-roster-projector-action="close"
+          aria-label="閉じる">
+
+          ✕
+
+        </button>
+
+      </div>
+
+
+      <main class="roster-projector-card">
+
+        <div class="roster-projector-class">
+          ${esc(className)}
+        </div>
+
+
+        <div class="roster-projector-student-label">
+          STUDENT
+        </div>
+
+
+        <h1>
+          ${esc(
+            student.display_name
+          )}
+        </h1>
+
+
+        <div class="roster-projector-login-grid">
+
+
+          <section class="roster-projector-value class-code">
+
+            <span>
+              CLASS CODE
+            </span>
+
+            <strong>
+              ${esc(classCode)}
+            </strong>
+
+          </section>
+
+
+          <section class="roster-projector-value student-no">
+
+            <span>
+              STUDENT NO.
+            </span>
+
+            <strong>
+              ${esc(studentNumber)}
+            </strong>
+
+          </section>
+
+
+          <section class="roster-projector-value pin">
+
+            <span>
+              JOIN PIN
+            </span>
+
+            <strong>
+              ${esc(pin)}
+            </strong>
+
+          </section>
+
+
+        </div>
+
+
+        <div class="roster-projector-url">
+
+          <span>
+            LOGIN
+          </span>
+
+          <strong>
+            cc.pic-speak-story.com
+          </strong>
+
+        </div>
+
+
+        <div class="roster-projector-guide">
+
+          Class Code → Student No. → Join PIN の順に入力してください
+
+        </div>
+
+      </main>
+
+
+      <div class="roster-projector-controls">
+
+
+        <button
+          type="button"
+          class="roster-projector-control secondary"
+          data-roster-projector-action="prev"
+          ${hasMultiple ? '' : 'disabled'}>
+
+          ← 前の生徒
+
+        </button>
+
+
+        <div class="roster-projector-position">
+
+          ${
+            index >= 0
+              ? `${index + 1} / ${ordered.length}`
+              : ''
+          }
+
+        </div>
+
+
+        <button
+          type="button"
+          class="roster-projector-control"
+          data-roster-projector-action="pin">
+
+          ${
+            rosterProjectorPinVisible
+              ? '🔒 PINを隠す'
+              : '👁 PINを表示'
+          }
+
+        </button>
+
+
+        <button
+          type="button"
+          class="roster-projector-control"
+          data-roster-projector-action="fullscreen">
+
+          ${
+            fullscreen
+              ? '↙ 全画面を終了'
+              : '⛶ フルスクリーン'
+          }
+
+        </button>
+
+
+        <button
+          type="button"
+          class="roster-projector-control secondary"
+          data-roster-projector-action="next"
+          ${hasMultiple ? '' : 'disabled'}>
+
+          次の生徒 →
+
+        </button>
+
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+function openRosterProjector(
+  student
+) {
+
+  if (
+    !student ||
+    !activeClass
+  ) {
+    return;
+  }
+
+
+  rosterProjectorStudentId =
+    student.id;
+
+
+  rosterProjectorPinVisible = false;
+
+
+  const root =
+    ensureRosterProjector();
+
+
+  root.classList.add(
+    'open'
+  );
+
+
+  root.setAttribute(
+    'aria-hidden',
+    'false'
+  );
+
+
+  document.body.classList.add(
+    'roster-projector-open'
+  );
+
+
+  renderRosterProjector();
+}
+
+
+async function closeRosterProjector() {
+
+  const root =
+    $('#rosterLoginProjector');
+
+
+  if (!root) {
+    return;
+  }
+
+
+  if (
+    document.fullscreenElement ===
+      root &&
+    typeof document.exitFullscreen ===
+      'function'
+  ) {
+
+    try {
+
+      await document.exitFullscreen();
+
+    } catch (error) {
+
+      console.warn(
+        '[Roster Projector] fullscreen exit failed',
+        error
+      );
+    }
+  }
+
+
+  root.classList.remove(
+    'open'
+  );
+
+
+  root.setAttribute(
+    'aria-hidden',
+    'true'
+  );
+
+
+  document.body.classList.remove(
+    'roster-projector-open'
+  );
+
+
+  rosterProjectorStudentId =
+    null;
+}
+
+
+function shiftRosterProjector(
+  direction
+) {
+
+  const ordered =
+    rosterProjectorStudents();
+
+
+  if (!ordered.length) {
+    return;
+  }
+
+
+  let index =
+    ordered.findIndex(
+      student =>
+        student.id ===
+        rosterProjectorStudentId
+    );
+
+
+  if (index < 0) {
+    index = 0;
+  }
+
+
+  index =
+    (
+      index +
+      direction +
+      ordered.length
+    ) %
+    ordered.length;
+
+
+  rosterProjectorStudentId =
+    ordered[index].id;
+
+
+  rosterProjectorPinVisible = false;
+
+
+  renderRosterProjector();
+}
+
+
+async function toggleRosterProjectorFullscreen() {
+
+  const root =
+    $('#rosterLoginProjector');
+
+
+  if (!root) {
+    return;
+  }
+
+
+  if (
+    document.fullscreenElement ===
+    root
+  ) {
+
+    if (
+      typeof document.exitFullscreen ===
+      'function'
+    ) {
+
+      await document.exitFullscreen();
+    }
+
+
+    return;
+  }
+
+
+  if (
+    typeof root.requestFullscreen ===
+    'function'
+  ) {
+
+    try {
+
+      await root.requestFullscreen({
+        navigationUI:
+          'hide'
+      });
+
+    } catch (error) {
+
+      console.warn(
+        '[Roster Projector] fullscreen unavailable',
+        error
+      );
+    }
+  }
+}
+
+
+function handleRosterProjectorRowClick(
+  event
+) {
+
+  if (
+    event.target.closest(
+      '[data-roster-action]'
+    )
+  ) {
+
+    return;
+  }
+
+
+  const row =
+    event.target.closest(
+      '[data-roster-project-id]'
+    );
+
+
+  if (!row) {
+    return;
+  }
+
+
+  const student =
+    roster.find(
+      item =>
+        item.id ===
+        row.dataset
+          .rosterProjectId
+    );
+
+
+  if (student) {
+
+    openRosterProjector(
+      student
+    );
+  }
+}
+
+
+function handleRosterProjectorKeydown(
+  event
+) {
+
+  const row =
+    event.target.closest(
+      '[data-roster-project-id]'
+    );
+
+
+  if (
+    row &&
+    (
+      event.key ===
+        'Enter' ||
+      event.key ===
+        ' '
+    ) &&
+    !event.target.closest(
+      '[data-roster-action]'
+    )
+  ) {
+
+    event.preventDefault();
+
+
+    const student =
+      roster.find(
+        item =>
+          item.id ===
+          row.dataset
+            .rosterProjectId
+      );
+
+
+    if (student) {
+
+      openRosterProjector(
+        student
+      );
+    }
+
+
+    return;
+  }
+
+
+  if (
+    !$('#rosterLoginProjector')
+      ?.classList
+      .contains(
+        'open'
+      )
+  ) {
+
+    return;
+  }
+
+
+  if (
+    event.key ===
+    'ArrowLeft'
+  ) {
+
+    shiftRosterProjector(
+      -1
+    );
+
+  } else if (
+    event.key ===
+    'ArrowRight'
+  ) {
+
+    shiftRosterProjector(
+      1
+    );
+
+  } else if (
+    event.key ===
+    'Escape'
+  ) {
+
+    if (
+      document.fullscreenElement
+    ) {
+
+      return;
+    }
+
+
+    closeRosterProjector();
+  }
+}
+
+
+document.addEventListener(
+  'fullscreenchange',
+  () => {
+
+    if (
+      $('#rosterLoginProjector')
+        ?.classList
+        .contains(
+          'open'
+        )
+    ) {
+
+      renderRosterProjector();
+    }
+  }
+);
+
+
+// ==========================================// ==========================================
 // COPY
 // ==========================================
 
@@ -1820,6 +2577,14 @@ async function handleRosterAction(
 
 
     if (
+      action === 'project'
+    ) {
+
+      openRosterProjector(
+        student
+      );
+
+    } else if (
       action === 'copy'
     ) {
 
@@ -1947,6 +2712,20 @@ function bindEvents() {
       'click',
       handleRosterAction
     );
+
+
+  $('#rosterBody')
+    ?.addEventListener(
+      'click',
+      handleRosterProjectorRowClick
+    );
+
+
+
+  document.addEventListener(
+    'keydown',
+    handleRosterProjectorKeydown
+  );
 }
 
 

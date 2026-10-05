@@ -9064,3 +9064,728 @@ body.leaderboard-presenting
   }
 
 }
+/* ==========================================
+   ROSTER LOGIN PROJECTOR v1
+========================================== */
+
+
+/* ------------------------------------------
+   Clickable roster row
+------------------------------------------ */
+
+.roster-project-row {
+  cursor:
+    pointer;
+
+  transition:
+    background .14s ease,
+    transform .14s ease;
+}
+
+
+.roster-project-row:hover {
+  background:
+    #f0faf6;
+}
+
+
+.roster-project-row:focus-visible {
+  outline:
+    3px solid
+    rgba(16,185,129,.28);
+
+  outline-offset:
+    -3px;
+}
+
+
+.roster-project-row
+.roster-actions {
+  cursor:
+    default;
+}
+
+
+/* ------------------------------------------
+   Projector root
+------------------------------------------ */
+
+.roster-login-projector {
+  display:
+    none;
+
+  position:
+    fixed;
+
+  inset:
+    0;
+
+  z-index:
+    100000;
+
+  width:
+    100vw;
+
+  height:
+    100vh;
+
+  overflow:
+    auto;
+
+  background:
+    linear-gradient(
+      145deg,
+      #eef8f4 0%,
+      #f8fbfa 48%,
+      #eef4f2 100%
+    );
+}
+
+
+.roster-login-projector.open {
+  display:
+    block;
+}
+
+
+.roster-login-projector:fullscreen {
+  display:
+    block;
+
+  width:
+    100vw;
+
+  height:
+    100vh;
+
+  background:
+    linear-gradient(
+      145deg,
+      #eef8f4 0%,
+      #f8fbfa 48%,
+      #eef4f2 100%
+    );
+}
+
+
+body.roster-projector-open {
+  overflow:
+    hidden;
+}
+
+
+/* ------------------------------------------
+   Stage
+------------------------------------------ */
+
+.roster-projector-stage {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  min-height:
+    100vh;
+
+  padding:
+    clamp(18px,2vw,34px);
+}
+
+
+.roster-projector-top {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+}
+
+
+.roster-projector-brand {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    11px;
+}
+
+
+.roster-projector-brand-mark {
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  width:
+    46px;
+
+  height:
+    46px;
+
+  border-radius:
+    13px;
+
+  background:
+    #047857;
+
+  color:
+    #ffffff;
+
+  font-family:
+    "Noto Sans JP",
+    "Yu Gothic UI",
+    sans-serif;
+
+  font-size:
+    23px;
+
+  font-weight:
+    900;
+}
+
+
+.roster-projector-brand strong,
+.roster-projector-brand span {
+  display:
+    block;
+}
+
+
+.roster-projector-brand strong {
+  color:
+    #12221d;
+
+  font-size:
+    18px;
+
+  font-weight:
+    900;
+}
+
+
+.roster-projector-brand span {
+  margin-top:
+    2px;
+
+  color:
+    #059669;
+
+  font-size:
+    9px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .16em;
+}
+
+
+.roster-projector-close {
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  width:
+    44px;
+
+  height:
+    44px;
+
+  border:
+    1px solid #d6e2dd;
+
+  border-radius:
+    50%;
+
+  background:
+    rgba(255,255,255,.84);
+
+  color:
+    #334155;
+
+  font-size:
+    18px;
+
+  cursor:
+    pointer;
+}
+
+
+/* ------------------------------------------
+   Main login card
+------------------------------------------ */
+
+.roster-projector-card {
+  display:
+    flex;
+
+  flex:
+    1;
+
+  flex-direction:
+    column;
+
+  justify-content:
+    center;
+
+  width:
+    min(1380px,94vw);
+
+  margin:
+    clamp(18px,3vh,34px)
+    auto;
+
+  padding:
+    clamp(28px,4vw,64px);
+
+  border:
+    1px solid #d8e5df;
+
+  border-radius:
+    clamp(20px,2vw,32px);
+
+  background:
+    rgba(255,255,255,.96);
+
+  box-shadow:
+    0 25px 70px
+    rgba(15,23,42,.10);
+}
+
+
+.roster-projector-class {
+  color:
+    #64748b;
+
+  font-family:
+    "Noto Sans JP",
+    "Yu Gothic UI",
+    sans-serif;
+
+  font-size:
+    clamp(15px,1.25vw,22px);
+
+  font-weight:
+    800;
+
+  text-align:
+    center;
+}
+
+
+.roster-projector-student-label {
+  margin-top:
+    clamp(12px,2vh,22px);
+
+  color:
+    #059669;
+
+  font-size:
+    10px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .18em;
+
+  text-align:
+    center;
+}
+
+
+.roster-projector-card h1 {
+  margin:
+    5px 0
+    clamp(24px,4vh,45px);
+
+  color:
+    #0f172a;
+
+  font-family:
+    "Noto Sans JP",
+    "Yu Gothic UI",
+    "Yu Gothic",
+    "Hiragino Sans",
+    Meiryo,
+    sans-serif;
+
+  font-size:
+    clamp(38px,4.5vw,72px);
+
+  line-height:
+    1.08;
+
+  font-weight:
+    900;
+
+  text-align:
+    center;
+
+  letter-spacing:
+    -.035em;
+}
+
+
+/* ------------------------------------------
+   Login values
+------------------------------------------ */
+
+.roster-projector-login-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    1.15fr .8fr 1.15fr;
+
+  gap:
+    clamp(12px,1.6vw,24px);
+}
+
+
+.roster-projector-value {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  min-width:
+    0;
+
+  min-height:
+    clamp(160px,23vh,245px);
+
+  padding:
+    clamp(16px,2vw,28px);
+
+  border:
+    2px solid #e2ebe7;
+
+  border-radius:
+    clamp(16px,1.6vw,24px);
+
+  background:
+    #f8fbfa;
+
+  text-align:
+    center;
+}
+
+
+.roster-projector-value span {
+  color:
+    #64748b;
+
+  font-size:
+    clamp(10px,.9vw,14px);
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .11em;
+}
+
+
+.roster-projector-value strong {
+  margin-top:
+    10px;
+
+  color:
+    #0f172a;
+
+  font-family:
+    "Noto Sans JP",
+    "Yu Gothic UI",
+    "Segoe UI",
+    sans-serif;
+
+  font-size:
+    clamp(46px,5vw,82px);
+
+  line-height:
+    1;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .055em;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+.roster-projector-value.class-code {
+  border-color:
+    #b9dfd0;
+
+  background:
+    #effaf6;
+}
+
+
+.roster-projector-value.class-code strong {
+  color:
+    #047857;
+}
+
+
+.roster-projector-value.pin {
+  border-color:
+    #cdddf8;
+
+  background:
+    #f4f7ff;
+}
+
+
+.roster-projector-value.pin strong {
+  color:
+    #1d4ed8;
+
+  letter-spacing:
+    .12em;
+}
+
+
+/* ------------------------------------------
+   Login URL
+------------------------------------------ */
+
+.roster-projector-url {
+  display:
+    flex;
+
+  align-items:
+    baseline;
+
+  justify-content:
+    center;
+
+  gap:
+    12px;
+
+  margin-top:
+    clamp(22px,3vh,36px);
+}
+
+
+.roster-projector-url span {
+  color:
+    #94a3b8;
+
+  font-size:
+    10px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .12em;
+}
+
+
+.roster-projector-url strong {
+  color:
+    #334155;
+
+  font-size:
+    clamp(18px,1.6vw,27px);
+
+  font-weight:
+    900;
+}
+
+
+.roster-projector-guide {
+  margin-top:
+    10px;
+
+  color:
+    #94a3b8;
+
+  font-size:
+    clamp(10px,.9vw,14px);
+
+  font-weight:
+    700;
+
+  text-align:
+    center;
+}
+
+
+/* ------------------------------------------
+   Bottom controls
+------------------------------------------ */
+
+.roster-projector-controls {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    8px;
+
+  flex-wrap:
+    wrap;
+}
+
+
+.roster-projector-control {
+  min-height:
+    42px;
+
+  padding:
+    8px 15px;
+
+  border:
+    1px solid #b6d9cb;
+
+  border-radius:
+    11px;
+
+  background:
+    #047857;
+
+  color:
+    #ffffff;
+
+  font-family:
+    "Noto Sans JP",
+    "Yu Gothic UI",
+    sans-serif;
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+
+  cursor:
+    pointer;
+}
+
+
+.roster-projector-control.secondary {
+  border-color:
+    #d7e1dd;
+
+  background:
+    #ffffff;
+
+  color:
+    #334155;
+}
+
+
+.roster-projector-control:disabled {
+  opacity:
+    .38;
+
+  cursor:
+    default;
+}
+
+
+.roster-projector-position {
+  min-width:
+    62px;
+
+  color:
+    #64748b;
+
+  font-size:
+    11px;
+
+  font-weight:
+    800;
+
+  text-align:
+    center;
+}
+
+
+/* ------------------------------------------
+   Tablet
+------------------------------------------ */
+
+@media (max-width: 900px) {
+
+  .roster-projector-login-grid {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+
+  .roster-projector-value.pin {
+    grid-column:
+      1 / -1;
+  }
+
+
+  .roster-projector-value {
+    min-height:
+      135px;
+  }
+
+}
+
+
+@media (max-width: 620px) {
+
+  .roster-projector-login-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .roster-projector-value.pin {
+    grid-column:
+      auto;
+  }
+
+
+  .roster-projector-card {
+    width:
+      100%;
+
+    padding:
+      22px 16px;
+  }
+
+
+  .roster-projector-controls {
+    padding-bottom:
+      12px;
+  }
+
+}
