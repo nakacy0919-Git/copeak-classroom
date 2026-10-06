@@ -1,0 +1,384 @@
+<!doctype html>
+
+<html lang="ja">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1">
+
+  <title>
+    Support | Copeak Classroom
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="styles.css">
+
+</head>
+
+
+<body>
+
+<div class="support-shell">
+
+  <header class="topbar support-topbar">
+
+    <div class="brand">
+
+      <div class="brand-mark">
+        C
+      </div>
+
+      <div>
+
+        <div class="brand-title">
+          Copeak Support
+        </div>
+
+        <div class="brand-sub">
+          Teacher Support
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="top-actions">
+
+      <span
+        id="supportUserName"
+        class="user-label small">
+      </span>
+
+
+      <a
+        id="supportBack"
+        href="teacher.html"
+        class="btn btn-sm btn-light">
+
+        ← Classroom
+
+      </a>
+
+
+      <button
+        type="button"
+        id="supportSignOut"
+        class="btn btn-sm btn-light">
+
+        Sign out
+
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <main>
+
+    <section class="paper support-hero">
+
+      <div>
+
+        <div class="eyebrow">
+          TEACHER SUPPORT
+        </div>
+
+        <h1>
+          管理者へ問い合わせ
+        </h1>
+
+        <p class="muted">
+          Copeak Classroomの利用について、
+          管理者へメッセージを送ることができます。
+        </p>
+
+      </div>
+
+
+      <button
+        type="button"
+        id="newSupportTicket"
+        class="btn btn-primary">
+
+        ＋ New Support Request
+
+      </button>
+
+    </section>
+
+
+    <div
+      id="supportAlert"
+      class="alert info hidden">
+    </div>
+
+
+    <section class="support-layout">
+
+      <aside class="paper support-list-panel">
+
+        <div class="eyebrow">
+          YOUR TICKETS
+        </div>
+
+        <h2>
+          問い合わせ履歴
+        </h2>
+
+
+        <div
+          id="supportTicketList"
+          class="support-ticket-list">
+
+          <div class="support-empty">
+            Loading...
+          </div>
+
+        </div>
+
+      </aside>
+
+
+      <section class="paper support-thread-panel">
+
+        <div
+          id="supportNoTicket"
+          class="support-no-ticket">
+
+          <div class="support-question-icon">
+            ?
+          </div>
+
+          <h2>
+            問い合わせを選択してください
+          </h2>
+
+          <p class="muted">
+            新しい問い合わせを作成することもできます。
+          </p>
+
+        </div>
+
+
+        <div
+          id="supportThread"
+          class="hidden">
+
+          <div class="support-thread-heading">
+
+            <div>
+
+              <span
+                id="supportTicketStatus"
+                class="support-status open">
+
+                Open
+
+              </span>
+
+              <h2 id="supportTicketSubject">
+              </h2>
+
+              <div
+                id="supportTicketMeta"
+                class="muted small">
+              </div>
+
+            </div>
+
+
+            <button
+              type="button"
+              id="supportRefresh"
+              class="btn btn-sm btn-light">
+
+              ↻ Refresh
+
+            </button>
+
+          </div>
+
+
+          <div
+            id="supportMessages"
+            class="support-messages">
+          </div>
+
+
+          <form
+            id="supportReplyForm"
+            class="support-reply-form">
+
+            <textarea
+              id="supportReply"
+              class="input"
+              rows="4"
+              maxlength="4000"
+              placeholder="メッセージを入力してください"
+              required></textarea>
+
+
+            <button
+              type="submit"
+              id="supportReplyButton"
+              class="btn btn-primary">
+
+              Send Message
+
+            </button>
+
+          </form>
+
+        </div>
+
+      </section>
+
+    </section>
+
+  </main>
+
+</div>
+
+
+<div
+  id="supportModal"
+  class="support-modal hidden">
+
+  <div class="paper support-modal-card">
+
+    <div class="support-modal-heading">
+
+      <div>
+
+        <div class="eyebrow">
+          NEW SUPPORT REQUEST
+        </div>
+
+        <h2>
+          新しい問い合わせ
+        </h2>
+
+      </div>
+
+
+      <button
+        type="button"
+        id="supportModalClose"
+        class="btn btn-sm btn-light">
+
+        ×
+
+      </button>
+
+    </div>
+
+
+    <form
+      id="supportCreateForm"
+      class="form-stack">
+
+      <div class="field">
+
+        <label>
+          Category
+        </label>
+
+        <select
+          id="supportCategory"
+          class="input">
+
+          <option value="login">
+            ログイン・アカウント
+          </option>
+
+          <option value="student">
+            生徒登録
+          </option>
+
+          <option value="assignment">
+            課題
+          </option>
+
+          <option value="microphone">
+            マイク・音声認識
+          </option>
+
+          <option value="bug">
+            不具合
+          </option>
+
+          <option value="other">
+            その他
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="field">
+
+        <label>
+          Subject
+        </label>
+
+        <input
+          id="supportSubject"
+          class="input"
+          maxlength="160"
+          placeholder="例：生徒がログインできません"
+          required>
+
+      </div>
+
+
+      <div class="field">
+
+        <label>
+          Message
+        </label>
+
+        <textarea
+          id="supportBody"
+          class="input"
+          rows="7"
+          maxlength="4000"
+          placeholder="状況をできるだけ具体的に入力してください"
+          required></textarea>
+
+      </div>
+
+
+      <button
+        type="submit"
+        id="supportCreateButton"
+        class="btn btn-primary">
+
+        Send Support Request
+
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<script src="js/config.js"></script>
+
+<script
+  type="module"
+  src="js/support.js">
+</script>
+
+</body>
+
+</html>
