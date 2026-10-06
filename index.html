@@ -280,18 +280,255 @@
 
 
         <div
-          id="teacherNameField"
-          class="field hidden">
+          id="teacherSignupFields"
+          class="teacher-signup-fields hidden">
 
-          <label>
-            Name
-          </label>
+          <div class="teacher-signup-intro">
 
-          <input
-            id="teacherDisplayName"
-            class="input"
-            autocomplete="name"
-            placeholder="Your name">
+            <strong>
+              Teacher Registration
+            </strong>
+
+            <span>
+              Copeak Classroomは現在承認制です。学校情報を確認後、管理者が利用を承認します。
+            </span>
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Name / 氏名
+            </label>
+
+            <input
+              id="teacherDisplayName"
+              class="input"
+              autocomplete="name"
+              placeholder="例：中島 康平">
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              School / Organization
+            </label>
+
+            <input
+              id="teacherSchoolName"
+              class="input"
+              autocomplete="organization"
+              placeholder="例：安城学園高等学校">
+
+          </div>
+
+
+          <div class="teacher-signup-pair">
+
+            <div class="field">
+
+              <label>
+                Prefecture
+              </label>
+
+              <select
+                id="teacherPrefecture"
+                class="input">
+
+                <option value="">
+                  選択してください
+                </option>
+
+                <option>北海道</option>
+                <option>青森県</option>
+                <option>岩手県</option>
+                <option>宮城県</option>
+                <option>秋田県</option>
+                <option>山形県</option>
+                <option>福島県</option>
+                <option>茨城県</option>
+                <option>栃木県</option>
+                <option>群馬県</option>
+                <option>埼玉県</option>
+                <option>千葉県</option>
+                <option>東京都</option>
+                <option>神奈川県</option>
+                <option>新潟県</option>
+                <option>富山県</option>
+                <option>石川県</option>
+                <option>福井県</option>
+                <option>山梨県</option>
+                <option>長野県</option>
+                <option>岐阜県</option>
+                <option>静岡県</option>
+                <option selected>愛知県</option>
+                <option>三重県</option>
+                <option>滋賀県</option>
+                <option>京都府</option>
+                <option>大阪府</option>
+                <option>兵庫県</option>
+                <option>奈良県</option>
+                <option>和歌山県</option>
+                <option>鳥取県</option>
+                <option>島根県</option>
+                <option>岡山県</option>
+                <option>広島県</option>
+                <option>山口県</option>
+                <option>徳島県</option>
+                <option>香川県</option>
+                <option>愛媛県</option>
+                <option>高知県</option>
+                <option>福岡県</option>
+                <option>佐賀県</option>
+                <option>長崎県</option>
+                <option>熊本県</option>
+                <option>大分県</option>
+                <option>宮崎県</option>
+                <option>鹿児島県</option>
+                <option>沖縄県</option>
+                <option>海外・その他</option>
+
+              </select>
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                School Type
+              </label>
+
+              <select
+                id="teacherSchoolType"
+                class="input">
+
+                <option value="">
+                  選択してください
+                </option>
+
+                <option value="elementary">
+                  小学校
+                </option>
+
+                <option value="junior_high">
+                  中学校
+                </option>
+
+                <option
+                  value="high_school"
+                  selected>
+                  高等学校
+                </option>
+
+                <option value="university">
+                  大学・短期大学
+                </option>
+
+                <option value="vocational">
+                  専門学校
+                </option>
+
+                <option value="other">
+                  その他
+                </option>
+
+              </select>
+
+            </div>
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Subject / 担当
+            </label>
+
+            <input
+              id="teacherSubject"
+              class="input"
+              value="English"
+              placeholder="例：English">
+
+          </div>
+
+
+          <div class="teacher-signup-pair">
+
+            <div class="field">
+
+              <label>
+                Planned Classes
+              </label>
+
+              <input
+                id="teacherPlannedClasses"
+                type="number"
+                class="input"
+                min="1"
+                max="100"
+                value="1">
+
+            </div>
+
+
+            <div class="field">
+
+              <label>
+                Planned Students
+              </label>
+
+              <input
+                id="teacherPlannedStudents"
+                type="number"
+                class="input"
+                min="1"
+                max="10000"
+                value="40">
+
+            </div>
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Phone / 電話番号（任意）
+            </label>
+
+            <input
+              id="teacherPhone"
+              type="tel"
+              class="input"
+              autocomplete="tel"
+              placeholder="緊急・重要なサポート連絡用">
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Use Purpose / 利用目的（任意）
+            </label>
+
+            <textarea
+              id="teacherPurpose"
+              class="input teacher-purpose"
+              placeholder="例：高校3年生の英語音読課題で利用予定"></textarea>
+
+          </div>
+
+
+          <div class="teacher-signup-note">
+            登録情報は、利用承認・サービス運営・サポートのために使用します。電話番号は任意です。
+          </div>
 
         </div>
 

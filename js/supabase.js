@@ -450,6 +450,19 @@ export async function requireUser(
   }
 
 
+  if (
+    role ===
+      'teacher' &&
+    profile.teacher_status !==
+      'approved'
+  ) {
+
+    location.href =
+      'teacher-pending.html';
+
+    return null;
+  }
+
   return {
     demo:
       false,

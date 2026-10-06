@@ -391,12 +391,25 @@ function syncTeacherMode() {
     'signup';
 
 
-  $('#teacherNameField')
-    .classList
+  $('#teacherSignupFields')
+    ?.classList
     .toggle(
       'hidden',
       !signup
     );
+
+
+  const password =
+    $('#teacherPassword');
+
+
+  if (password) {
+
+    password.autocomplete =
+      signup
+        ? 'new-password'
+        : 'current-password';
+  }
 
 
   $('#teacherSubmitBtn')
@@ -540,7 +553,7 @@ $('#teacherForm').onsubmit =
               'profiles'
             )
             .select(
-              'role'
+              'role,teacher_status'
             )
             .eq(
               'id',
@@ -568,8 +581,19 @@ $('#teacherForm').onsubmit =
         }
 
 
-        location.href =
-          'teacher.html';
+        if (
+          profile.teacher_status ===
+          'approved'
+        ) {
+
+          location.href =
+            'teacher.html';
+
+        } else {
+
+          location.href =
+            'teacher-pending.html';
+        }
 
 
       } else {
@@ -580,10 +604,109 @@ $('#teacherForm').onsubmit =
             .trim();
 
 
+        const schoolName =
+          $('#teacherSchoolName')
+            ?.value
+            .trim() ||
+          '';
+
+
+        const prefecture =
+          $('#teacherPrefecture')
+            ?.value
+            .trim() ||
+          '';
+
+
+        const schoolType =
+          $('#teacherSchoolType')
+            ?.value
+            .trim() ||
+          '';
+
+
+        const subject =
+          $('#teacherSubject')
+            ?.value
+            .trim() ||
+          '';
+
+
+        const plannedClassCount =
+          Number(
+            $('#teacherPlannedClasses')
+              ?.value ||
+            0
+          );
+
+
+        const plannedStudentCount =
+          Number(
+            $('#teacherPlannedStudents')
+              ?.value ||
+            0
+          );
+
+
+        const phone =
+          $('#teacherPhone')
+            ?.value
+            .trim() ||
+          '';
+
+
+        const usePurpose =
+          $('#teacherPurpose')
+            ?.value
+            .trim() ||
+          '';
+
+
         if (!displayName) {
 
           throw new Error(
             '先生の名前を入力してください。'
+          );
+        }
+
+
+        if (
+          !schoolName ||
+          !prefecture ||
+          !schoolType ||
+          !subject
+        ) {
+
+          throw new Error(
+            '学校名・都道府県・学校種別・担当を入力してください。'
+          );
+        }
+
+
+        if (
+          !Number.isInteger(
+            plannedClassCount
+          ) ||
+          plannedClassCount < 1 ||
+          plannedClassCount > 100
+        ) {
+
+          throw new Error(
+            '利用予定クラス数を正しく入力してください。'
+          );
+        }
+
+
+        if (
+          !Number.isInteger(
+            plannedStudentCount
+          ) ||
+          plannedStudentCount < 1 ||
+          plannedStudentCount > 10000
+        ) {
+
+          throw new Error(
+            '利用予定生徒数を正しく入力してください。'
           );
         }
 
@@ -613,7 +736,35 @@ $('#teacherForm').onsubmit =
                     displayName,
 
                   role:
-                    'teacher'
+                    'teacher',
+
+                  school_name:
+                    schoolName,
+
+                  prefecture:
+                    prefecture,
+
+                  school_type:
+                    schoolType,
+
+                  subject:
+                    subject,
+
+                  planned_class_count:
+                    String(
+                      plannedClassCount
+                    ),
+
+                  planned_student_count:
+                    String(
+                      plannedStudentCount
+                    ),
+
+                  phone:
+                    phone,
+
+                  use_purpose:
+                    usePurpose
 
                 }
 
@@ -631,12 +782,12 @@ $('#teacherForm').onsubmit =
         if (data.session) {
 
           location.href =
-            'teacher.html';
+            'teacher-pending.html';
 
         } else {
 
           showMessage(
-            'Teacherアカウントを作成しました。確認メールが有効な場合は、メール確認後にSign inしてください。',
+            'Teacherアカウントを作成しました。確認メールが届いた場合はメール認証後にSign inしてください。その後、管理者の承認をお待ちください。',
             'ok'
           );
         }

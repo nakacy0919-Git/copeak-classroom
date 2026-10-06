@@ -1,0 +1,181 @@
+<!doctype html>
+
+<html lang="ja">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1">
+
+  <title>
+    Teacher Approval | Copeak Classroom
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="styles.css">
+
+</head>
+
+
+<body>
+
+<main class="teacher-pending-wrap">
+
+  <section class="teacher-pending-card paper">
+
+    <div class="teacher-pending-brand">
+
+      <div class="brand-mark">
+        C
+      </div>
+
+      <div>
+
+        <div class="brand-title">
+          Copeak Classroom
+        </div>
+
+        <div class="brand-sub">
+          Teacher Registration
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="teacherPendingIcon"
+      class="teacher-pending-icon">
+
+      ✓
+
+    </div>
+
+
+    <div class="eyebrow">
+      Teacher Approval
+    </div>
+
+
+    <h1 id="teacherPendingTitle">
+      登録内容を確認中です
+    </h1>
+
+
+    <p
+      id="teacherPendingMessage"
+      class="teacher-pending-message">
+
+      管理者による承認後に
+      Copeak Classroomをご利用いただけます。
+
+    </p>
+
+
+    <div class="teacher-pending-details">
+
+      <div>
+
+        <span>
+          NAME
+        </span>
+
+        <strong id="pendingTeacherName">
+          —
+        </strong>
+
+      </div>
+
+
+      <div>
+
+        <span>
+          SCHOOL
+        </span>
+
+        <strong id="pendingTeacherSchool">
+          —
+        </strong>
+
+      </div>
+
+
+      <div>
+
+        <span>
+          EMAIL
+        </span>
+
+        <strong id="pendingTeacherEmail">
+          —
+        </strong>
+
+      </div>
+
+
+      <div>
+
+        <span>
+          STATUS
+        </span>
+
+        <strong id="pendingTeacherStatus">
+          Checking...
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <div class="teacher-pending-actions">
+
+      <button
+        type="button"
+        id="refreshTeacherApproval"
+        class="btn btn-primary">
+
+        承認状況を更新
+
+      </button>
+
+
+      <button
+        type="button"
+        id="teacherPendingSignOut"
+        class="btn btn-light">
+
+        Sign out
+
+      </button>
+
+    </div>
+
+
+    <div class="teacher-pending-footnote">
+
+      承認されると、この画面から自動的に
+      Teacher Dashboardへ進めるようになります。
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<script src="js/config.js"></script>
+
+<script
+  type="module"
+  src="js/teacher-pending.js">
+</script>
+
+</body>
+
+</html>
