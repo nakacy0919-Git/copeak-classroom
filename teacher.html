@@ -2168,6 +2168,211 @@
 
 </div>
 
+<div class="assignment-editor-sidebar-card">
+
+  <div class="assignment-editor-sidebar-title">
+    🏫 配布クラス / Cross-posting
+  </div>
+
+  <div
+    class="tiny muted"
+    style="margin-bottom:10px">
+
+    同じ課題を複数クラスへ一括配布できます。
+    現在開いているクラスはPrimary Classとして必ず含まれます。
+
+  </div>
+
+  <div
+    id="assignmentClassList"
+    style="
+      display:grid;
+      gap:8px;
+    ">
+
+    <div class="small muted">
+      クラス一覧を読み込みます。
+    </div>
+
+  </div>
+
+  <div
+    id="assignmentClassSummary"
+    class="tiny muted"
+    style="margin-top:9px">
+
+    1クラス選択
+
+  </div>
+
+</div>
+
+
+<div
+  class="assignment-editor-sidebar-card"
+  id="assignmentPracticeModeCard">
+
+  <div class="assignment-editor-sidebar-title">
+    🎙 Practice Mode
+  </div>
+
+  <div
+    class="tiny muted"
+    style="margin-bottom:12px">
+
+    生徒がこの課題で使用するCopeakの練習モードを指定します。
+
+  </div>
+
+  <div class="field">
+
+    <label>
+      練習モード
+    </label>
+
+    <select
+      id="assignmentPracticeMode"
+      class="input">
+
+      <option value="free">
+        Free Practice
+      </option>
+
+      <option value="reading">
+        📖 Reading
+      </option>
+
+      <option value="paced">
+        ⚡ Paced
+      </option>
+
+      <option value="vanish">
+        🧠 Vanish
+      </option>
+
+      <option value="shadowing">
+        🎧 Shadowing
+      </option>
+
+    </select>
+
+  </div>
+
+  <label
+    class="publish-check"
+    style="margin-top:10px">
+
+    <input
+      id="assignmentModeLocked"
+      type="checkbox">
+
+    <span>
+
+      <strong>
+        指定モードに固定する
+      </strong>
+
+      <small>
+        ONの場合、指定したPractice Modeの結果だけを課題として扱います
+      </small>
+
+    </span>
+
+  </label>
+
+  <div
+    id="assignmentPacedSettings"
+    class="hidden"
+    style="
+      margin-top:12px;
+      padding:12px;
+      border:1px solid #e5e7eb;
+      border-radius:10px;
+      background:#f8fafc;
+    ">
+
+    <div class="field">
+
+      <label>
+        ⚡ Target Pace (WPM)
+      </label>
+
+      <input
+        id="assignmentPacedTargetWpm"
+        type="number"
+        min="40"
+        max="300"
+        step="10"
+        value="120"
+        class="input">
+
+      <div
+        class="tiny muted"
+        style="margin-top:5px">
+
+        CopeakのPaced表示速度を固定します。
+        実際に測定されるWPMとは別の設定です。
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div
+    id="assignmentVanishSettings"
+    class="hidden"
+    style="
+      margin-top:12px;
+      padding:12px;
+      border:1px solid #e5e7eb;
+      border-radius:10px;
+      background:#f8fafc;
+    ">
+
+    <div class="field">
+
+      <label>
+        🧠 Vanish Level
+      </label>
+
+      <select
+        id="assignmentVanishLevel"
+        class="input">
+
+        <option value="1">Level 1</option>
+        <option value="2">Level 2</option>
+        <option value="3" selected>Level 3</option>
+        <option value="4">Level 4</option>
+        <option value="5">Level 5</option>
+
+      </select>
+
+    </div>
+
+  </div>
+
+  <div
+    id="assignmentShadowingNotice"
+    class="hidden"
+    style="
+      margin-top:12px;
+      padding:12px;
+      border:1px solid #bfdbfe;
+      border-radius:10px;
+      background:#eff6ff;
+      font-size:12px;
+      line-height:1.6;
+      color:#1e3a8a;
+    ">
+
+    🎧 Shadowing課題ではAudioファイルが必須です。
+    生徒が課題を開いたとき、Shadowing Modeで開始できるようにします。
+
+  </div>
+
+</div>
+
 <div
   class="field assignment-media-tools"
   id="assignmentMediaTools"

@@ -5002,6 +5002,351 @@ function updateAssignmentPassCriteriaState() {
     );
 }
 
+// ==========================================
+// CROSS-POSTING UI
+// ==========================================
+
+function renderAssignmentClassTargets(
+  selectedIds = []
+) {
+
+  const root =
+    $('#assignmentClassList');
+
+  const summary =
+    $('#assignmentClassSummary');
+
+
+  if (
+    !root ||
+    !summary ||
+    !selectedClass
+  ) {
+    return;
+  }
+
+
+  const selectedSet =
+    new Set(
+      [
+        selectedClass.id,
+        ...(selectedIds || [])
+      ]
+        .filter(Boolean)
+    );
+
+
+  const targeted =
+    $('#assignmentAudienceTargeted')
+      ?.checked === true;
+
+
+  root.replaceChildren();
+
+
+  classes.forEach(
+    classItem => {
+
+      const primary =
+        classItem.id ===
+        selectedClass.id;
+
+
+      const checked =
+        primary ||
+        (
+          !targeted &&
+          selectedSet.has(
+            classItem.id
+          )
+        );
+
+
+      const disabled =
+        primary ||
+        targeted;
+
+
+      const label =
+        document.createElement(
+          'label'
+        );
+
+
+      label.style.cssText =
+        [
+          'display:flex',
+          'align-items:center',
+          'gap:9px',
+          'padding:9px 10px',
+          'border:1px solid #e5e7eb',
+          'border-radius:9px',
+          `background:${primary ? '#f0fdf4' : '#ffffff'}`,
+          `cursor:${disabled ? 'default' : 'pointer'}`
+        ].join(';');
+
+
+      const input =
+        document.createElement(
+          'input'
+        );
+
+
+      input.type =
+        'checkbox';
+
+
+      input.className =
+        'assignment-class-target';
+
+
+      input.value =
+        classItem.id;
+
+
+      input.checked =
+        checked;
+
+
+      input.disabled =
+        disabled;
+
+
+      const textWrap =
+        document.createElement(
+          'span'
+        );
+
+
+      textWrap.style.cssText =
+        [
+          'display:flex',
+          'flex-direction:column',
+          'gap:2px',
+          'min-width:0'
+        ].join(';');
+
+
+      const name =
+        document.createElement(
+          'strong'
+        );
+
+
+      name.style.cssText =
+        [
+          'font-size:13px',
+          'line-height:1.3'
+        ].join(';');
+
+
+      name.textContent =
+        classItem.name ||
+        'Class';
+
+
+      textWrap.appendChild(
+        name
+      );
+
+
+      if (primary) {
+
+        const primaryLabel =
+          document.createElement(
+            'small'
+          );
+
+
+        primaryLabel.style.cssText =
+          [
+            'color:#15803d',
+            'font-weight:700'
+          ].join(';');
+
+
+        primaryLabel.textContent =
+          'Primary Class';
+
+
+        textWrap.appendChild(
+          primaryLabel
+        );
+      }
+
+
+      label.append(
+        input,
+        textWrap
+      );
+
+
+      root.appendChild(
+        label
+      );
+    }
+  );
+
+
+  updateAssignmentClassSummary();
+}
+
+
+function getSelectedAssignmentClassIds() {
+
+  if (!selectedClass) {
+    return [];
+  }
+
+
+  const ids =
+    new Set([
+      selectedClass.id
+    ]);
+
+
+  document
+    .querySelectorAll(
+      '.assignment-class-target:checked'
+    )
+    .forEach(
+      input => {
+
+        if (
+          input.value
+        ) {
+
+          ids.add(
+            input.value
+          );
+        }
+      }
+    );
+
+
+  return [
+    ...ids
+  ];
+}
+
+
+function updateAssignmentClassSummary() {
+
+  const summary =
+    $('#assignmentClassSummary');
+
+
+  if (
+    !summary ||
+    !selectedClass
+  ) {
+    return;
+  }
+
+
+  const targeted =
+    $('#assignmentAudienceTargeted')
+      ?.checked === true;
+
+
+  if (targeted) {
+
+    summary.textContent =
+      '個別配布ではPrimary Classのみ使用します。';
+
+    return;
+  }
+
+
+  const ids =
+    getSelectedAssignmentClassIds();
+
+
+  const names =
+    classes
+      .filter(
+        classItem =>
+          ids.includes(
+            classItem.id
+          )
+      )
+      .map(
+        classItem =>
+          classItem.name
+      );
+
+
+  summary.textContent =
+    `${ids.length}クラス選択` +
+    (
+      names.length
+        ? ` · ${names.join(' + ')}`
+        : ''
+    );
+}
+
+
+// ==========================================
+// PRACTICE MODE UI
+// ==========================================
+
+function updateAssignmentPracticeModeState() {
+
+  const mode =
+    $('#assignmentPracticeMode')
+      ?.value ||
+    'free';
+
+
+  const lock =
+    $('#assignmentModeLocked');
+
+
+  if (lock) {
+
+    lock.disabled =
+      mode ===
+      'free';
+
+
+    if (
+      mode ===
+      'free'
+    ) {
+
+      lock.checked =
+        false;
+    }
+  }
+
+
+  $('#assignmentPacedSettings')
+    ?.classList
+    .toggle(
+      'hidden',
+      mode !==
+      'paced'
+    );
+
+
+  $('#assignmentVanishSettings')
+    ?.classList
+    .toggle(
+      'hidden',
+      mode !==
+      'vanish'
+    );
+
+
+  $('#assignmentShadowingNotice')
+    ?.classList
+    .toggle(
+      'hidden',
+      mode !==
+      'shadowing'
+    );
+}
+
 function openAssignmentEditor(
   assignment = null
 ) {
@@ -5080,6 +5425,64 @@ function openAssignmentEditor(
         []
       : []
   );
+
+
+  // ========================================
+  // CROSS-POSTING INITIAL STATE
+  // ========================================
+
+  renderAssignmentClassTargets(
+
+    assignment?.class_ids ||
+
+    [
+      assignment?.class_id ||
+      selectedClass?.id
+    ]
+
+  );
+
+
+  // ========================================
+  // PRACTICE MODE INITIAL STATE
+  // ========================================
+
+  const editorPracticeMode =
+    [
+      'reading',
+      'paced',
+      'vanish',
+      'shadowing'
+    ]
+      .includes(
+        assignment?.practice_mode
+      )
+
+      ? assignment.practice_mode
+
+      : 'free';
+
+
+  $('#assignmentPracticeMode').value =
+    editorPracticeMode;
+
+
+  $('#assignmentModeLocked').checked =
+    assignment?.mode_locked ===
+    true;
+
+
+  $('#assignmentPacedTargetWpm').value =
+    assignment?.paced_target_wpm ??
+    120;
+
+
+  $('#assignmentVanishLevel').value =
+    assignment?.vanish_level ??
+    3;
+
+
+  updateAssignmentPracticeModeState();
 
   const editorLessonType =
     assignment?.lesson_type ===
@@ -6373,6 +6776,116 @@ let youtubeClip =
     $('#assignmentMsg');
 
 
+  // ========================================
+  // PRACTICE POLICY SAVE VALUES
+  // ========================================
+
+  const requestedPracticeMode =
+    $('#assignmentPracticeMode')
+      ?.value ||
+    'free';
+
+
+  const practiceMode =
+    [
+      'free',
+      'reading',
+      'paced',
+      'vanish',
+      'shadowing'
+    ]
+      .includes(
+        requestedPracticeMode
+      )
+
+      ? requestedPracticeMode
+
+      : 'free';
+
+
+  const modeLocked =
+    practiceMode !== 'free' &&
+    $('#assignmentModeLocked')
+      ?.checked === true;
+
+
+  const pacedTargetWpm =
+    practiceMode === 'paced'
+
+      ? Number(
+          $('#assignmentPacedTargetWpm')
+            ?.value
+        )
+
+      : null;
+
+
+  const vanishLevel =
+    practiceMode === 'vanish'
+
+      ? Number(
+          $('#assignmentVanishLevel')
+            ?.value
+        )
+
+      : null;
+
+
+  if (
+    practiceMode === 'paced' &&
+    (
+      !Number.isInteger(
+        pacedTargetWpm
+      ) ||
+      pacedTargetWpm < 40 ||
+      pacedTargetWpm > 300
+    )
+  ) {
+
+    msg.textContent =
+      'PacedのTarget WPMは40〜300で設定してください。';
+
+    return;
+  }
+
+
+  if (
+    practiceMode === 'vanish' &&
+    (
+      !Number.isInteger(
+        vanishLevel
+      ) ||
+      vanishLevel < 1 ||
+      vanishLevel > 5
+    )
+  ) {
+
+    msg.textContent =
+      'Vanish Levelは1〜5で設定してください。';
+
+    return;
+  }
+
+
+  const existingAudio =
+    Boolean(
+      existingAssignment?.audio_object_key ||
+      existingAssignment?.audio_url
+    );
+
+
+  if (
+    practiceMode === 'shadowing' &&
+    !audioFile &&
+    !existingAudio
+  ) {
+
+    msg.textContent =
+      'Shadowing課題にはAudioファイルを登録してください。';
+
+    return;
+  }
+
   msg.style.color =
     '#b91c1c';
   const optionalNumber =
@@ -6798,6 +7311,18 @@ let uploadedImage =
   null;
 
   const row = {
+    practice_mode:
+      practiceMode,
+
+    mode_locked:
+      modeLocked,
+
+    paced_target_wpm:
+      pacedTargetWpm,
+
+    vanish_level:
+      vanishLevel,
+
 
     title,
 
@@ -7132,6 +7657,40 @@ if (imageFile) {
 
     }
 
+
+    // ========================================
+    // CROSS-POSTING SAVE RPC
+    // ========================================
+
+    const assignmentClassIds =
+      audienceType === 'targeted'
+
+        ? [
+            selectedClass.id
+          ]
+
+        : getSelectedAssignmentClassIds();
+
+
+    const {
+      error: classLinkError
+    } =
+      await sb.rpc(
+        'set_assignment_classes',
+        {
+          p_assignment_id:
+            savedAssignmentId,
+
+          p_class_ids:
+            assignmentClassIds
+        }
+      );
+
+
+    if (classLinkError) {
+
+      throw classLinkError;
+    }
 
     const {
       error: targetError
@@ -7809,38 +8368,175 @@ students =
       }
     );
 
+  // ========================================
+  // ========================================
+  // CURRENT CLASS STUDENT FILTER
+  // ========================================
+
+  const currentClassStudentIds =
+    new Set(
+      students
+        .map(
+          student =>
+            student.id
+        )
+        .filter(Boolean)
+    );
+
+  // CROSS-POSTING ASSIGNMENT LOAD
+  // ========================================
+
   const {
-    data: assignmentRows,
-    error: assignmentError
+    data: currentClassLinks,
+    error: currentClassLinkError
   } =
     await sb
       .from(
-        'assignments'
+        'assignment_classes'
       )
       .select(
-        '*'
+        'assignment_id'
       )
       .eq(
         'class_id',
         selectedClass.id
-      )
-      .order(
-        'week_no'
       );
 
 
   if (
-    assignmentError
+    currentClassLinkError
   ) {
 
-    throw assignmentError;
+    throw currentClassLinkError;
+  }
+
+
+  const linkedAssignmentIds =
+    [
+      ...new Set(
+        (currentClassLinks || [])
+          .map(
+            row =>
+              row.assignment_id
+          )
+          .filter(Boolean)
+      )
+    ];
+
+
+  let assignmentRows =
+    [];
+
+
+  if (
+    linkedAssignmentIds.length
+  ) {
+
+    const {
+      data: loadedAssignments,
+      error: assignmentError
+    } =
+      await sb
+        .from(
+          'assignments'
+        )
+        .select(
+          '*'
+        )
+        .in(
+          'id',
+          linkedAssignmentIds
+        )
+        .order(
+          'week_no'
+        );
+
+
+    if (
+      assignmentError
+    ) {
+
+      throw assignmentError;
+    }
+
+
+    const {
+      data: allClassLinks,
+      error: allClassLinkError
+    } =
+      await sb
+        .from(
+          'assignment_classes'
+        )
+        .select(
+          'assignment_id,class_id'
+        )
+        .in(
+          'assignment_id',
+          linkedAssignmentIds
+        );
+
+
+    if (
+      allClassLinkError
+    ) {
+
+      throw allClassLinkError;
+    }
+
+
+    const assignmentClassMap =
+      new Map();
+
+
+    (allClassLinks || [])
+      .forEach(
+        row => {
+
+          if (
+            !assignmentClassMap.has(
+              row.assignment_id
+            )
+          ) {
+
+            assignmentClassMap.set(
+              row.assignment_id,
+              []
+            );
+          }
+
+
+          assignmentClassMap
+            .get(
+              row.assignment_id
+            )
+            .push(
+              row.class_id
+            );
+        }
+      );
+
+
+    assignmentRows =
+      (loadedAssignments || [])
+        .map(
+          assignment => ({
+            ...assignment,
+
+            class_ids:
+              assignmentClassMap.get(
+                assignment.id
+              ) ||
+              [
+                assignment.class_id
+              ].filter(Boolean)
+          })
+        );
   }
 
 
   assignments =
-    assignmentRows ||
-    [];
-
+    assignmentRows;
 
   if (
     assignments.length
@@ -7948,8 +8644,13 @@ students =
 
 
     submissions =
-      submissionRows ||
-      [];
+      (submissionRows || [])
+        .filter(
+          row =>
+            currentClassStudentIds.has(
+              row.student_id
+            )
+        );
 
   } else {
 
@@ -7989,8 +8690,13 @@ students =
 
 
     manualScores =
-      manualRows ||
-      [];
+      (manualRows || [])
+        .filter(
+          row =>
+            currentClassStudentIds.has(
+              row.student_id
+            )
+        );
 
   } else {
 
@@ -8312,6 +9018,23 @@ function updateAssignmentAudienceUI() {
   if (targeted) {
     renderAssignmentTargetStudents();
   }
+
+  // ========================================
+  // CROSS-POSTING AUDIENCE SYNC
+  // 個別配布ではPrimary Classのみ
+  // ========================================
+
+  const selectedClassIds =
+    getSelectedAssignmentClassIds();
+
+
+  renderAssignmentClassTargets(
+    targeted
+      ? [
+          selectedClass?.id
+        ]
+      : selectedClassIds
+  );
 }
 
 let assignmentOcrPreviewUrl =
@@ -10238,6 +10961,65 @@ $('#assignmentPassEnabled')
   ?.addEventListener(
     'change',
     updateAssignmentPassCriteriaState
+  );
+
+// ==========================================
+// PRACTICE MODE CHANGE EVENT
+// ==========================================
+
+$('#assignmentPracticeMode')
+  ?.addEventListener(
+    'change',
+    () => {
+
+      const mode =
+        $('#assignmentPracticeMode')
+          ?.value ||
+        'free';
+
+
+      // 指定モードを選んだら
+      // 初期状態ではMode LockをON
+      if (
+        mode !== 'free'
+      ) {
+
+        const lock =
+          $('#assignmentModeLocked');
+
+
+        if (lock) {
+
+          lock.checked =
+            true;
+        }
+      }
+
+
+      updateAssignmentPracticeModeState();
+    }
+  );
+
+// ==========================================
+// CROSS-POSTING CLASS CHANGE EVENT
+// ==========================================
+
+$('#assignmentClassList')
+  ?.addEventListener(
+    'change',
+    event => {
+
+      if (
+        event.target
+          ?.classList
+          ?.contains(
+            'assignment-class-target'
+          )
+      ) {
+
+        updateAssignmentClassSummary();
+      }
+    }
   );
 
 $('#assignmentRelease').onchange =

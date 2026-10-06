@@ -4696,6 +4696,106 @@ async function openCopeak(
 
 
   // ========================================
+  // PRACTICE MODE LAUNCH PARAMETERS
+  // ========================================
+
+  const requestedPracticeMode =
+    String(
+      assignment.practice_mode ||
+      'free'
+    )
+      .toLowerCase();
+
+
+  const practiceMode =
+    [
+      'free',
+      'reading',
+      'paced',
+      'vanish',
+      'shadowing'
+    ]
+      .includes(
+        requestedPracticeMode
+      )
+
+      ? requestedPracticeMode
+
+      : 'free';
+
+
+  url.searchParams.set(
+    'practice_mode',
+    practiceMode
+  );
+
+
+  url.searchParams.set(
+    'mode_locked',
+    assignment.mode_locked === true
+      ? '1'
+      : '0'
+  );
+
+
+  if (
+    practiceMode ===
+    'paced'
+  ) {
+
+    const pacedTargetWpm =
+      Number(
+        assignment.paced_target_wpm
+      );
+
+
+    if (
+      Number.isInteger(
+        pacedTargetWpm
+      ) &&
+      pacedTargetWpm >= 40 &&
+      pacedTargetWpm <= 300
+    ) {
+
+      url.searchParams.set(
+        'paced_target_wpm',
+        String(
+          pacedTargetWpm
+        )
+      );
+    }
+  }
+
+
+  if (
+    practiceMode ===
+    'vanish'
+  ) {
+
+    const vanishLevel =
+      Number(
+        assignment.vanish_level
+      );
+
+
+    if (
+      Number.isInteger(
+        vanishLevel
+      ) &&
+      vanishLevel >= 1 &&
+      vanishLevel <= 5
+    ) {
+
+      url.searchParams.set(
+        'vanish_level',
+        String(
+          vanishLevel
+        )
+      );
+    }
+  }
+
+  // ========================================
   // LESSON DATA
   // ========================================
 
@@ -5199,6 +5299,77 @@ async function saveCopeakResult(
     // SAVE ROW
     // ======================================
 
+    // ======================================
+    // PRACTICE MODE RESULT VALUES
+    // ======================================
+
+    const requestedPracticeMode =
+      String(
+        data.practiceMode ||
+        'reading'
+      )
+        .toLowerCase();
+
+
+    const practiceMode =
+      [
+        'reading',
+        'paced',
+        'vanish',
+        'shadowing'
+      ]
+        .includes(
+          requestedPracticeMode
+        )
+
+        ? requestedPracticeMode
+
+        : 'reading';
+
+
+    const pacedValue =
+      Number(
+        data.pacedTargetWpm
+      );
+
+
+    const pacedTargetWpm =
+      (
+        practiceMode ===
+          'paced' &&
+        Number.isInteger(
+          pacedValue
+        ) &&
+        pacedValue >= 40 &&
+        pacedValue <= 300
+      )
+
+        ? pacedValue
+
+        : null;
+
+
+    const vanishValue =
+      Number(
+        data.vanishLevel
+      );
+
+
+    const vanishLevel =
+      (
+        practiceMode ===
+          'vanish' &&
+        Number.isInteger(
+          vanishValue
+        ) &&
+        vanishValue >= 1 &&
+        vanishValue <= 5
+      )
+
+        ? vanishValue
+
+        : null;
+
     const row = {
 
       assignment_id:
@@ -5216,6 +5387,14 @@ async function saveCopeakResult(
       attempt_no:
         attemptNo,
 
+      practice_mode:
+        practiceMode,
+
+      paced_target_wpm:
+        pacedTargetWpm,
+
+      vanish_level:
+        vanishLevel,
       submitted_at:
         new Date()
           .toISOString()
@@ -5662,47 +5841,97 @@ async function loadLive() {
 
 
   // ========================================
-  // ASSIGNMENTS
-  // ========================================
+// STUDENT CROSS-POSTING ASSIGNMENT LOAD
+// ========================================
 
   const {
-    data: assignmentRows,
-    error: assignmentError
+    data: assignmentClassRows,
+    error: assignmentClassError
   } =
     await sb
       .from(
-        'assignments'
+        'assignment_classes'
       )
       .select(
-        '*'
+        'assignment_id'
       )
       .eq(
         'class_id',
         currentClass.id
-      )
-      .eq(
-        'is_published',
-        true
-      )
-      .order(
-        'week_no'
       );
 
 
   if (
-    assignmentError
+    assignmentClassError
   ) {
 
-    throw assignmentError;
+    throw assignmentClassError;
+  }
+
+
+  const assignmentIds =
+    [
+      ...new Set(
+        (assignmentClassRows || [])
+          .map(
+            row =>
+              row.assignment_id
+          )
+          .filter(Boolean)
+      )
+    ];
+
+
+  let assignmentRows =
+    [];
+
+
+  if (
+    assignmentIds.length
+  ) {
+
+    const {
+      data: loadedAssignments,
+      error: assignmentError
+    } =
+      await sb
+        .from(
+          'assignments'
+        )
+        .select(
+          '*'
+        )
+        .in(
+          'id',
+          assignmentIds
+        )
+        .eq(
+          'is_published',
+          true
+        )
+        .order(
+          'week_no'
+        );
+
+
+    if (
+      assignmentError
+    ) {
+
+      throw assignmentError;
+    }
+
+
+    assignmentRows =
+      loadedAssignments ||
+      [];
   }
 
 
   assignments =
-    assignmentRows ||
-    [];
+    assignmentRows;
 
-
-  // ========================================
+// ========================================
   // SUBMISSIONS
   // ========================================
 
