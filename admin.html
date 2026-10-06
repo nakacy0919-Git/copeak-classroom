@@ -1,0 +1,267 @@
+<!doctype html>
+
+<html lang="ja">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1">
+
+  <title>
+    Admin | Copeak Classroom
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="styles.css">
+
+</head>
+
+
+<body>
+
+<div class="admin-shell">
+
+  <header class="topbar admin-topbar">
+
+    <div class="brand">
+
+      <div class="brand-mark">
+        C
+      </div>
+
+      <div>
+
+        <div class="brand-title">
+          Copeak Admin
+        </div>
+
+        <div class="brand-sub">
+          Teacher Management
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="top-actions">
+
+      <span
+        id="adminUserName"
+        class="user-label small">
+      </span>
+
+
+      <a
+        href="teacher.html"
+        class="btn btn-sm btn-light">
+
+        ← Classroom
+
+      </a>
+
+
+      <button
+        id="adminSignOut"
+        class="btn btn-sm btn-light">
+
+        Sign out
+
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <main>
+
+    <section class="paper admin-hero">
+
+      <div>
+
+        <div class="eyebrow">
+          PLATFORM ADMIN
+        </div>
+
+        <h1>
+          Teacher Management
+        </h1>
+
+        <p class="muted">
+          新規Teacherの確認・承認・利用停止を管理します。
+        </p>
+
+      </div>
+
+
+      <button
+        type="button"
+        id="adminRefresh"
+        class="btn btn-primary">
+
+        ↻ Refresh
+
+      </button>
+
+    </section>
+
+
+    <section class="admin-stats">
+
+      <article class="admin-stat-card">
+
+        <span>PENDING</span>
+
+        <strong id="adminPendingCount">
+          0
+        </strong>
+
+        <small>
+          承認待ち
+        </small>
+
+      </article>
+
+
+      <article class="admin-stat-card">
+
+        <span>APPROVED</span>
+
+        <strong id="adminApprovedCount">
+          0
+        </strong>
+
+        <small>
+          利用可能
+        </small>
+
+      </article>
+
+
+      <article class="admin-stat-card">
+
+        <span>SUSPENDED</span>
+
+        <strong id="adminSuspendedCount">
+          0
+        </strong>
+
+        <small>
+          利用停止
+        </small>
+
+      </article>
+
+
+      <article class="admin-stat-card">
+
+        <span>REJECTED</span>
+
+        <strong id="adminRejectedCount">
+          0
+        </strong>
+
+        <small>
+          不承認
+        </small>
+
+      </article>
+
+    </section>
+
+
+    <section class="paper admin-panel">
+
+      <div class="admin-panel-heading">
+
+        <div>
+
+          <div class="eyebrow">
+            REGISTERED TEACHERS
+          </div>
+
+          <h2>
+            Teacher Accounts
+          </h2>
+
+        </div>
+
+
+        <div class="admin-toolbar">
+
+          <input
+            id="adminTeacherSearch"
+            class="input"
+            type="search"
+            placeholder="名前・学校・Emailを検索">
+
+
+          <select
+            id="adminStatusFilter"
+            class="input">
+
+            <option value="all">
+              All Status
+            </option>
+
+            <option value="pending">
+              Pending
+            </option>
+
+            <option value="approved">
+              Approved
+            </option>
+
+            <option value="suspended">
+              Suspended
+            </option>
+
+            <option value="rejected">
+              Rejected
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="adminMessage"
+        class="alert info hidden">
+      </div>
+
+
+      <div
+        id="adminTeacherList"
+        class="admin-teacher-list">
+
+        <div class="admin-loading">
+          Loading...
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+
+<script src="js/config.js"></script>
+
+<script
+  type="module"
+  src="js/admin.js">
+</script>
+
+</body>
+
+</html>

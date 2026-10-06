@@ -75,6 +75,69 @@ let editingAssignmentId = null;
 $('#signOut').onclick =
   signOut;
 
+// ==========================================
+// PLATFORM ADMIN ACCESS
+// ==========================================
+
+async function loadPlatformAdminAccess() {
+
+  const link =
+    $('#adminDashboardLink');
+
+
+  if (
+    !link ||
+    !ctx ||
+    ctx.demo
+  ) {
+
+    return;
+  }
+
+
+  const sb =
+    getClient(
+      'teacher'
+    );
+
+
+  const {
+    data,
+    error
+  } =
+    await sb
+      .from(
+        'platform_admins'
+      )
+      .select(
+        'user_id'
+      )
+      .eq(
+        'user_id',
+        ctx.user.id
+      )
+      .maybeSingle();
+
+
+  if (error) {
+
+    console.warn(
+      '[Platform Admin Access]',
+      error
+    );
+
+    return;
+  }
+
+
+  link.classList
+    .toggle(
+      'hidden',
+      !data
+    );
+}
+
+
 
 // ==========================================
 // DATE
@@ -10356,6 +10419,8 @@ $('#assignmentRelease').onchange =
     return;
   }
 
+
+  await loadPlatformAdminAccess();
 
   if (
     await loadLive()
