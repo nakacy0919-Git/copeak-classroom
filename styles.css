@@ -10138,3 +10138,316 @@ body.roster-projector-open {
   }
 
 }
+
+/* ==========================================
+   COPEAK ADMIN v1
+========================================== */
+
+.admin-shell {
+  max-width:1240px;
+  margin:0 auto;
+  padding:20px;
+}
+
+.admin-topbar {
+  position:relative;
+  top:0;
+}
+
+.admin-hero {
+  margin-top:18px;
+  padding:28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+
+.admin-hero p {
+  margin:10px 0 0;
+}
+
+.admin-stats {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin:16px 0;
+}
+
+.admin-stat-card {
+  padding:18px;
+  background:#fff;
+  border:1px solid var(--stone-200);
+  box-shadow:0 8px 20px rgba(28,25,23,.08);
+}
+
+.admin-stat-card span {
+  display:block;
+  color:var(--stone-500);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.12em;
+}
+
+.admin-stat-card strong {
+  display:block;
+  margin-top:6px;
+  font:700 36px 'Lora',serif;
+  color:var(--stone-900);
+}
+
+.admin-stat-card small {
+  color:var(--stone-500);
+}
+
+.admin-panel {
+  padding:24px;
+}
+
+.admin-panel-heading {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  padding-bottom:16px;
+  border-bottom:2px solid var(--stone-200);
+}
+
+.admin-toolbar {
+  display:grid;
+  grid-template-columns:minmax(220px,1fr) 170px;
+  gap:8px;
+  width:min(520px,100%);
+}
+
+.admin-teacher-list {
+  display:grid;
+  gap:12px;
+  margin-top:16px;
+}
+
+.admin-teacher-card {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:20px;
+  padding:18px;
+  background:#fff;
+  border:1px solid var(--stone-200);
+}
+
+.admin-teacher-heading {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.admin-teacher-name {
+  font:700 20px 'Lora',serif;
+  color:var(--stone-900);
+}
+
+.admin-teacher-email {
+  margin-top:3px;
+  color:var(--stone-500);
+  font-size:11px;
+}
+
+.admin-status-badge {
+  padding:5px 9px;
+  border:1px solid;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.06em;
+}
+
+.admin-status-badge.pending {
+  background:#fff7ed;
+  color:#c2410c;
+  border-color:#fed7aa;
+}
+
+.admin-status-badge.approved {
+  background:#ecfdf5;
+  color:#047857;
+  border-color:#a7f3d0;
+}
+
+.admin-status-badge.suspended {
+  background:#fef3c7;
+  color:#92400e;
+  border-color:#fde68a;
+}
+
+.admin-status-badge.rejected {
+  background:#fef2f2;
+  color:#b91c1c;
+  border-color:#fecaca;
+}
+
+.admin-teacher-school {
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+
+.admin-teacher-school strong {
+  font-size:14px;
+}
+
+.admin-teacher-school span {
+  color:var(--stone-500);
+  font-size:10px;
+}
+
+.admin-teacher-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  margin-top:14px;
+  border:1px solid var(--stone-200);
+}
+
+.admin-teacher-grid > div {
+  padding:11px;
+  border-right:1px solid var(--stone-200);
+}
+
+.admin-teacher-grid > div:last-child {
+  border-right:0;
+}
+
+.admin-teacher-grid span,
+.admin-teacher-purpose span {
+  display:block;
+  color:var(--stone-500);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.1em;
+}
+
+.admin-teacher-grid strong {
+  display:block;
+  margin-top:4px;
+  font-size:11px;
+}
+
+.admin-teacher-purpose {
+  margin-top:12px;
+  padding:11px 12px;
+  background:var(--stone-100);
+}
+
+.admin-teacher-purpose p {
+  margin:5px 0 0;
+  color:var(--stone-700);
+  font-size:11px;
+  line-height:1.6;
+}
+
+.admin-teacher-meta {
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-top:10px;
+  color:var(--stone-500);
+  font-size:9px;
+}
+
+.admin-teacher-actions {
+  min-width:120px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:flex-end;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.admin-self-label {
+  padding:6px 10px;
+  background:#ecfdf5;
+  color:#047857;
+  border:1px solid #a7f3d0;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:800;
+}
+
+.admin-loading,
+.admin-empty {
+  padding:34px;
+  text-align:center;
+  color:var(--stone-500);
+  background:var(--stone-100);
+  border:1px dashed var(--stone-300);
+}
+
+@media(max-width:900px) {
+
+  .admin-stats {
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .admin-panel-heading {
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .admin-toolbar {
+    width:100%;
+  }
+
+  .admin-teacher-grid {
+    grid-template-columns:repeat(2,1fr);
+  }
+
+}
+
+@media(max-width:560px) {
+
+  .admin-shell {
+    padding:10px;
+  }
+
+  .admin-hero {
+    align-items:flex-start;
+    flex-direction:column;
+    padding:20px;
+  }
+
+  .admin-stats {
+    grid-template-columns:1fr 1fr;
+  }
+
+  .admin-panel {
+    padding:16px;
+  }
+
+  .admin-toolbar {
+    grid-template-columns:1fr;
+  }
+
+  .admin-teacher-card {
+    grid-template-columns:1fr;
+  }
+
+  .admin-teacher-grid {
+    grid-template-columns:1fr;
+  }
+
+  .admin-teacher-grid > div {
+    border-right:0;
+    border-bottom:1px solid var(--stone-200);
+  }
+
+  .admin-teacher-grid > div:last-child {
+    border-bottom:0;
+  }
+
+  .admin-teacher-actions {
+    justify-content:flex-start;
+  }
+
+}
