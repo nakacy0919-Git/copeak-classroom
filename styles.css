@@ -11190,3 +11190,186 @@ body.roster-projector-open {
   }
 
 }
+
+
+/* COPEAK PLATFORM SIDEBAR READABILITY
+   Larger and clearer navigation for desktop
+========================================================= */
+
+@media (min-width: 1001px) {
+
+  .app-shell.platform-layout {
+    grid-template-columns:
+      286px
+      minmax(0, 1fr);
+  }
+
+
+  .platform-sidebar {
+    padding:
+      28px
+      20px
+      22px;
+  }
+
+
+  /* Brand */
+
+  .platform-sidebar-brand {
+    gap:
+      14px;
+
+    padding:
+      2px
+      7px
+      30px;
+  }
+
+
+  .platform-sidebar .brand-mark {
+    width:
+      48px;
+
+    height:
+      48px;
+
+    font-size:
+      24px;
+
+    border-radius:
+      12px;
+  }
+
+
+  .platform-brand-title {
+    font-size:
+      21px;
+
+    font-weight:
+      850;
+
+    line-height:
+      1.08;
+  }
+
+
+  .platform-brand-sub {
+    margin-top:
+      4px;
+
+    font-size:
+      11px;
+
+    letter-spacing:
+      .17em;
+  }
+
+
+  /* Section title */
+
+  .platform-sidebar-label {
+    padding:
+      0
+      11px
+      12px;
+
+    font-size:
+      10.5px;
+
+    font-weight:
+      800;
+
+    letter-spacing:
+      .18em;
+  }
+
+
+  /* Navigation */
+
+  .platform-nav {
+    gap:
+      8px;
+  }
+
+
+  .platform-nav-item {
+    min-height:
+      68px;
+
+    grid-template-columns:
+      40px
+      minmax(0, 1fr);
+
+    gap:
+      13px;
+
+    padding:
+      13px
+      14px;
+
+    border-radius:
+      11px;
+  }
+
+
+  .platform-nav-icon {
+    width:
+      38px;
+
+    height:
+      38px;
+
+    border-radius:
+      9px;
+
+    font-size:
+      18px;
+  }
+
+
+  .platform-nav-item strong {
+    font-size:
+      16.5px;
+
+    font-weight:
+      780;
+
+    line-height:
+      1.15;
+
+    letter-spacing:
+      -.01em;
+  }
+
+
+  .platform-nav-item small {
+    margin-top:
+      4px;
+
+    color:
+      #91aaa3;
+
+    font-size:
+      11.5px;
+
+    font-weight:
+      550;
+
+    line-height:
+      1.3;
+  }
+
+
+  .platform-nav-item.active small {
+    color:
+      #b7d6cc;
+  }
+
+
+  .platform-nav-item.active {
+    box-shadow:
+      inset 4px 0 0
+      #34d399;
+  }
+
+}
