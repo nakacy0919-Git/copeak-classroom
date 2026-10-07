@@ -78,51 +78,115 @@ alter table public.classes
 
 
 -- =========================================================
--- BACKFILL GRADE
+-- BACKFILL EXISTING CLASS NAMES
 --
--- Examples:
---   3年12組 -> 3
---   2年1組  -> 2
+-- Supported examples:
+--
+--   3年12組
+--   ３年１２組
+--   1-4
+--   2-13
+--
+-- Full-width digits are normalized first.
 -- =========================================================
 
-update public.classes
+with normalized as (
 
-set grade_level =
-  substring(
-    name
-    from '([123])年'
-  )::integer
+  select
+    id,
+
+    translate(
+      name,
+      '０１２３４５６７８９',
+      '0123456789'
+    ) as normalized_name
+
+  from public.classes
+
+),
+
+parsed as (
+
+  select
+    id,
+    normalized_name,
+
+    case
+
+      when
+        normalized_name ~ '^[123]年[[:space:]]*[0-9]{1,2}組'
+      then
+        substring(
+          normalized_name
+          from '^([123])年'
+        )::integer
+
+      when
+        normalized_name ~ '^[123][[:space:]]*-[[:space:]]*[0-9]{1,2}$'
+      then
+        substring(
+          normalized_name
+          from '^([123])'
+        )::integer
+
+      else
+        null
+
+    end as parsed_grade,
+
+    case
+
+      when
+        normalized_name ~ '^[123]年[[:space:]]*[0-9]{1,2}組'
+      then
+        substring(
+          normalized_name
+          from '年[[:space:]]*([0-9]{1,2})組'
+        )::integer
+
+      when
+        normalized_name ~ '^[123][[:space:]]*-[[:space:]]*[0-9]{1,2}$'
+      then
+        substring(
+          normalized_name
+          from '-[[:space:]]*([0-9]{1,2})$'
+        )::integer
+
+      else
+        null
+
+    end as parsed_number
+
+  from normalized
+)
+
+
+update public.classes c
+
+set
+  grade_level =
+    coalesce(
+      c.grade_level,
+      p.parsed_grade
+    ),
+
+  class_number =
+    coalesce(
+      c.class_number,
+      p.parsed_number
+    )
+
+from parsed p
 
 where
-  grade_level is null
+  p.id = c.id
 
   and
-
-  name ~ '[123]年';
-
-
--- =========================================================
--- BACKFILL CLASS NUMBER
---
--- Examples:
---   3年12組 -> 12
---   2年1組  -> 1
--- =========================================================
-
-update public.classes
-
-set class_number =
-  substring(
-    name
-    from '[123]年[[:space:]]*([0-9]{1,2})組'
-  )::integer
-
-where
-  class_number is null
-
-  and
-
-  name ~ '[123]年[[:space:]]*[0-9]{1,2}組';
+  (
+    c.grade_level is null
+    or
+    c.class_number is null
+  );
 
 
 -- =========================================================
@@ -145,7 +209,9 @@ set class_type =
       'tutor'
 
     when
-      name ~ '[123]年[[:space:]]*[0-9]{1,2}組'
+      grade_level is not null
+      and
+      class_number is not null
     then
       'regular'
 
@@ -156,7 +222,6 @@ set class_type =
 
 where
   class_type is null;
-
 
 -- =========================================================
 -- FUTURE DEFAULT
