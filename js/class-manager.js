@@ -1598,6 +1598,10 @@ function buildClassManager() {
     .onclick =
       event => {
 
+        event.preventDefault();
+        event.stopPropagation();
+
+
         const tab =
           event.target.closest(
             '[data-class-grade]'
@@ -1617,6 +1621,13 @@ function buildClassManager() {
 
 
         renderClassPicker();
+
+
+        // 学年切替ではClass Pickerを閉じない。
+        // 同じパネル内で続けてクラスを選択できる状態を維持する。
+        setClassPickerOpen(
+          true
+        );
       };
 
 
