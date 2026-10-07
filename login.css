@@ -1,0 +1,890 @@
+/* =========================================================
+   COPEAK CLASSROOM LOGIN UI V1
+========================================================= */
+
+body.login-page {
+  margin: 0;
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 1px 1px,
+      rgba(255,255,255,.10) 1px,
+      transparent 1.2px
+    )
+    0 0 / 20px 20px,
+    linear-gradient(
+      145deg,
+      #292824 0%,
+      #211f1d 52%,
+      #2b2926 100%
+    );
+
+  color: #0d1d3b;
+}
+
+
+.login-page .auth-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 34px;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.login-page .auth-card {
+  width: min(1450px, calc(100vw - 68px));
+  height: min(800px, calc(100vh - 68px));
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.16fr)
+    minmax(470px, .84fr);
+
+  overflow: hidden;
+
+  border: 1px solid rgba(255,255,255,.76);
+  border-radius: 22px;
+
+  background: #fff;
+
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.32);
+}
+
+
+.login-page .auth-card.paper::before {
+  display: none;
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.login-page .auth-intro {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+
+  box-sizing: border-box;
+
+  padding:
+    38px
+    50px;
+
+  overflow: hidden;
+
+  color: #071936;
+
+  background-color: #eaf8ff;
+
+  background-image:
+    url("assets/login/login-hero.png");
+
+  background-size: cover;
+
+  background-position:
+    center bottom;
+
+  isolation: isolate;
+}
+
+
+.login-page .auth-intro::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  z-index: -1;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.98) 0%,
+      rgba(255,255,255,.94) 20%,
+      rgba(255,255,255,.82) 37%,
+      rgba(255,255,255,.32) 56%,
+      rgba(255,255,255,.02) 77%
+    );
+}
+
+
+.login-page .auth-intro::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  z-index: -1;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.45) 0%,
+      rgba(255,255,255,.15) 48%,
+      transparent 78%
+    );
+
+  pointer-events: none;
+}
+
+
+.login-hero-content {
+  position: relative;
+  z-index: 2;
+
+  height: 100%;
+}
+
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+
+.login-brand-logo {
+  width: 88px;
+  height: 88px;
+
+  flex: 0 0 auto;
+
+  object-fit: contain;
+
+  filter:
+    drop-shadow(
+      0 9px 17px rgba(4,120,87,.14)
+    );
+}
+
+
+.login-brand-copy {
+  min-width: 0;
+}
+
+
+.login-brand-name {
+  display: flex;
+  align-items: baseline;
+
+  gap: 10px;
+
+  white-space: nowrap;
+
+  font-family:
+    'Lora',
+    Georgia,
+    serif;
+
+  font-size:
+    clamp(32px, 3vw, 48px);
+
+  font-weight: 800;
+
+  line-height: 1;
+
+  letter-spacing: -.035em;
+
+  color: #061936;
+}
+
+
+.login-brand-name strong {
+  color: #059669;
+}
+
+
+.login-brand-sub {
+  margin-top: 9px;
+
+  color: #85888d;
+
+  font-size: 12px;
+
+  font-weight: 800;
+
+  letter-spacing: .22em;
+
+  text-transform: uppercase;
+}
+
+
+/* =========================================================
+   HERO COPY
+========================================================= */
+
+.login-hero-message {
+  margin-top: 42px;
+
+  max-width: 650px;
+}
+
+
+.login-hero-kicker {
+  color: #078c70;
+
+  font-size: 17px;
+
+  font-weight: 850;
+
+  letter-spacing: .22em;
+
+  text-transform: uppercase;
+}
+
+
+.login-hero-kicker span {
+  padding: 0 5px;
+
+  color: #19b994;
+}
+
+
+.login-hero-title {
+  margin: 17px 0 0;
+
+  color: #071936;
+
+  font-family:
+    'Lora',
+    Georgia,
+    serif;
+
+  font-size:
+    clamp(48px, 4.3vw, 70px);
+
+  font-weight: 800;
+
+  line-height: .98;
+
+  letter-spacing: -.035em;
+
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.85);
+}
+
+
+.login-highlight {
+  position: relative;
+
+  display: inline-block;
+
+  z-index: 0;
+}
+
+
+.login-highlight::after {
+  content: "";
+
+  position: absolute;
+
+  z-index: -1;
+
+  left: 4%;
+  right: -2%;
+  bottom: 1px;
+
+  height: 14px;
+
+  border-radius: 999px;
+
+  background:
+    rgba(110,231,183,.68);
+
+  transform:
+    rotate(-1deg);
+}
+
+
+.login-hero-description {
+  margin: 23px 0 0;
+
+  color: #102447 !important;
+
+  font-size: 18px;
+
+  font-weight: 700;
+
+  line-height: 1.75 !important;
+
+  text-shadow:
+    0 1px 7px rgba(255,255,255,.98);
+}
+
+
+/* =========================================================
+   RIGHT PANEL
+========================================================= */
+
+.login-page .auth-form {
+  min-width: 0;
+  height: 100%;
+
+  box-sizing: border-box;
+
+  padding:
+    44px
+    52px;
+
+  overflow-y: auto;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #fffefd 72%,
+      #f7fffb 100%
+    );
+}
+
+
+.login-page .auth-form > .eyebrow {
+  color: #078b70;
+
+  font-size: 12px;
+
+  font-weight: 850;
+
+  letter-spacing: .18em;
+}
+
+
+.login-page #formTitle {
+  margin:
+    7px 0 23px !important;
+
+  color: #071936;
+
+  font-family:
+    'Lora',
+    Georgia,
+    serif;
+
+  font-size:
+    clamp(31px, 2.8vw, 40px);
+
+  font-weight: 800;
+
+  line-height: 1.05;
+}
+
+
+/* =========================================================
+   ROLE SWITCH
+========================================================= */
+
+.login-page .segmented {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  margin-bottom: 28px !important;
+
+  padding: 0;
+
+  overflow: hidden;
+
+  border: 1px solid #d6d9dc;
+  border-radius: 10px;
+
+  background: #f7f8f8;
+}
+
+
+.login-page .segmented button {
+  min-height: 58px;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #757a7f;
+
+  font-size: 16px;
+
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    background .16s ease,
+    color .16s ease;
+}
+
+
+.login-page .segmented button.active {
+  color: #fff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #059669,
+      #0b9f82
+    );
+
+  box-shadow:
+    0 8px 22px rgba(5,150,105,.20);
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.login-page .form-stack {
+  display: grid;
+
+  gap: 16px;
+}
+
+
+.login-page .field label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #63676c;
+
+  font-size: 11px;
+
+  font-weight: 850;
+
+  letter-spacing: .12em;
+
+  text-transform: uppercase;
+}
+
+
+.login-page .input {
+  width: 100%;
+  min-height: 58px;
+
+  box-sizing: border-box;
+
+  padding:
+    13px
+    17px;
+
+  border: 1px solid #d5dade;
+  border-radius: 9px;
+
+  outline: none;
+
+  background: rgba(255,255,255,.97);
+
+  color: #17213a;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+  transition:
+    border-color .16s ease,
+    box-shadow .16s ease;
+}
+
+
+.login-page .input::placeholder {
+  color: #a3a6aa;
+
+  font-weight: 500;
+}
+
+
+.login-page .input:focus {
+  border-color: #10a37f;
+
+  box-shadow:
+    0 0 0 4px rgba(16,163,127,.10);
+}
+
+
+/* =========================================================
+   REMEMBER
+========================================================= */
+
+.login-page #studentRememberLogin {
+  accent-color: #059669;
+}
+
+
+.login-page #studentForm > label {
+  color: #18233c;
+
+  font-size: 14px !important;
+
+  font-weight: 650;
+}
+
+
+.login-page #studentForm > label .tiny {
+  color: #898f94;
+
+  font-size: 10.5px;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.login-page #studentEnterBtn,
+.login-page #teacherSubmitBtn {
+  min-height: 62px;
+
+  margin-top: 4px;
+
+  border-radius: 9px;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #059669,
+      #089f82
+    );
+
+  font-family:
+    'Lora',
+    Georgia,
+    serif;
+
+  font-size: 20px;
+
+  font-weight: 800;
+
+  box-shadow:
+    0 10px 24px rgba(5,150,105,.22);
+}
+
+
+.login-page #studentEnterBtn::after {
+  content: "→";
+
+  margin-left: 9px;
+
+  font-family: Arial, sans-serif;
+
+  font-size: 25px;
+}
+
+
+.login-page #studentEnterBtn:hover,
+.login-page #teacherSubmitBtn:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 13px 29px rgba(5,150,105,.28);
+}
+
+
+.login-page #teacherSwitchMode {
+  min-height: 48px;
+
+  border-radius: 8px;
+}
+
+
+/* =========================================================
+   REMEMBERED STUDENT
+========================================================= */
+
+.login-page .remembered-student {
+  margin-bottom: 20px;
+
+  padding: 20px;
+
+  border: 1px solid #d5ede4;
+  border-radius: 12px;
+
+  background: #f4fcf8;
+}
+
+
+.login-page .alert {
+  border-radius: 8px;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1100px) {
+
+  .login-page .auth-wrap {
+    padding: 22px;
+  }
+
+
+  .login-page .auth-card {
+    width: calc(100vw - 44px);
+    height: calc(100vh - 44px);
+
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(410px, .92fr);
+  }
+
+
+  .login-page .auth-intro {
+    padding:
+      34px
+      32px;
+  }
+
+
+  .login-brand-logo {
+    width: 68px;
+    height: 68px;
+  }
+
+
+  .login-brand-name {
+    font-size: 31px;
+  }
+
+
+  .login-brand-sub {
+    font-size: 9px;
+  }
+
+
+  .login-hero-title {
+    font-size: 48px;
+  }
+
+
+  .login-hero-description {
+    font-size: 15px;
+  }
+
+
+  .login-page .auth-form {
+    padding:
+      38px
+      32px;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE / NARROW
+========================================================= */
+
+@media (max-width: 820px) {
+
+  body.login-page {
+    background: #f4f7f6;
+  }
+
+
+  .login-page .auth-wrap {
+    display: block;
+
+    padding: 0;
+  }
+
+
+  .login-page .auth-card {
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
+
+    display: block;
+
+    border: 0;
+    border-radius: 0;
+
+    box-shadow: none;
+  }
+
+
+  .login-page .auth-intro {
+    min-height: 440px;
+
+    padding: 27px;
+
+    background-position:
+      center 69%;
+  }
+
+
+  .login-page .auth-intro::before {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255,255,255,.98) 0%,
+        rgba(255,255,255,.92) 28%,
+        rgba(255,255,255,.45) 58%,
+        rgba(255,255,255,.03) 84%
+      );
+  }
+
+
+  .login-brand-logo {
+    width: 62px;
+    height: 62px;
+  }
+
+
+  .login-brand-name {
+    font-size:
+      clamp(26px, 6vw, 36px);
+  }
+
+
+  .login-brand-sub {
+    font-size: 8.5px;
+  }
+
+
+  .login-hero-message {
+    margin-top: 27px;
+  }
+
+
+  .login-hero-kicker {
+    font-size: 12px;
+  }
+
+
+  .login-hero-title {
+    font-size:
+      clamp(38px, 9vw, 51px);
+  }
+
+
+  .login-hero-description {
+    font-size: 14px;
+  }
+
+
+  .login-page .auth-form {
+    height: auto;
+
+    padding:
+      34px
+      28px
+      48px;
+
+    overflow: visible;
+  }
+
+}
+
+
+@media (max-width: 520px) {
+
+  .login-page .auth-intro {
+    min-height: 360px;
+
+    padding:
+      21px
+      19px;
+
+    background-position:
+      center 73%;
+  }
+
+
+  .login-brand {
+    gap: 9px;
+  }
+
+
+  .login-brand-logo {
+    width: 50px;
+    height: 50px;
+  }
+
+
+  .login-brand-name {
+    gap: 5px;
+
+    font-size: 23px;
+  }
+
+
+  .login-brand-sub {
+    margin-top: 5px;
+
+    font-size: 7px;
+
+    letter-spacing: .13em;
+  }
+
+
+  .login-hero-kicker {
+    font-size: 10px;
+
+    letter-spacing: .14em;
+  }
+
+
+  .login-hero-title {
+    margin-top: 11px;
+
+    font-size: 37px;
+  }
+
+
+  .login-hero-description {
+    margin-top: 15px;
+
+    font-size: 13px;
+  }
+
+
+  .login-page .auth-form {
+    padding:
+      29px
+      20px
+      44px;
+  }
+
+
+  .login-page #formTitle {
+    font-size: 30px;
+  }
+
+
+  .login-page .segmented button {
+    min-height: 52px;
+
+    font-size: 14px;
+  }
+
+
+  .login-page .input {
+    min-height: 54px;
+
+    font-size: 15px;
+  }
+
+
+  .login-page #studentEnterBtn,
+  .login-page #teacherSubmitBtn {
+    min-height: 58px;
+
+    font-size: 18px;
+  }
+
+}
