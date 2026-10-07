@@ -800,21 +800,23 @@ textarea {
 
 /* ==========================================
    Structured Class Picker
+   Refined Academic UI
 ========================================== */
 
 .class-picker-button {
-  width: min(100%, 520px);
+  width: min(100%, 380px);
+  min-height: 44px;
   margin-top: 7px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
 
-  padding: 12px 14px;
+  padding: 9px 12px;
 
   border: 1px solid #10b981;
-  border-radius: 10px;
+  border-radius: 8px;
 
   background: #ffffff;
   color: #1c1917;
@@ -833,14 +835,14 @@ textarea {
 
 .class-picker-button:hover,
 .class-picker-button.open {
-  background: #f0fdf4;
   border-color: #059669;
+  background: #f7fdf9;
 }
 
 
 .class-picker-button.open {
   box-shadow:
-    0 0 0 3px rgba(16, 185, 129, .10);
+    0 0 0 2px rgba(16, 185, 129, .10);
 }
 
 
@@ -848,8 +850,8 @@ textarea {
   min-width: 0;
 
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
 }
 
 
@@ -858,16 +860,26 @@ textarea {
   text-overflow: ellipsis;
   white-space: nowrap;
 
-  font-size: 14px;
-  font-weight: 850;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: .01em;
 }
 
 
 .class-picker-current small {
+  flex: 0 0 auto;
+
   color: #78716c;
 
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+
+.class-picker-current small::before {
+  content: "·";
+  margin-right: 7px;
+  color: #a8a29e;
 }
 
 
@@ -876,7 +888,7 @@ textarea {
 
   color: #78716c;
 
-  font-size: 12px;
+  font-size: 11px;
 
   transition:
     transform .15s ease;
@@ -890,19 +902,24 @@ textarea {
 }
 
 
+/* ------------------------------------------
+   Picker panel
+------------------------------------------ */
+
 .class-picker-panel {
-  width: min(100%, 720px);
+  width: fit-content;
+  max-width: 100%;
 
-  margin-top: 8px;
-  padding: 12px;
+  margin-top: 7px;
+  padding: 10px;
 
-  border: 1px solid #d6d3d1;
-  border-radius: 12px;
+  border: 1px solid #dedbd7;
+  border-radius: 10px;
 
   background: #ffffff;
 
   box-shadow:
-    0 14px 30px rgba(28, 25, 23, .10);
+    0 10px 26px rgba(28, 25, 23, .07);
 }
 
 
@@ -918,30 +935,33 @@ textarea {
 .class-grade-tabs {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 
   flex-wrap: wrap;
 
-  margin-bottom: 12px;
+  margin-bottom: 9px;
 }
 
 
 .class-grade-tab {
+  min-height: 34px;
+
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
 
-  padding: 7px 11px;
+  padding: 6px 10px;
 
   border: 1px solid #d6d3d1;
-  border-radius: 999px;
+  border-radius: 7px;
 
   background: #ffffff;
-  color: #57534e;
+  color: #44403c;
 
   font: inherit;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
 
   cursor: pointer;
 
@@ -953,8 +973,8 @@ textarea {
 
 
 .class-grade-tab:hover:not(:disabled) {
-  border-color: #a7f3d0;
-  background: #f0fdf4;
+  border-color: #86d9ba;
+  background: #f7fdf9;
 }
 
 
@@ -967,18 +987,17 @@ textarea {
 
 
 .class-grade-tab span {
-  min-width: 20px;
+  min-width: 19px;
 
-  padding: 2px 5px;
+  padding: 1px 5px;
 
-  border-radius: 999px;
+  border-radius: 5px;
 
   background: #f5f5f4;
-
   color: #78716c;
 
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 10.5px;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -990,14 +1009,16 @@ textarea {
 
 
 .class-grade-tab:disabled {
-  opacity: .32;
+  opacity: .30;
   cursor: default;
 }
 
 
 /* ------------------------------------------
    Class grid
-   15 classes = 5 × 3 on desktop
+
+   Desktop:
+   5 classes × 3 rows for 15 classes
 ------------------------------------------ */
 
 .class-grid {
@@ -1006,27 +1027,31 @@ textarea {
   grid-template-columns:
     repeat(
       5,
-      minmax(92px, 1fr)
+      108px
     );
 
-  gap: 8px;
+  gap: 7px;
 }
 
 
 .class-grid-item {
   min-width: 0;
-  min-height: 64px;
+  min-height: 46px;
 
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 6px;
+  display: grid;
 
-  padding: 9px 10px;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 8px 9px;
 
   border: 1px solid #e7e5e4;
-  border-radius: 10px;
+  border-radius: 7px;
 
   background: #ffffff;
   color: #292524;
@@ -1039,17 +1064,13 @@ textarea {
   transition:
     background .15s ease,
     border-color .15s ease,
-    transform .15s ease,
     box-shadow .15s ease;
 }
 
 
 .class-grid-item:hover {
-  border-color: #a7f3d0;
-  background: #f0fdf4;
-
-  transform:
-    translateY(-1px);
+  border-color: #86d9ba;
+  background: #f7fdf9;
 }
 
 
@@ -1059,43 +1080,46 @@ textarea {
   background: #ecfdf5;
 
   box-shadow:
-    inset 0 0 0 1px #10b981;
+    inset 0 0 0 1px rgba(16, 185, 129, .30);
 }
 
 
 .class-grid-name {
-  width: 100%;
+  min-width: 0;
 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 
-  font-size: 13px;
-  font-weight: 850;
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: .01em;
 }
 
 
 .class-grid-role {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
-  padding: 2px 6px;
+  padding: 2px 5px;
 
-  border-radius: 999px;
+  border-radius: 5px;
 
-  font-size: 9px;
-  font-weight: 800;
-  line-height: 1.4;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 
 .class-grid-role.owner {
-  background: #d1fae5;
+  background: #e4f8ef;
   color: #047857;
 }
 
 
 .class-grid-role.shared {
-  background: #dbeafe;
+  background: #e8f0ff;
   color: #1d4ed8;
 }
 
@@ -1110,7 +1134,7 @@ textarea {
     grid-template-columns:
       repeat(
         3,
-        minmax(90px, 1fr)
+        116px
       );
   }
 
@@ -1119,8 +1143,14 @@ textarea {
 
 @media(max-width:560px) {
 
+  .class-picker-button {
+    width: 100%;
+  }
+
+
   .class-picker-panel {
-    padding: 10px;
+    width: 100%;
+    padding: 9px;
   }
 
 
@@ -1128,13 +1158,18 @@ textarea {
     grid-template-columns:
       repeat(
         2,
-        minmax(90px, 1fr)
+        minmax(0, 1fr)
       );
   }
 
 
   .class-grid-item {
-    min-height: 58px;
+    min-height: 44px;
+  }
+
+
+  .class-grid-name {
+    font-size: 13.5px;
   }
 
 }
