@@ -422,29 +422,95 @@ export function showFormModal({
 
 
         const input =
-          document.createElement(
-            'input'
-          );
+          field.type === 'select'
+
+            ? document.createElement(
+                'select'
+              )
+
+            : document.createElement(
+                'input'
+              );
 
 
         input.className =
           'input';
 
-        input.type =
-          field.type ||
-          'text';
+
+        if (
+          field.type === 'select'
+        ) {
+
+          (
+            field.options ||
+            []
+          )
+            .forEach(
+              option => {
+
+                const optionEl =
+                  document.createElement(
+                    'option'
+                  );
+
+
+                optionEl.value =
+                  option.value;
+
+
+                optionEl.textContent =
+                  option.label;
+
+
+                input.appendChild(
+                  optionEl
+                );
+              }
+            );
+
+        } else {
+
+          input.type =
+            field.type ||
+            'text';
+
+
+          input.placeholder =
+            field.placeholder ||
+            '';
+
+
+          input.autocomplete =
+            'off';
+
+
+          if (
+            field.min !== undefined
+          ) {
+
+            input.min =
+              String(
+                field.min
+              );
+          }
+
+
+          if (
+            field.max !== undefined
+          ) {
+
+            input.max =
+              String(
+                field.max
+              );
+          }
+
+        }
+
 
         input.value =
           field.value ??
           '';
-
-        input.placeholder =
-          field.placeholder ||
-          '';
-
-        input.autocomplete =
-          'off';
-
 
         wrapper.appendChild(
           label
