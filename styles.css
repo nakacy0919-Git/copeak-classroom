@@ -11373,3 +11373,18 @@ body.roster-projector-open {
   }
 
 }
+
+/* COPEAK_STUDENT_PASS_LAYOUT_FIX_20261009 */
+.student-assignment-card > .student-pass-panel {
+  grid-column: 1 / -1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 560px) {
+  .student-assignment-card > .student-pass-panel .student-pass-head {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
