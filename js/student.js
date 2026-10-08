@@ -1,3 +1,4 @@
+import { reviewDeliveryUrl } from './launch-safety.js';
 import {
   requireUser,
   getClient,
@@ -5013,9 +5014,24 @@ if (
   // NAVIGATE TO COPEAK
   // ========================================
 
-  popup.location.replace(
-    url.toString()
-  );
+  // COPEAK_DELIVERY_SAFETY_V1
+  const deliveryCheck = reviewDeliveryUrl(url);
+
+  if (deliveryCheck.omitJapanese) {
+    url.searchParams.delete('jpn');
+  }
+
+  if (reviewDeliveryUrl(url).tooLong) {
+    popup.close();
+
+    alert(activeLanguage === 'en'
+      ? 'This lesson is too long to open. Please ask your teacher to divide it into smaller lessons.'
+      : 'この教材は文章量が多く、このままでは開けません。先生に教材を分けてもらってください。');
+
+    return;
+  }
+
+  popup.location.replace(url.toString());
 }
 
 

@@ -1,3 +1,4 @@
+import { reviewDeliveryUrl } from './launch-safety.js';
 import {
   requireUser,
   getClient,
@@ -5347,6 +5348,139 @@ function updateAssignmentPracticeModeState() {
     );
 }
 
+
+// COPEAK_DELIVERY_SAFETY_V1
+function previewAssignmentDelivery() {
+  const dialogueMode = $('#assignmentLessonType')?.value === 'dialogue';
+  const dialogue = dialogueMode ? getAssignmentDialogueFromForm() : [];
+
+  const english = dialogueMode
+    ? dialogue.map(line => line.text || '').filter(Boolean).join('\n')
+    : ($('#assignmentText')?.value || '').trim();
+
+  const japanese = ($('#assignmentTranslation')?.value || '').trim();
+  const title = ($('#assignmentTitle')?.value || '').trim()
+    || 'Reading Assignment';
+
+  const previous = editingAssignmentId
+    ? assignments.find(item => item.id === editingAssignmentId)
+    : null;
+
+  const url = new URL(
+    previous?.copeak_url ||
+    window.COPEAK_CONFIG?.copeakBaseUrl ||
+    'https://copeak.pic-speak-story.com/'
+  );
+
+  const p = url.searchParams;
+
+  p.set('classroom_assignment',
+    editingAssignmentId || '00000000-0000-0000-0000-000000000000');
+  p.set('source', 'copeak-classroom');
+  p.set('classroom_origin', location.origin);
+
+  const mode = $('#assignmentPracticeMode')?.value || 'free';
+  p.set('practice_mode', mode);
+  p.set('mode_locked', $('#assignmentModeLocked')?.checked ? '1' : '0');
+
+  if (mode === 'paced') {
+    p.set('paced_target_wpm',
+      $('#assignmentPacedTargetWpm')?.value || '120');
+  }
+
+  if (mode === 'vanish') {
+    p.set('vanish_level',
+      $('#assignmentVanishLevel')?.value || '3');
+  }
+
+  p.set('title', title);
+  p.set('eng', english);
+  p.set('jpn', japanese);
+  p.set('lang', $('#assignmentLang')?.value || 'en-US');
+
+  if (dialogueMode && dialogue.length) {
+    p.set('type', 'dialogue');
+    p.set('dialogue', JSON.stringify(dialogue));
+  }
+
+  const hasAudio = Boolean(
+    $('#assignmentAudio')?.files?.length ||
+    previous?.audio_object_key ||
+    previous?.audio_url
+  );
+
+  const hasImage = Boolean(
+    $('#assignmentImage')?.files?.length ||
+    previous?.image_object_key
+  );
+
+  const reserve =
+    150 + (hasAudio ? 1800 : 0) + (hasImage ? 1800 : 0);
+
+  return {
+    ...reviewDeliveryUrl(url, reserve),
+    englishCount: english.length,
+    japaneseCount: japanese.length
+  };
+}
+
+function updateAssignmentDeliveryStatus() {
+  const status = $('#assignmentDeliveryStatus');
+  const stats = $('#assignmentDeliveryStats');
+
+  if (!status || !stats) return;
+
+  try {
+    const d = previewAssignmentDelivery();
+
+    stats.textContent =
+      '英語 ' + d.englishCount.toLocaleString('ja-JP') +
+      '文字 ／ 日本語訳 ' +
+      d.japaneseCount.toLocaleString('ja-JP') +
+      '文字 ／ 配信データ約 ' +
+      d.full.toLocaleString('ja-JP') + '文字';
+
+    if (d.tooLong) {
+      status.textContent =
+        '⚠ 文章量が多すぎます。日本語訳を送らなくても開けないおそれがあります。英文を複数の課題に分けてください。';
+      status.style.color = '#b91c1c';
+    } else if (d.omitJapanese) {
+      status.textContent =
+        '⚠ 文章量が多いため、生徒の音読画面には日本語訳を送らず、教材を開きやすくします。日本語訳は保存されます。';
+      status.style.color = '#92400e';
+    } else if (d.warning) {
+      status.textContent =
+        '△ 文章量が多めです。一部の端末では開きにくくなる場合があります。';
+      status.style.color = '#92400e';
+    } else {
+      status.textContent =
+        '✓ 配信データは短めです（すべての端末での動作を保証するものではありません）。';
+      status.style.color = '#166534';
+    }
+  } catch (error) {
+    status.textContent =
+      '配信状態を確認できませんでした。教材の入力内容をご確認ください。';
+    status.style.color = '#b91c1c';
+    console.warn('[Copeak Classroom] delivery preview failed', error);
+  }
+}
+
+function ensureAssignmentDeliveryPanel() {
+  if ($('#assignmentDeliverySafety')) return;
+
+  const field = $('#assignmentTranslation')?.closest('.field');
+  if (!field) return;
+
+  field.insertAdjacentHTML('afterend',
+    '<section id="assignmentDeliverySafety" ' +
+    'style="border:1px solid #cbd5e1;border-radius:12px;padding:14px;margin-top:12px;background:#f8fafc">' +
+    '<strong>🛡 教材の配信チェック</strong>' +
+    '<p id="assignmentDeliveryStats" style="font-size:13px;color:#475569;margin:9px 0 6px"></p>' +
+    '<p id="assignmentDeliveryStatus" role="status" aria-live="polite" style="font-size:14px;line-height:1.6;margin:0"></p>' +
+    '<small style="display:block;margin-top:8px;color:#64748b">日本語訳は削除されません。音声・画像の容量そのものは配信リンクの長さに含まれません。</small>' +
+    '</section>'
+  );
+}
 function openAssignmentEditor(
   assignment = null
 ) {
@@ -5738,6 +5872,8 @@ $('#assignmentPublished').checked =
     .remove(
       'hidden'
     );
+  ensureAssignmentDeliveryPanel();
+  updateAssignmentDeliveryStatus();
 
 
   $('#assignmentHint')
@@ -7178,6 +7314,10 @@ try {
     msg.textContent =
       '音読するEnglish Textを入力してください。';
 
+    return;
+  }
+  if (published && previewAssignmentDelivery().tooLong) {
+    msg.textContent = '文章量が多すぎるため公開できません。英文を分割するか、Publish nowをOFFにして下書き保存してください。';
     return;
   }
 
@@ -10424,8 +10564,9 @@ function toggleAssignmentMediaPanel(
 }
 
 // EVENTS
-
-
+// COPEAK_DELIVERY_SAFETY_V1
+$('#assignmentEditor')?.addEventListener('input', updateAssignmentDeliveryStatus);
+$('#assignmentEditor')?.addEventListener('change', updateAssignmentDeliveryStatus);
 const assignmentYoutubeUrlInput =
   $('#assignmentYoutubeUrl');
 
