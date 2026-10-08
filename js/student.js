@@ -1,4 +1,5 @@
 import { reviewDeliveryUrl } from './launch-safety.js';
+import { createSyncLaunchManager } from './direct-sync-launch.js';
 import {
   requireUser,
   getClient,
@@ -33,6 +34,23 @@ let activeLanguage =
 
 const processedResultIds = new Set();
 const savingAssignments = new Set();
+let directSyncLaunchManager;
+
+function getDirectSyncLaunchManager() {
+  if (!directSyncLaunchManager) {
+    directSyncLaunchManager = createSyncLaunchManager({
+      client: getClient('student'),
+      studentId: ctx.user.id,
+      copeakOrigin: new URL(window.COPEAK_CONFIG.copeakBaseUrl).origin,
+      onSynced: async () => {
+        // Direct Sync already saved the result; only refresh the dashboard.
+        await loadLive();
+        render();
+      }
+    });
+  }
+  return directSyncLaunchManager;
+}
 
 $('#signOut').onclick = signOut;
 
@@ -4667,11 +4685,16 @@ async function openCopeak(
       .copeakBaseUrl;
 
 
-  const url =
-    new URL(
-      base,
-      location.href
-    );
+  const url = new URL(base, location.href);
+  if (url.origin !== new URL(window.COPEAK_CONFIG.copeakBaseUrl).origin) {
+    alert('Copeakの起動先URLを確認してください。');
+    return;
+  }
+  const launchNonce = crypto.randomUUID();
+  if (!ctx.demo) {
+    url.searchParams.set('classroom_student', ctx.user.id);
+    url.searchParams.set('classroom_launch', launchNonce);
+  }
 
 
   // ========================================
@@ -4979,13 +5002,21 @@ if (
   // Cacheから即取得。
   // ========================================
 
-  const {
-    audioUrl,
-    imageUrl
-  } =
-    await getAssignmentMediaUrls(
-      assignment
-    );
+  let audioUrl, imageUrl;
+  try {
+    const [media] = await Promise.all([
+      getAssignmentMediaUrls(assignment),
+      ctx.demo
+        ? Promise.resolve()
+        : getDirectSyncLaunchManager().register(popup, assignment.id, launchNonce)
+    ]);
+    ({ audioUrl, imageUrl } = media);
+  } catch (error) {
+    popup.close();
+    alert(`Classroomとの連携準備に失敗しました。再度開いてください：${error.message || error}`);
+    return;
+  }
+  if (popup.closed) return;
 
 
   if (
@@ -5387,6 +5418,8 @@ async function saveCopeakResult(
         : null;
 
     const row = {
+      ...( /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resultId)
+        ? { client_result_id: resultId } : {} ),
 
       assignment_id:
         data.assignmentId,
@@ -5421,34 +5454,41 @@ async function saveCopeakResult(
     // SUPABASE
     // ======================================
 
-    const {
-      data: saved,
-      error
-    } =
-      await getClient(
-        'student'
-      )
-        .from(
-          'submissions'
-        )
-        .insert(
-          row
-        )
-        .select()
+    const { data: inserted, error } = await getClient('student')
+      .from('submissions')
+      .insert(row)
+      .select()
+      .single();
+
+    let saved = inserted;
+    if (error?.code === '23505' && row.client_result_id) {
+      const duplicate = await getClient('student')
+        .from('submissions')
+        .select('*')
+        .eq('client_result_id', row.client_result_id)
+        .eq('student_id', ctx.user.id)
+        .eq('assignment_id', data.assignmentId)
         .single();
 
-
-    if (
-      error
-    ) {
-
+      if (
+        duplicate.error || !duplicate.data ||
+        Number(duplicate.data.accuracy) !== Math.round(accuracy * 100) / 100 ||
+        Number(duplicate.data.wpm) !== Math.round(wpm * 100) / 100 ||
+        Number(duplicate.data.comprehension) !== Math.round(comprehension * 100) / 100 ||
+        duplicate.data.practice_mode !== practiceMode ||
+        duplicate.data.paced_target_wpm !== pacedTargetWpm ||
+        duplicate.data.vanish_level !== vanishLevel
+      ) {
+        throw error;
+      }
+      saved = duplicate.data;
+    } else if (error) {
       throw error;
     }
 
-
-    submissions.push(
-      saved
-    );
+    if (!submissions.some(item => item.id === saved.id)) {
+      submissions.push(saved);
+    }
 
 
     if (
@@ -5588,8 +5628,21 @@ window.addEventListener(
     }
 
 
-    const data =
-      event.data;
+    const data = event.data;
+    if (
+      ctx && !ctx.demo &&
+      typeof data?.type === 'string' &&
+      data.type.startsWith('copeak-classroom-') &&
+      data.type !== 'copeak-classroom-result'
+    ) {
+      void getDirectSyncLaunchManager().receive(event).catch(error => {
+        console.warn(
+          '[Copeak Classroom] Direct Sync dashboard refresh failed',
+          error.message
+        );
+      });
+      return;
+    }
 
 
     if (
