@@ -8053,6 +8053,23 @@ async function duplicateAssignment(
   }
 
 
+
+  // Register duplicate in the assignment_classes bridge.
+  const duplicateClassIds = assignment.audience_type === 'targeted'
+    ? [selectedClass.id]
+    : [...new Set([selectedClass.id, ...(assignment.class_ids || [])])];
+
+  const { error: duplicateClassLinkError } =
+    await getClient('teacher').rpc(
+      'set_assignment_classes',
+      {
+        p_assignment_id: duplicatedAssignment.id,
+        p_class_ids: duplicateClassIds
+      }
+    );
+
+  if (duplicateClassLinkError) throw duplicateClassLinkError;
+
   const duplicateTargetIds =
     assignment.audience_type ===
       'targeted'
@@ -8424,13 +8441,24 @@ students =
     ];
 
 
-  let assignmentRows =
-    [];
+
+  // Include assignments owned by this class even without bridge links.
+  const { data: primaryAssignmentIds, error: primaryAssignmentError } =
+    await sb.from('assignments')
+      .select('id')
+      .eq('class_id', selectedClass.id);
+
+  if (primaryAssignmentError) throw primaryAssignmentError;
+
+  const allAssignmentIds = [...new Set([
+    ...linkedAssignmentIds,
+    ...(primaryAssignmentIds || []).map(row => row.id)
+  ])];
+
+  let assignmentRows = [];
 
 
-  if (
-    linkedAssignmentIds.length
-  ) {
+  if (allAssignmentIds.length) {
 
     const {
       data: loadedAssignments,
@@ -8443,10 +8471,7 @@ students =
         .select(
           '*'
         )
-        .in(
-          'id',
-          linkedAssignmentIds
-        )
+        .in('id', allAssignmentIds)
         .order(
           'week_no'
         );
@@ -8471,10 +8496,7 @@ students =
         .select(
           'assignment_id,class_id'
         )
-        .in(
-          'assignment_id',
-          linkedAssignmentIds
-        );
+        .in('assignment_id', allAssignmentIds);
 
 
     if (
