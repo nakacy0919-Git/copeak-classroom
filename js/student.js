@@ -1,3 +1,4 @@
+import { reportClassroomDiagnostic, flushClassroomDiagnostics } from './classroom-diagnostics.js';
 import { reviewDeliveryUrl } from './launch-safety.js';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
 import {
@@ -31,6 +32,21 @@ let activeLanguage =
   localStorage.getItem(
     'copeak-classroom-student-language'
   ) || 'ja';
+
+// Best-effort diagnostics are independent of result saving and scoring.
+window.addEventListener('online', () => {
+  if (ctx && !ctx.demo) void flushClassroomDiagnostics(getClient('student'), ctx.user.id);
+});
+window.addEventListener('pageshow', () => {
+  if (ctx && !ctx.demo) void flushClassroomDiagnostics(getClient('student'), ctx.user.id);
+});
+function reportFailure(assignmentId, code, error) {
+  try {
+    const reason = !navigator.onLine ? 'offline' : error?.code === '42501' ? 'permission'
+      : error?.code === '23505' ? 'duplicate' : error?.code === '22023' ? 'invalid_data' : 'unknown';
+    if (ctx && !ctx.demo) reportClassroomDiagnostic(getClient('student'), ctx.user.id, assignmentId, code, reason);
+  } catch { /* Diagnostic reporting must not affect launching or saving results. */ }
+}
 
 const processedResultIds = new Set();
 const savingAssignments = new Set();
@@ -5012,6 +5028,7 @@ if (
     ]);
     ({ audioUrl, imageUrl } = media);
   } catch (error) {
+    reportFailure(assignment.id, 'launch_preparation_failed', error);
     popup.close();
     alert(`Classroomとの連携準備に失敗しました。再度開いてください：${error.message || error}`);
     return;
@@ -5053,6 +5070,7 @@ if (
   }
 
   if (reviewDeliveryUrl(url).tooLong) {
+    reportFailure(assignment.id, 'delivery_too_long');
     popup.close();
 
     alert(activeLanguage === 'en'
@@ -5563,6 +5581,8 @@ async function saveCopeakResult(
     error
   ) {
 
+    reportFailure(data.assignmentId, 'submission_save_failed', error);
+
     console.error(
       '[Copeak Classroom] result save failed',
       error
@@ -5636,6 +5656,7 @@ window.addEventListener(
       data.type !== 'copeak-classroom-result'
     ) {
       void getDirectSyncLaunchManager().receive(event).catch(error => {
+        reportFailure(data.assignmentId, 'dashboard_refresh_failed', error);
         console.warn(
           '[Copeak Classroom] Direct Sync dashboard refresh failed',
           error.message
@@ -6092,6 +6113,8 @@ applyStaticLanguage();
     return;
   }
 
+
+  if (!ctx.demo) void flushClassroomDiagnostics(getClient('student'), ctx.user.id);
 
   $('#userName').textContent =
     ctx.profile

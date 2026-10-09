@@ -19,6 +19,8 @@ let adminUser =
 
 let teachers =
   [];
+let page = 0;
+const pageSize = 6;
 
 let statusFilter =
   'all';
@@ -101,28 +103,28 @@ function statusInfo(
 
     pending: {
       label:
-        'Pending',
+        '承認待ち',
       className:
         'pending'
     },
 
     approved: {
       label:
-        'Approved',
+        '承認済み',
       className:
         'approved'
     },
 
     suspended: {
       label:
-        'Suspended',
+        '停止中',
       className:
         'suspended'
     },
 
     rejected: {
       label:
-        'Rejected',
+        '却下',
       className:
         'rejected'
     }
@@ -434,7 +436,7 @@ function actionButtons(
       data-teacher-id="${esc(
         teacher.teacher_id
       )}">
-      ✓ Approve
+      ✓ 承認
     </button>
   `;
 
@@ -447,7 +449,7 @@ function actionButtons(
       data-teacher-id="${esc(
         teacher.teacher_id
       )}">
-      ⏸ Suspend
+      ⏸ 停止
     </button>
   `;
 
@@ -460,7 +462,7 @@ function actionButtons(
       data-teacher-id="${esc(
         teacher.teacher_id
       )}">
-      × Reject
+      × 却下
     </button>
   `;
 
@@ -514,239 +516,27 @@ function actionButtons(
 }
 
 
-function teacherCard(
-  teacher
-) {
-
-  const status =
-    statusInfo(
-      teacher.teacher_status
-    );
-
-
-  return `
-    <article class="admin-teacher-card">
-
-      <div class="admin-teacher-main">
-
-        <div class="admin-teacher-heading">
-
-          <div>
-
-            <div class="admin-teacher-name">
-              ${esc(
-                teacher.display_name ||
-                'No name'
-              )}
-            </div>
-
-            <div class="admin-teacher-email">
-              ${esc(
-                teacher.email ||
-                '—'
-              )}
-            </div>
-
-          </div>
-
-
-          <span
-            class="
-              admin-status-badge
-              ${status.className}
-            ">
-
-            ${status.label}
-
-          </span>
-
-        </div>
-
-
-        <div class="admin-teacher-school">
-
-          <strong>
-            ${esc(
-              teacher.school_name ||
-              '学校名未登録'
-            )}
-          </strong>
-
-          <span>
-            ${esc(
-              teacher.prefecture ||
-              '—'
-            )}
-            /
-            ${esc(
-              schoolTypeLabel(
-                teacher.school_type
-              )
-            )}
-          </span>
-
-        </div>
-
-
-        <div class="admin-teacher-grid">
-
-          <div>
-            <span>SUBJECT</span>
-            <strong>
-              ${esc(
-                teacher.subject ||
-                '—'
-              )}
-            </strong>
-          </div>
-
-          <div>
-            <span>PLANNED CLASSES</span>
-            <strong>
-              ${esc(
-                teacher.planned_class_count ??
-                '—'
-              )}
-            </strong>
-          </div>
-
-          <div>
-            <span>PLANNED STUDENTS</span>
-            <strong>
-              ${esc(
-                teacher.planned_student_count ??
-                '—'
-              )}
-            </strong>
-          </div>
-
-          <div>
-            <span>PHONE</span>
-            <strong>
-              ${esc(
-                teacher.phone ||
-                '—'
-              )}
-            </strong>
-          </div>
-
-        </div>
-
-
-        <div class="admin-teacher-purpose">
-
-          <span>
-            USE PURPOSE
-          </span>
-
-          <p>
-            ${esc(
-              teacher.use_purpose ||
-              '未記入'
-            )}
-          </p>
-
-        </div>
-
-
-        <div class="admin-teacher-meta">
-
-          Registered:
-          ${esc(
-            formatDate(
-              teacher.registered_at
-            )
-          )}
-
-          ${
-            teacher.reviewed_at
-              ? `
-                <span>
-                  Reviewed:
-                  ${esc(
-                    formatDate(
-                      teacher.reviewed_at
-                    )
-                  )}
-                </span>
-              `
-              : ''
-          }
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-teacher-actions">
-
-        ${actionButtons(
-          teacher
-        )}
-
-      </div>
-
-    </article>
-  `;
-}
-
-
 function render() {
-
   renderStats();
-
-
-  const filtered =
-    teachers.filter(
-      teacher => {
-
-        if (
-          statusFilter !==
-            'all' &&
-          teacher.teacher_status !==
-            statusFilter
-        ) {
-
-          return false;
-        }
-
-
-        return teacherMatchesSearch(
-          teacher
-        );
-      }
-    );
-
-
-  const root =
-    $('#adminTeacherList');
-
-
-  if (
-    filtered.length ===
-    0
-  ) {
-
-    root.innerHTML = `
-      <div class="admin-empty">
-        条件に一致するTeacherはいません。
-      </div>
-    `;
-
-    return;
-  }
-
-
-  root.innerHTML =
-    filtered
-      .map(
-        teacher =>
-          teacherCard(
-            teacher
-          )
-      )
-      .join('');
+  const filtered = teachers.filter(t => (statusFilter === 'all' || t.teacher_status === statusFilter) && teacherMatchesSearch(t));
+  page = Math.min(page, Math.max(0, Math.ceil(filtered.length / pageSize) - 1));
+  const rows = filtered.slice(page * pageSize, (page + 1) * pageSize);
+  $('#adminTeacherList').innerHTML = `<table class="admin-table"><thead><tr><th>先生 / 学校</th><th>メール</th><th>登録日</th><th>状態</th><th>操作</th></tr></thead><tbody>${rows.map(t => `<tr><td>${esc(t.display_name || '氏名未登録')}<small>${esc(t.school_name || '学校未登録')}</small></td><td>${esc(t.email)}</td><td>${esc(formatDate(t.registered_at))}</td><td><span class="admin-badge ${statusInfo(t.teacher_status).className}">${esc(statusInfo(t.teacher_status).label)}</span></td><td><button class="btn btn-sm btn-light" data-detail="${esc(t.teacher_id)}">詳細</button> ${actionButtons(t)}</td></tr>`).join('') || '<tr><td colspan="5">該当する先生はいません。</td></tr>'}</tbody></table>`;
+  $('#adminPage').textContent = `${filtered.length}件 · ${page + 1} / ${Math.max(1, Math.ceil(filtered.length / pageSize))}ページ`;
+  $('#adminPrevious').disabled = page === 0;
+  $('#adminNext').disabled = (page + 1) * pageSize >= filtered.length;
 }
+$('#adminPrevious').onclick = () => { page--; render(); };
+$('#adminNext').onclick = () => { page++; render(); };
+$('#adminDetailClose').onclick = () => $('#adminTeacherDetail').close();
+$('#adminTeacherList').addEventListener('click', event => {
+  const id = event.target.closest('[data-detail]')?.dataset.detail;
+  const t = teachers.find(t => t.teacher_id === id);
+  if (!t) return;
+  const fields = [['氏名',t.display_name],['メール',t.email],['学校',t.school_name],['都道府県',t.prefecture],['校種',schoolTypeLabel(t.school_type)],['教科',t.subject],['予定クラス数',t.planned_class_count],['予定生徒数',t.planned_student_count],['電話',t.phone],['利用目的',t.use_purpose],['管理メモ',t.review_note]];
+  $('#adminDetailBody').innerHTML = `<dl class="admin-detail-grid">${fields.map(([k,v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v ?? '—')}</dd></div>`).join('')}</dl>`;
+  $('#adminTeacherDetail').showModal();
+});
 
 
 async function changeTeacherStatus(
@@ -862,6 +652,7 @@ $('#adminTeacherSearch')
     'input',
     event => {
 
+      page = 0;
       searchQuery =
         event.target
           .value
@@ -878,6 +669,7 @@ $('#adminStatusFilter')
     'change',
     event => {
 
+      page = 0;
       statusFilter =
         event.target.value;
 

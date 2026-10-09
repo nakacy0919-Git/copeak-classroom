@@ -1,50 +1,16 @@
-﻿import { getClient, isConfigured } from './supabase.js';
-
+import { getClient, isConfigured } from './supabase.js';
 const $ = selector => document.querySelector(selector);
-
-let client = null;
-let teachers = [];
-let lessons = [];
-let requestSerial = 0;
-
-const escapeHtml = value => String(value ?? '').replace(
-  /[&<>"']/g,
-  char => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  })[char]
-);
-
-const number = value =>
-  Number(value || 0).toLocaleString('ja-JP');
-
-function formatDate(value) {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
-}
-
-function message(text, type = 'info') {
-  const root = $('#activityMessage');
-  root.textContent = text;
-  root.className = `alert ${type}`;
-  root.classList.remove('hidden');
-}
-
-function hideMessage() {
-  $('#activityMessage').classList.add('hidden');
-}
-
+let client, teachers = [], serial = 0, timer;
+let state = {view:'teachers',page:0}, stack = [], displayed = [];
+const size = 6;
+const esc = value => String(value ?? '').replace(/[&<>"']/g,c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = value => value == null ? '—' : Number(value).toLocaleString('ja-JP',{maximumFractionDigits:2});
+const date = value => value ? new Date(value).toLocaleString('ja-JP') : '—';
+const codes = {launch_preparation_failed:'教材・連携の準備に失敗',delivery_too_long:'教材URLが長すぎる',submission_save_failed:'成績保存に失敗',dashboard_refresh_failed:'画面更新に失敗'};
+const reasons = {offline:'通信オフライン',permission:'権限・課題条件の拒否',duplicate:'重複登録の拒否',invalid_data:'送信データの拒否',unknown:'原因コードなし（要調査）'};
+const statuses = {draft:'未公開',scheduled:'公開待ち',open:'公開中',closed:'締切済み'};
+function message(text) { $('#activityMessage').textContent=text; $('#activityMessage').classList.remove('hidden'); }
+function hideMessage() { $('#activityMessage').classList.add('hidden'); }
 async function verifyAdmin() {
   if (!isConfigured()) {
     location.replace('index.html');
@@ -93,283 +59,97 @@ async function verifyAdmin() {
   return true;
 }
 
-function metric(label, value) {
-  return `<div class="activity-stat">
-    <small>${escapeHtml(label)}</small>
-    <strong>${number(value)}</strong>
-  </div>`;
+function table(headers, rows) {
+  return `<table class="admin-table"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.map(cells=>`<tr>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${headers.length}">該当する記録がありません。</td></tr>`}</tbody></table>`;
 }
-
-function renderStats() {
-  const total = key => teachers.reduce(
-    (sum, teacher) => sum + Number(teacher[key] || 0), 0
-  );
-
-  $('#activityStats').innerHTML = [
-    metric('登録された先生', teachers.length),
-    metric('クラス数', total('class_count')),
-    metric('教材・課題数', total('assignment_count')),
-    metric('提出記録', total('submission_count'))
-  ].join('');
+const button = (kind,id,label) => `<button class="btn btn-sm btn-light" data-open="${kind}" data-id="${esc(id)}">${label}</button>`;
+function navigate(next) {
+  stack.push({...state, search:$('#activitySearch').value, filter:$('#activityFilter').value});
+  state = {...state,...next,page:0}; $('#activitySearch').value=''; $('#activityFilter').value='all';
+  void load().catch(showError);
 }
-
-function renderTeachers() {
-  const query = $('#activitySearch').value.trim().toLowerCase();
-  const filter = $('#activityFilter').value;
-
-  const filtered = teachers.filter(teacher => {
-    const matches = [
-      teacher.teacher_name,
-      teacher.school_name
-    ].join(' ').toLowerCase().includes(query);
-
-    if (!matches) return false;
-
-    if (filter === 'lessons') {
-      return Number(teacher.assignment_count) > 0;
-    }
-
-    if (filter === 'submissions') {
-      return Number(teacher.submission_count) > 0;
-    }
-
-    return true;
-  });
-
-  const root = $('#activityTeacherList');
-
-  if (!filtered.length) {
-    root.innerHTML =
-      '<p class="activity-muted">該当する先生はいません。</p>';
-    return;
-  }
-
-  root.innerHTML = filtered.map(teacher => `
-    <article class="activity-teacher">
-      <h3>${escapeHtml(teacher.teacher_name || 'Teacher')}</h3>
-      <p>${escapeHtml(teacher.school_name || '学校名未登録')}</p>
-      <div class="activity-metrics">
-        <div class="activity-metric">
-          <strong>${number(teacher.class_count)}</strong>
-          <small>クラス</small>
-        </div>
-        <div class="activity-metric">
-          <strong>${number(teacher.assignment_count)}</strong>
-          <small>教材・課題</small>
-        </div>
-        <div class="activity-metric">
-          <strong>${number(teacher.submission_count)}</strong>
-          <small>提出件数</small>
-        </div>
-      </div>
-      <div class="activity-teacher-footer">
-        <span class="activity-muted">
-          最終提出：${escapeHtml(formatDate(teacher.last_submission_at))}
-        </span>
-        <button type="button" class="btn btn-sm btn-primary"
-          data-activity-teacher="${escapeHtml(teacher.teacher_id)}">
-          教材を見る →
-        </button>
-      </div>
-    </article>
-  `).join('');
+function showError(error) { message(`読み込みに失敗しました。更新で再試行してください：${error.message || error}`); }
+function renderRows(items) {
+  displayed=items;
+  if (state.view==='teachers') return table(['先生 / 学校','クラス','課題','公開済み','提出記録','最終提出','操作'],items.map(t=>[
+    `${esc(t.teacher_name)}<small>${esc(t.school_name)}</small>`,num(t.class_count),num(t.assignment_count),num(t.published_count),num(t.submission_count),esc(date(t.last_submission_at)),button('assignments',t.teacher_id,'課題 →')]));
+  if (state.view==='assignments') return table(['課題 / 配布クラス','公開状態','練習モード','対象 / 提出済み','提出回数','締切','報告','操作'],items.map(a=>[
+    `${esc(a.title)}<small>${esc(a.class_names)}</small>`, `<span class="admin-badge ${esc(a.delivery_status)}">${statuses[a.delivery_status] || '—'}</span><small>公開 ${esc(date(a.release_at))}</small>`,esc(a.practice_mode),`${num(a.target_count)} / ${num(a.submitted_students)}`,num(a.submission_count),esc(date(a.due_at)),num(a.recent_errors),button('students',a.assignment_id,'成績 →')]));
+  if (state.view==='students') return table(['生徒','提出回数','最新 Accuracy','最新 WPM','最新 Comp.','合格（最高値・手動）','最終提出','操作'],items.map(s=>[
+    `${esc(s.student_name)}${s.current_target?'':'<small>現在の配布対象外</small>'}`,num(s.attempts),num(s.accuracy),num(s.wpm),num(s.comprehension),s.passed==null?'対象外':s.passed?`✓ 合格<small>${num(s.effective_accuracy)}% / ${num(s.effective_wpm)} WPM / ${num(s.effective_comprehension)}%</small>`:`未合格<small>${num(s.effective_accuracy)}% / ${num(s.effective_wpm)} WPM / ${num(s.effective_comprehension)}%</small>`,esc(date(s.submitted_at)),Number(s.attempts)?button('history',s.student_id,'履歴 →'):'—']));
+  if (state.view==='history') return table(['音読回数','日時','Accuracy %','WPM','Comp. %','練習モード','設定'],items.map(s=>[
+    num(s.attempt_no),esc(date(s.submitted_at)),num(s.accuracy),num(s.wpm),num(s.comprehension),esc(s.practice_mode),s.practice_mode==='paced'?`目標 ${num(s.paced_target_wpm)} WPM`:s.practice_mode==='vanish'?`Level ${num(s.vanish_level)}`:'—']));
+  return table(['報告日時','先生 / クラス','課題','報告した利用者','内容'],items.map(d=>[
+    esc(date(d.created_at)),`${esc(d.teacher_name)}<small>${esc(d.class_name)}</small>`,esc(d.title),esc(d.reporter_name),`${esc(codes[d.code]||d.code)}<small>${esc(reasons[d.reason]||reasons.unknown)}</small>`]));
 }
-
-async function loadActivity() {
-  hideMessage();
-
-  const { data, error } =
-    await client.rpc('admin_get_teacher_activity');
-
-  if (error) throw error;
-
-  teachers = Array.isArray(data) ? data : [];
-
-  teachers.sort(
-    (a, b) =>
-      Number(b.submission_count || 0) -
-      Number(a.submission_count || 0)
-  );
-
-  renderStats();
-  renderTeachers();
-
-  requestSerial++;
-  $('#activityDetail').hidden = true;
-  $('#activityPreview').hidden = true;
+function renderHeader() {
+  $('#activityTitle').textContent = {teachers:'先生を選択',assignments:'配布課題',students:'生徒別の成績',history:'提出履歴',diagnostics:'エラー報告'}[state.view];
+  $('#activityContext').textContent = [state.teacherName,state.assignmentTitle,state.studentName].filter(Boolean).join(' → ') || '先生から課題・生徒・提出履歴へ進めます。';
+  $('#activityBack').classList.toggle('hidden',!stack.length);
+  $('#activityFilter').classList.toggle('hidden',state.view!=='teachers');
+  $('#activityErrors').classList.toggle('hidden',state.view==='diagnostics');
+  $('#activityPreviewButton').classList.toggle('hidden',!state.assignmentId || state.view==='diagnostics');
+  $('#activitySearch').classList.toggle('hidden',state.view==='history');
+  $('#activitySearch').placeholder = {teachers:'先生・学校名を検索',assignments:'課題・クラス名を検索',students:'生徒名を検索',diagnostics:'課題・利用者・エラーコードを検索'}[state.view] || '';
 }
-
-function renderLessons() {
-  const root = $('#activityLessonList');
-
-  if (!lessons.length) {
-    root.innerHTML =
-      '<p class="activity-muted">まだ教材が登録されていません。</p>';
-    return;
-  }
-
-  root.innerHTML = lessons.map((lesson, index) => {
-    const mode = lesson.lesson_type === 'dialogue'
-      ? 'Dialogue'
-      : 'Text';
-
-    const chips = [
-      mode,
-      lesson.practice_mode || 'free',
-      lesson.has_audio ? '音声あり' : '',
-      lesson.has_image ? '画像あり' : '',
-      lesson.has_youtube ? '動画あり' : '',
-      lesson.is_published ? '公開中' : '下書き'
-    ].filter(Boolean);
-
-    return `
-      <article class="activity-lesson">
-        <div class="activity-muted">
-          ${escapeHtml(lesson.class_name || 'クラス')}
-          ／ No. ${number(lesson.week_no)}
-        </div>
-        <h3>${escapeHtml(lesson.title || 'Untitled')}</h3>
-        <div>
-          ${chips.map(chip =>
-            `<span class="activity-chip">${escapeHtml(chip)}</span>`
-          ).join('')}
-        </div>
-        <p>
-          提出 ${number(lesson.submission_count)}件
-          ／ 作成 ${escapeHtml(formatDate(lesson.created_at))}
-        </p>
-        <button type="button" class="btn btn-sm btn-light"
-          data-activity-lesson="${index}">
-          本文を確認 →
-        </button>
-      </article>
-    `;
-  }).join('');
-}
-
-async function openTeacher(teacherId) {
-  const teacher = teachers.find(
-    item => item.teacher_id === teacherId
-  );
-
-  if (!teacher) return;
-
-  const token = ++requestSerial;
-  const detail = $('#activityDetail');
-
-  detail.hidden = false;
-  $('#activityPreview').hidden = true;
-  $('#activityDetailTitle').textContent =
-    `${teacher.teacher_name || 'Teacher'} の教材`;
-
-  $('#activityDetailSub').textContent =
-    `${teacher.school_name || '学校名未登録'} ・ 教材を読み込んでいます...`;
-
-  $('#activityLessonList').textContent = '読み込み中...';
-
-  detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  try {
-    const { data, error } =
-      await client.rpc('admin_get_teacher_lessons', {
-        p_teacher_id: teacherId
-      });
-
+async function load() {
+  const current=++serial; clearTimeout(timer); hideMessage(); renderHeader();
+  $('#activityTable').innerHTML='<div class="admin-loading" role="status">読み込み中…</div>';
+  $('#activityPrevious').disabled=true; $('#activityNext').disabled=true; $('#activityPage').textContent='';
+  let items,total;
+  if (state.view==='teachers') {
+    const search=$('#activitySearch').value.trim().toLowerCase(), filter=$('#activityFilter').value;
+    const found=teachers.filter(t=>[t.teacher_name,t.school_name].join(' ').toLowerCase().includes(search) &&
+      (filter==='all' || Number(t[filter==='lessons'?'assignment_count':'submission_count'])>0));
+    total=found.length; items=found.slice(state.page*size,(state.page+1)*size);
+  } else {
+    const {data,error}=await client.rpc('admin_inspect_activity',{
+      p_view:state.view,p_teacher_id:state.teacherId||null,p_assignment_id:state.assignmentId||null,
+      p_student_id:state.studentId||null,p_search:$('#activitySearch').value.trim(),p_page:state.page,p_size:size
+    });
+    if (current!==serial) return;
     if (error) throw error;
-    if (token !== requestSerial) return;
-
-    lessons = Array.isArray(data) ? data : [];
-
-    $('#activityDetailSub').textContent =
-      `${teacher.school_name || '学校名未登録'} ・ ${lessons.length}件`;
-
-    renderLessons();
-  } catch (error) {
-    if (token !== requestSerial) return;
-    $('#activityLessonList').textContent =
-      '教材を読み込めませんでした。';
-    message(error.message || '教材の取得に失敗しました。', 'error');
+    total=Number(data?.total||0); items=Array.isArray(data?.items)?data.items:[];
   }
+  if(current!==serial)return;
+  $('#activityTable').innerHTML=renderRows(items);
+  $('#activityPage').textContent=`${num(total)}件 · ${state.page+1} / ${Math.max(1,Math.ceil(total/size))}ページ`;
+  $('#activityPrevious').disabled=state.page===0; $('#activityNext').disabled=(state.page+1)*size>=total;
 }
-
-function previewLesson(index) {
-  const lesson = lessons[index];
-  if (!lesson) return;
-
-  $('#activityPreviewTitle').textContent =
-    lesson.title || 'Untitled';
-
-  $('#activityPreviewMeta').textContent =
-    `${lesson.class_name || 'クラス'} / ` +
-    `${lesson.lesson_lang || 'en-US'} / ` +
-    `${lesson.practice_mode || 'free'} / ` +
-    `提出 ${number(lesson.submission_count)}件`;
-
-  $('#activityEnglish').textContent =
-    lesson.lesson_text || '英文は登録されていません。';
-
-  $('#activityJapanese').textContent =
-    lesson.lesson_translation || '日本語訳は登録されていません。';
-
-  const hasDialogue = lesson.lesson_type === 'dialogue' &&
-    Array.isArray(lesson.lesson_dialogue);
-
-  $('#activityDialogueArea').hidden = !hasDialogue;
-
-  if (hasDialogue) {
-    $('#activityDialogue').textContent =
-      lesson.lesson_dialogue.map(line =>
-        `${line.speaker || 'Speaker'}: ${line.text || ''}`
-      ).join('\n');
-  }
-
-  const root = $('#activityPreview');
-  root.hidden = false;
-  root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+async function refresh() {
+  const current=++serial;
+  const {data,error}=await client.rpc('admin_get_teacher_activity');
+  if(current!==serial)return;
+  if(error)throw error; teachers=data||[];
+  const total=key=>teachers.reduce((s,t)=>s+Number(t[key]||0),0);
+  $('#activityStats').innerHTML=[['先生',teachers.length],['クラス',total('class_count')],['課題',total('assignment_count')],['提出記録',total('submission_count')]].map(([k,v])=>`<span>${k}<strong>${num(v)}</strong></span>`).join('');
+  await load();
 }
-
-$('#activitySearch').addEventListener('input', renderTeachers);
-$('#activityFilter').addEventListener('change', renderTeachers);
-
-$('#activityTeacherList').addEventListener('click', event => {
-  const button = event.target.closest('[data-activity-teacher]');
-  if (button) openTeacher(button.dataset.activityTeacher);
-});
-
-$('#activityLessonList').addEventListener('click', event => {
-  const button = event.target.closest('[data-activity-lesson]');
-  if (button) previewLesson(Number(button.dataset.activityLesson));
-});
-
-$('#activityCloseDetail').addEventListener('click', () => {
-  requestSerial++;
-  $('#activityDetail').hidden = true;
-  $('#activityPreview').hidden = true;
-});
-
-$('#activityRefresh').addEventListener('click', async () => {
-  const button = $('#activityRefresh');
-  button.disabled = true;
-
+$('#activityTable').onclick=event=>{
+  const b=event.target.closest('[data-open]'); if(!b)return;
+  const id=b.dataset.id;
+  if(b.dataset.open==='assignments') { const t=displayed.find(t=>t.teacher_id===id); if(t)navigate({view:'assignments',teacherId:id,teacherName:t.teacher_name,assignmentId:null,assignmentTitle:null,studentId:null,studentName:null}); }
+  if(b.dataset.open==='students') { const a=displayed.find(a=>a.assignment_id===id); if(a)navigate({view:'students',assignmentId:id,assignmentTitle:a.title,studentId:null,studentName:null}); }
+  if(b.dataset.open==='history') { const s=displayed.find(s=>s.student_id===id); if(s)navigate({view:'history',studentId:id,studentName:s.student_name}); }
+};
+$('#activityBack').onclick=()=>{state=stack.pop()||{view:'teachers',page:0};$('#activitySearch').value=state.search||'';$('#activityFilter').value=state.filter||'all';void load().catch(showError);};
+$('#activityErrors').onclick=()=>navigate({view:'diagnostics',studentId:null,studentName:null});
+$('#activityPrevious').onclick=()=>{state.page--;void load().catch(showError);};
+$('#activityNext').onclick=()=>{state.page++;void load().catch(showError);};
+$('#activitySearch').oninput=()=>{++serial;clearTimeout(timer);state.page=0;timer=setTimeout(()=>void load().catch(showError),250);};
+$('#activityFilter').onchange=()=>{state.page=0;void load().catch(showError);};
+$('#activityRefresh').onclick=()=>void refresh().catch(showError);
+$('#activitySignOut').onclick=async()=>{if(client)await client.auth.signOut();location.replace('index.html');};
+$('#previewClose').onclick=()=>$('#activityPreview').close();
+$('#activityPreviewButton').onclick=async()=>{
+  const assignmentId=state.assignmentId;
+  $('#previewTitle').textContent=state.assignmentTitle||'教材';$('#previewText').textContent='読み込み中…';$('#activityPreview').showModal();
   try {
-    await loadActivity();
-  } catch (error) {
-    message(error.message || '更新できませんでした。', 'error');
-  } finally {
-    button.disabled = false;
-  }
-});
-
-$('#activitySignOut').addEventListener('click', async () => {
-  if (client) await client.auth.signOut();
-  location.replace('index.html');
-});
-
-(async () => {
-  if (await verifyAdmin()) {
-    await loadActivity();
-  }
-})().catch(error => {
-  console.error('[Admin Activity]', error);
-  message(error.message || '利用状況を読み込めませんでした。', 'error');
-});
+    const {data,error}=await client.rpc('admin_inspect_activity',{p_view:'lesson',p_assignment_id:assignmentId});
+    if(error)throw error;
+    const lesson=data?.items?.[0];
+    if(!lesson)throw new Error('教材を取得できません。');
+    $('#previewText').textContent=[lesson.lesson_text,lesson.lesson_translation,lesson.lesson_type==='dialogue'?JSON.stringify(lesson.lesson_dialogue,null,2):''].filter(Boolean).join('\n\n');
+  } catch(error){$('#previewText').textContent=error.message||'取得に失敗しました。';}
+};
+(async()=>{if(await verifyAdmin())await refresh();})().catch(showError);
