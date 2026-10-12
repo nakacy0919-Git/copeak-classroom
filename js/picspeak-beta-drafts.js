@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
       :MODE_LESSONS[mode]?.some(([id])=>id===theme_id);
     if(!valid)throw Error('このモードの教材を選択してください。');
     if(!['elementary','junior_high','high_school'].includes(level))throw Error('レベルを選択してください。');
-    if(![30,45,60].includes(time_limit))throw Error('制限時間が不正です。');
+    if(!(mode==='picflash'?[3,5,10,30,45,60]:[30,45,60]).includes(time_limit))throw Error('制限時間が不正です。');
     if(!Number.isFinite(t1.getTime())||!Number.isFinite(t2.getTime())||t2<=t1)throw Error('公開と締切の日時を確認してください。');
     if(!(pass_percent>=0&&pass_percent<=100&&pass_seconds>=1&&pass_seconds<=1800))throw Error('合格ラインが不正です。');
     if(!['targeted','class'].includes(audienceEl.value))throw Error('配布対象を選んでください。');
@@ -284,9 +284,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const openEdit=async item=>{
     if(!Array.from(fields.classId.options).some(o=>o.value===item.class_id)) {status('先にクラスの読込を完了してください。',true);return;}
+    fields.duration.dataset.psmLegacyTime=(item.mode==='picflash'&&[30,45,60].includes(Number(item.time_limit)))?String(item.time_limit):'';
+    fields.duration.dataset.psmTimerMode='';
     editing={id:item.id,class_id:item.class_id,audience_type:item.audience_type||'targeted',
       student_ids:targetsByAssignment.get(item.id)||[],is_published:item.is_published};
-    modeEl.value=item.mode||'snapshot';applyMode();
+    modeEl.value=item.mode||'snapshot';applyMode();modeEl.dispatchEvent(new Event('change'));fields.duration.value=String(item.time_limit);
     if(!Array.from(fields.theme.options).some(o=>o.value===item.theme_id)) {status('教材が見つかりません。教材一覧の読込を確認してください。',true);return;}
     fields.title.value=item.title;fields.title.dataset.manuallyEdited='1';
     fields.theme.value=item.theme_id;fields.classId.value=item.class_id;
@@ -308,7 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const clear=()=>{
     editing=null;fields.title.value='';fields.title.dataset.manuallyEdited='0';
-    fields.published.checked=false;modeEl.value='snapshot';applyMode();
+    fields.duration.dataset.psmLegacyTime='';fields.duration.dataset.psmTimerMode='';
+    fields.published.checked=false;modeEl.value='snapshot';applyMode();modeEl.dispatchEvent(new Event('change'));
     // applyMode dispatches a theme change, which can auto-fill the old title.
     // A fresh assignment must start with an empty title and no selected student.
     fields.title.value='';fields.title.dataset.manuallyEdited='0';
@@ -343,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const card=document.createElement('div');card.className='psl-card';
       const strong=document.createElement('strong');strong.textContent=a.title;
       const details=document.createElement('p');details.className='psl-muted';
-      details.textContent=[a.mode||'snapshot',a.theme_id,a.level,a.time_limit+'秒',
+      details.textContent=[a.mode||'snapshot',a.theme_id,a.level,a.mode==='picflash'?'1問'+(({30:3,45:5,60:10})[a.time_limit]||a.time_limit)+'秒':a.time_limit+'秒',
         a.audience_type==='class'?'クラス全員':'個別：'+(targetsByAssignment.get(a.id)||[]).length+'名',
         a.is_published?'公開':'下書き','締切: '+new Date(a.due_at).toLocaleString('ja-JP')].join(' / ');
       const actions=document.createElement('div');actions.className='psl-actions';

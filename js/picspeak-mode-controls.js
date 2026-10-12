@@ -9,7 +9,8 @@
   function init(){
     const mode=document.getElementById('pslMode');const old=document.getElementById('pslPassPercent');
     const level=document.getElementById('picSpeakBetaLevel');
-    if(!mode||!old||!level||document.getElementById('pslPassCorrect'))return false;
+    const duration=document.getElementById('picSpeakBetaDuration');
+    if(!mode||!old||!level||!duration||document.getElementById('pslPassCorrect'))return false;
     const style=document.createElement('style');style.id='psmCriteriaCss';style.textContent=css;document.head.append(style);
     const host=document.createElement('div');host.className='psm-fields';host.setAttribute('aria-label','モード別合格条件');
     const make=(id,label,min,max,value)=>{
@@ -25,7 +26,34 @@
     const fQA=make('pslPassQA','Q&A評価（Good以上=1）',1,2,1);
     const container=document.querySelector('#picSpeakBetaPanel .psv4-statsrow');
     (container?.parentElement || old.closest('.psl-grid') || old.parentElement).append(host);
+    const syncTimer=()=>{
+      const flash=mode.value==='picflash';
+      const which=flash?'flash':'standard';
+      if(duration.dataset.psmTimerMode!==which){
+        const opts=flash
+          ?[['3','3\u79d2'],['5','5\u79d2'],['10','10\u79d2']]
+          :[['30','30\u79d2'],['45','45\u79d2'],['60','60\u79d2']];
+        if(flash && ['30','45','60'].includes(duration.dataset.psmLegacyTime)){
+          const legacy=duration.dataset.psmLegacyTime;
+          const alias={'30':'3\u79d2','45':'5\u79d2','60':'10\u79d2'}[legacy];
+          opts.push([legacy,alias+' (\u65e7\u8ab2\u984c)']);
+        }
+        duration.replaceChildren(...opts.map(([v,label])=>new Option(label,v)));
+        duration.value=flash?'5':'45';
+        duration.dataset.psmTimerMode=which;
+      }
+      const wrapper=duration.closest('label');
+      if(wrapper)for(const n of wrapper.childNodes){
+        if(n.nodeType===Node.TEXT_NODE && n.textContent.trim()){
+          n.textContent=(flash
+            ?'1\u554f\u3042\u305f\u308a\u306e\u5236\u9650\u6642\u9593'
+            :'\u5236\u9650\u6642\u9593')+' ';
+          break;
+        }
+      }
+    };
     const sync=()=>{
+      syncTimer();
       const flash=mode.value==='picflash',oral=mode.value==='oralquest';
       fCorrect.hidden=!flash;fReading.hidden=!oral;fPicture.hidden=!oral;fQA.hidden=!oral;
       // The grade bands are real teaching/assessment choices in five activities.
