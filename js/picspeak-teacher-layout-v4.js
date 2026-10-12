@@ -87,7 +87,7 @@
     const name=node('div','psv4-fullfield');form(name,'picSpeakBetaAssignmentTitle');shell.append(name);
     const grid=node('div','psv4-grid');const left=node('div','psv4-column'),right=node('div','psv4-column');grid.append(left,right);shell.append(grid);
     const lesson=card(left,1,'教材を選ぶ','練習モードと画像教材を指定');const lessonRow=node('div','psv4-controlrow');form(lessonRow,'pslMode');form(lessonRow,'picSpeakBetaTheme');lesson.append(lessonRow);
-    const preview=node('figure','psv4-preview');const previewImg=node('img');previewImg.alt='選択中のPicSpeak教材';previewImg.loading='eager';const placeholder=node('div','psv4-image-placeholder','教材を選択すると画像が表示されます');const caption=node('figcaption','psv4-caption','教材を選択してください');preview.append(previewImg,placeholder,caption);lesson.append(preview);
+    const preview=node('figure','psv4-preview');const previewImg=node('img');previewImg.alt='選択中のPicSpeak教材';previewImg.loading='eager';const placeholder=node('div','psv4-image-placeholder','教材を選択すると画像が表示されます');preview.append(previewImg,placeholder);lesson.append(preview);
     const metrics=card(left,2,'学習条件','レベル・時間・合格ライン');const metricsRow=node('div','psv4-statsrow');['picSpeakBetaLevel','picSpeakBetaDuration','pslPassPercent','pslPassSeconds'].forEach(id=>form(metricsRow,id));metrics.append(metricsRow,node('p','psv4-conditions-help','画像描写は達成率（%）で合否を判定します。PIC FLASHはクリアタイム（秒）です。'));
     const delivery=card(right,3,'配布先','クラスと配布範囲を選択');const classWrap=node('div','psv4-class');form(classWrap,'picSpeakBetaClass');delivery.append(classWrap);
     const hiddenHolder=node('div','psv4-hidden-holder');form(hiddenHolder,'pslAudience');form(hiddenHolder,'pslStudentFilter');hiddenHolder.append(get('pslNew'),get('pslReload'));delivery.append(hiddenHolder);
@@ -103,6 +103,31 @@
     section.append(shell);
     // The previous v2 and v3 shells stay in DOM, but no live input remains there.
     const mode=get('pslMode'),theme=get('picSpeakBetaTheme'),classSelect=get('picSpeakBetaClass'),recipients=get('pslRecipientList'),percent=wrappers.get('pslPassPercent'),seconds=wrappers.get('pslPassSeconds');
+    // Display only: keep option values (lesson IDs and mode IDs) unchanged.
+    const modeLabels={snapshot:'SNAPSHOT',mosaic:'MOSAIC',detective:'DETECTIVE',oralquest:'ORAL QUEST',story:'STORY',picflash:'PIC FLASH'};
+    function shortenModeLabels(){
+      for(const option of mode.options){
+        const label=modeLabels[option.value];
+        if(label && option.textContent!==label)option.textContent=label;
+      }
+    }
+    function shortenNewLessonLabels(){
+      for(const option of theme.options){
+        const match=/^theme_l2_(\d{3})$/i.exec(option.value);
+        if(!match)continue; // Keep legacy [301] and other mode titles intact.
+        const number=String(Number(match[1]));
+        const original=(option.textContent||'').trim();
+        const name=original
+          .replace(/^\[\s*theme_l2_\d{3}\s*\]\s*/i,'')
+          .replace(/^theme_l2_\d{3}\s*/i,'')
+          .replace(/^\[\s*\d{1,3}\s*\]\s*/,'')
+          .trim();
+        if(!name)continue;
+        const label=`[${number}] ${name}`;
+        if(option.textContent!==label)option.textContent=label;
+      }
+    }
+    shortenModeLabels();shortenNewLessonLabels();
     // Preserve native <select> option values/IDs; change only the displayed class labels.
     function simplifyClasses(){
       const opts=Array.from(classSelect.options);const names=opts.map(o=>o.textContent.replace(/\s*[（(][0-9a-fA-F]{6,8}[)）]\s*$/,'').trim());const seen=new Map();
@@ -133,8 +158,8 @@
     }
     let lastPreviewPath='',previewFailed='';
     function syncPreview(){
-      const modeValue=mode.value,id=theme.value,title=theme.selectedOptions?.[0]?.textContent?.trim()||'教材を選択してください';
-      caption.textContent=title;const path=pathFor(modeValue,id);
+      const modeValue=mode.value,id=theme.value;
+      const path=pathFor(modeValue,id);
       if(path!==lastPreviewPath){lastPreviewPath=path;previewFailed='';previewImg.removeAttribute('src');}
       const show=Boolean(path && previewFailed!==path);
       previewImg.hidden=!show;placeholder.hidden=show;
@@ -180,7 +205,7 @@
     audience.addEventListener('change',syncAudience);
     new MutationObserver(()=>{sortRecipients();syncPublish();}).observe(recipients,{childList:true,subtree:false});
     new MutationObserver(()=>{simplifyClasses();}).observe(classSelect,{childList:true});
-    new MutationObserver(()=>{syncPreview();syncPublish();}).observe(theme,{childList:true});
+    new MutationObserver(()=>{shortenNewLessonLabels();syncPreview();syncPublish();}).observe(theme,{childList:true});
     const oldImage=get('picSpeakBetaImage');if(oldImage)new MutationObserver(syncPreview).observe(oldImage,{attributes:true,attributeFilter:['src']});
     sortRecipients();syncAudience();syncMetrics();simplifyClasses();syncPreview();syncPublish();
     panel.classList.add('psv4-ready');
