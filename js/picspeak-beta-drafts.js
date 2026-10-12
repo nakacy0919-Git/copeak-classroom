@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div id="pslGradebook" hidden>
       <h3>成績一覧 <span id="pslGradeTitle"></span></h3>
       <div class="psl-actions"><button id="pslExport" type="button">CSVダウンロード</button><button id="pslCloseGrades" type="button">閉じる</button></div>
-      <div class="psl-table-scroll"><table><thead><tr><th>生徒</th><th>取り組み回数</th><th>Best Score</th><th>Completion</th><th>WPM</th><th>合格</th></tr></thead><tbody id="pslGradesBody"></tbody></table></div>
+      <div class="psl-table-scroll"><table><thead><tr><th>生徒</th><th>練習回数</th><th>最高達成率 / 最速タイム</th><th>Score (pt)</th><th>WPM</th><th>合格</th></tr></thead><tbody id="pslGradesBody"></tbody></table></div>
     </div>
   `;
   closeButton.parentElement.insertAdjacentElement('beforebegin',section);
@@ -355,19 +355,20 @@ document.addEventListener('DOMContentLoaded', () => {
     for(const id of ids)grouped.set(id,[]);
     for(const attempt of attempts||[]) if(grouped.has(attempt.student_id))grouped.get(attempt.student_id).push(attempt);
     currentGradeRows=ids.map(id=>{
-      const rows=grouped.get(id), best=a.mode==='picflash'
+      const rows=grouped.get(id),completionValue=r=>r.completion_percent??r.score_percent;
+       const best=a.mode==='picflash'
         ? rows.filter(r=>r.duration_seconds!=null).sort((x,y)=>x.duration_seconds-y.duration_seconds)[0]
-        : rows.filter(r=>r.score_percent!=null).sort((x,y)=>y.score_percent-x.score_percent)[0];
-      const pass=rows.some(x=>a.mode==='picflash'?(x.duration_seconds!=null&&x.duration_seconds<=a.pass_seconds):(x.score_percent!=null&&x.score_percent>=a.pass_percent));
+        : rows.filter(r=>completionValue(r)!=null).sort((x,y)=>Number(completionValue(y))-Number(completionValue(x)))[0];
+      const pass=rows.some(x=>a.mode==='picflash'?(x.duration_seconds!=null&&x.duration_seconds<=a.pass_seconds):(completionValue(x)!=null&&Number(completionValue(x))>=a.pass_percent));
       return {student_id:id,name:nameById.get(id)||id,attempts:rows.length,
-        best:best?(a.mode==='picflash'?best.duration_seconds:(best.score_raw??best.score_percent)):null,
-        completion:best?.completion_percent??null,wpm:best?.wpm??null,pass};
+        best:best?(a.mode==='picflash'?Number(best.duration_seconds):Number(completionValue(best))):null,
+        points:a.mode==='picflash'?null:(best?.score_raw??null),wpm:a.mode==='picflash'?null:(best?.wpm??null),pass};
     });
     const tbody=el('pslGradesBody');tbody.replaceChildren();
     const th=val=>{const td=document.createElement('td');td.textContent=String(val??'—');return td;};
     for(const row of currentGradeRows){const tr=document.createElement('tr');
-      tr.append(th(row.name),th(row.attempts),th(row.best==null?'—':row.best+(a.mode==='picflash'?'秒':'pt')),
-        th(row.completion==null?'—':row.completion+'%'),th(row.wpm),th(row.pass?'合格':'未達成'));
+      tr.append(th(row.name),th(row.attempts+'回'),th(row.best==null?'—':row.best+(a.mode==='picflash'?'秒':'%')),
+        th(row.points==null?'—':row.points+'pt'),th(row.wpm),th(row.pass?'合格':'未達成'));
       tbody.append(tr);}
     el('pslGradeTitle').textContent=a.title+'（'+currentGradeRows.length+'名）';
     el('pslGradebook').hidden=false;el('pslGradebook').scrollIntoView({behavior:'smooth'});
@@ -375,8 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const csvEscape=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const exportCSV=()=>{
     if(!activeGrade)return;
-    const headers=['生徒ID','氏名','取り組み回数','Best Score (pts / FLASH は秒)','Completion (%)','WPM','合格'];
-    const data=[headers,...currentGradeRows.map(x=>[x.student_id,x.name,x.attempts,x.best,x.completion,x.wpm,x.pass?'合格':'未達成'])];
+    const headers=['生徒ID','氏名','練習回数','最高達成率 (%) / PIC FLASH最速(秒)','Score (pt)','WPM','合格'];
+    const data=[headers,...currentGradeRows.map(x=>[x.student_id,x.name,x.attempts,x.best,x.points,x.wpm,x.pass?'合格':'未達成'])];
     const contents='\ufeff'+data.map(row=>row.map(csvEscape).join(',')).join('\r\n');
     const blob=new Blob([contents],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download='picspeak-results-'+activeGrade.id+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
