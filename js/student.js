@@ -3661,7 +3661,9 @@ function renderAssignmentList(
           return `
             <article
               class="assignment student-assignment-card ${passState.configured ? 'has-pass-criteria' : ''}"
-              data-status="${status.key}">
+              data-status="${status.key}"
+              data-cso-accuracy="${submission && Number.isFinite(Number(submission.accuracy)) ? Number(submission.accuracy) : ''}"
+              data-cso-wpm="${submission && Number.isFinite(Number(submission.wpm)) ? Number(submission.wpm) : ''}">
 
               <div class="weekbox">
 

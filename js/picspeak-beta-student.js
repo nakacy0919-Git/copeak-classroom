@@ -83,14 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const h=document.createElement('h3');h.textContent=a.title;
         const small=document.createElement('p');small.className='psl-muted psl-subtitle';small.textContent=LABELS[a.mode]+' • '+a.level+' • 締切 '+fmt(a.due_at);
         const scores=document.createElement('div');scores.className='psl-scores';
-        function metric(title,value){const d=document.createElement('div'),strong=document.createElement('strong'),cap=document.createElement('span');strong.textContent=String(value);cap.textContent=title;cap.className='psl-muted';d.append(strong,cap);scores.append(d);}
-        metric(a.mode==='picflash'?'最速タイム':a.mode==='detective'?'発見率':a.mode==='oralquest'?'画像描写':a.mode==='story'?'情報伝達率':'最高達成率',best?headline(a,best):'—');
-        metric('練習回数',rows.length+'回');
+        function addScoreMetric(title,value){const d=document.createElement('div'),strong=document.createElement('strong'),cap=document.createElement('span');strong.textContent=String(value);cap.textContent=title;cap.className='psl-muted';d.append(strong,cap);scores.append(d);}
+        addScoreMetric(a.mode==='picflash'?'最速タイム':a.mode==='detective'?'発見率':a.mode==='oralquest'?'画像描写':a.mode==='story'?'情報伝達率':'最高達成率',best?headline(a,best):'—');
+        addScoreMetric('練習回数',rows.length+'回');
         const totalWords=rows.reduce((n,r)=>n+(Number(r.word_count)||0),0);
         const third=a.mode==='picflash'?((best?.metrics?.correct??'—')+'/10問')
           :a.mode==='detective'?((best?.metrics?.found??'—')+'/'+(best?.metrics?.total??'—')+'件')
           :rows.some(r=>r.word_count!=null)?totalWords+'語':'—';
-        metric(a.mode==='picflash'?'正答数':a.mode==='detective'?'発見数':'累計発話単語数',third);
+        addScoreMetric(a.mode==='picflash'?'正答数':a.mode==='detective'?'発見数':'累計発話単語数',third);
         const btn=document.createElement('button');btn.textContent=expired?'締切済み':'PicSpeakに挑戦！ ↗';btn.className='psl-challenge';btn.disabled=expired;
         btn.addEventListener('click',()=>void launch(a,btn));
         const detailsBtn=document.createElement('button');detailsBtn.className='psl-secondary';detailsBtn.textContent='成果を見る';
