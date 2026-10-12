@@ -41,6 +41,13 @@
     #picSpeakBetaPanel .psv4-preview img{display:block;aspect-ratio:16/9;width:100%;object-fit:contain;max-height:265px;background:#edf3f0}
     #picSpeakBetaPanel .psv4-image-placeholder{min-height:166px;display:flex;align-items:center;justify-content:center;text-align:center;color:#668078;font-size:13px;padding:20px}
     #picSpeakBetaPanel .psv4-caption{padding:8px 11px;font-size:12px;color:#32594f;background:#fff;font-weight:700;overflow-wrap:anywhere}
+    #picSpeakBetaPanel .psv4-flash-preview{padding:14px;background:#fff;display:grid;gap:11px}
+    #picSpeakBetaPanel .psv4-flash-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    #picSpeakBetaPanel .psv4-flash-item{display:flex;flex-direction:column;gap:6px;min-width:0;align-items:center}
+    #picSpeakBetaPanel .psv4-flash-item img{width:100%;height:auto;max-height:115px;aspect-ratio:4/3;object-fit:contain;border-radius:8px;background:#f1f7f4;border:1px solid #e2ebe6}
+    #picSpeakBetaPanel .psv4-flash-item span{color:#355a4f;font-size:11px;font-weight:650;overflow-wrap:anywhere;text-align:center}
+    #picSpeakBetaPanel .psv4-flash-info{color:#52756a;font-size:12px;text-align:center;margin:0}
+    #picSpeakBetaPanel .psv4-flash-empty{color:#668078;font-size:13px;text-align:center;padding:32px 8px}
     #picSpeakBetaPanel .psv4-conditions-help{font-size:11px;line-height:1.45;color:var(--muted);margin:10px 0 0}
     #picSpeakBetaPanel .psv4-class{max-width:380px}
     #picSpeakBetaPanel .psv4-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;max-width:370px;padding:4px;border-radius:12px;border:1px solid #d2e5dd;background:#f2f6f4;margin:12px 0}
@@ -102,7 +109,7 @@
     const name=node('div','psv4-fullfield');form(name,'picSpeakBetaAssignmentTitle');shell.append(name);
     const grid=node('div','psv4-grid');const left=node('div','psv4-column'),right=node('div','psv4-column');grid.append(left,right);shell.append(grid);
     const lesson=card(left,1,'教材を選ぶ','練習モードと画像教材を指定');const lessonRow=node('div','psv4-controlrow');form(lessonRow,'pslMode');form(lessonRow,'picSpeakBetaTheme');lesson.append(lessonRow);
-    const preview=node('figure','psv4-preview');const previewImg=node('img');previewImg.alt='選択中のPicSpeak教材';previewImg.loading='eager';const placeholder=node('div','psv4-image-placeholder','教材を選択すると画像が表示されます');preview.append(previewImg,placeholder);lesson.append(preview);
+    const preview=node('figure','psv4-preview');const previewImg=node('img');previewImg.alt='選択中のPicSpeak教材';previewImg.loading='eager';const placeholder=node('div','psv4-image-placeholder','教材を選択すると画像が表示されます');const flashPreview=node('div','psv4-flash-preview');flashPreview.hidden=true;preview.append(previewImg,placeholder,flashPreview);lesson.append(preview);
     const metrics=card(left,2,'学習条件','レベル・時間・合格ライン');const metricsRow=node('div','psv4-statsrow');['picSpeakBetaLevel','picSpeakBetaDuration','pslPassPercent','pslPassSeconds'].forEach(id=>form(metricsRow,id));metrics.append(metricsRow,node('p','psv4-conditions-help','画像描写は達成率（%）で合否を判定します。PIC FLASHはクリアタイム（秒）です。'));
     const delivery=card(right,3,'配布先','クラスと配布範囲を選択');const classWrap=node('div','psv4-class');form(classWrap,'picSpeakBetaClass');delivery.append(classWrap);
     const hiddenHolder=node('div','psv4-hidden-holder');form(hiddenHolder,'pslAudience');form(hiddenHolder,'pslStudentFilter');hiddenHolder.append(get('pslNew'),get('pslReload'));delivery.append(hiddenHolder);
@@ -172,8 +179,28 @@
     }
     function syncAudience(){const isTarget=audience.value!=='class';recipientBox.hidden=!isTarget;warning.hidden=isTarget;targetBtn.setAttribute('aria-pressed',String(isTarget));classBtn.setAttribute('aria-pressed',String(!isTarget));}
     function syncMetrics(){const flash=mode.value==='picflash';percent.hidden=flash;seconds.hidden=!flash;}
-    // Image previews come from the PicSpeak lesson IDs, NOT the hidden legacy img src.
+    // Teacher-only image previews. Original mode and theme IDs remain unchanged.
     const imageRoot='https://www.pic-speak-story.com/assets/images/';
+    // A compact snapshot of the existing PicSpeak category catalogs, for preview only.
+    // These values do not control game questions or scoring.
+    const flashSamples={
+      animals_and_bugs: {count:30, words:["animal","ant","bear"]},
+      sea_animals: {count:12, words:["aquarium","crab","dolphin"]},
+      fruits_and_vegetables: {count:28, words:["apple","banana","bean"]},
+      foods_drinks_and_tastes: {count:59, words:["bacon","beef","bread"]},
+      colors_and_shapes: {count:23, words:["black","blue","brown"]},
+      body_parts_and_clothes: {count:31, words:["arm","body","ear"]},
+      jobs_and_people: {count:27, words:["artist","astronaut","baker"]},
+      family_and_pronouns: {count:20, words:["aunt","baby","brother"]},
+      school_subjects_and_stationery: {count:38, words:["classmates","classroom","dictionary"]},
+      school_clubs_and_events: {count:38, words:["classmates","classroom","dictionary"]},
+      sports_and_hobbies: {count:50, words:["badminton","baseball","basketball"]},
+      places_town_and_countries: {count:38, words:["bookstore","bus_stop","castle"]},
+      nature_weather_and_environment: {count:39, words:["cloudy","desert","fall"]},
+      daily_actions: {count:48, words:["brush_my_teeth","buy","call"]},
+      feelings_and_adjectives: {count:42, words:["active","amazing","bad"]},
+      time_events_and_misc: {count:68, words:["afternoon","always","birthday"]},
+    };
     function pathFor(modeValue,id){
       if(modeValue==='snapshot'){
         if(/^theme_l2_\d{3}$/.test(id))return 'l2_'+id.slice(-3)+'.webp';
@@ -182,17 +209,55 @@
       if(modeValue==='mosaic' && /^mosaic_\d{3,4}$/.test(id))return 'mosaic/'+id.split('_')[1]+'.webp';
       if(modeValue==='detective' && /^detective_\d{3}$/.test(id))return 'detective/dete'+id.slice(-3)+'.webp';
       if(modeValue==='oralquest' && /^oq_\d{3}$/.test(id))return 'oralquest/oq'+id.slice(-3)+'.webp';
+      // Every checked-in story1..story7 catalog points to this first-scene image pattern.
+      if(modeValue==='story' && /^story\d{1,2}$/.test(id))return 'story/'+id+'_scene1.webp';
       return '';
     }
-    let lastPreviewPath='',previewFailed='';
+    let lastPreviewPath='',previewFailed='',lastFlashCategory='';
+    function syncFlashPreview(id){
+      // Do not rebuild the images on an unrelated settings change.
+      if(id===lastFlashCategory)return;
+      lastFlashCategory=id;
+      flashPreview.replaceChildren();
+      const data=Object.prototype.hasOwnProperty.call(flashSamples,id)?flashSamples[id]:null;
+      if(!data){
+        flashPreview.append(node('p','psv4-flash-empty',id?'この教材のプレビューは未登録です。':'教材を選択してください'));
+        return;
+      }
+      const gallery=node('div','psv4-flash-gallery');
+      for(const word of data.words){
+        const item=node('div','psv4-flash-item');
+        const img=node('img');
+        img.alt=word.replaceAll('_',' ');
+        img.loading='lazy';
+        img.src=imageRoot+'picflash/'+word+'.webp';
+        img.addEventListener('error',()=>{
+          img.hidden=true;
+          item.append(node('span','','画像を取得できません'));
+        },{once:true});
+        item.append(img,node('span','',word.replaceAll('_',' ')));
+        gallery.append(item);
+      }
+      flashPreview.append(gallery,node('p','psv4-flash-info',`収録 ${data.count} 枚から代表3枚を表示（課題は10問）`));
+    }
     function syncPreview(){
       const modeValue=mode.value,id=theme.value;
+      if(modeValue==='picflash'){
+        // PIC FLASH has a category of cards, not one main picture.
+        previewImg.hidden=true;
+        placeholder.hidden=true;
+        flashPreview.hidden=false;
+        syncFlashPreview(id);
+        return;
+      }
+      flashPreview.hidden=true;
+      if(lastFlashCategory){flashPreview.replaceChildren();lastFlashCategory='';}
       const path=pathFor(modeValue,id);
       if(path!==lastPreviewPath){lastPreviewPath=path;previewFailed='';previewImg.removeAttribute('src');}
       const show=Boolean(path && previewFailed!==path);
       previewImg.hidden=!show;placeholder.hidden=show;
       if(show && !previewImg.getAttribute('src'))previewImg.src=imageRoot+path;
-      if(!show)placeholder.textContent=modeValue==='story'?'STORYの場面画像は学習開始後に表示されます':modeValue==='picflash'?'PIC FLASH：単語タイムアタック':path?'プレビュー画像を取得できません':'教材を選択してください';
+      if(!show)placeholder.textContent=path?'プレビュー画像を取得できません':'教材を選択してください';
     }
     previewImg.addEventListener('error',()=>{previewFailed=lastPreviewPath;syncPreview();});
     // A saved draft may be published only through the ORIGINAL guarded list button.
