@@ -73,6 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
       .psl-teacher-section .psl-muted{font-size:12px;color:#64748b}
       .psl-teacher-section .psl-table-scroll{max-width:100%;overflow:auto}
       .psl-teacher-section table{width:100%;border-collapse:collapse;min-width:520px;font-size:13px}
+      .psl-teacher-section .psl-student-checks{max-height:210px;overflow-y:auto;border:1px solid #cbd5e1;border-radius:9px;padding:5px;background:#fff}
+      .psl-teacher-section .psl-student-checks label{display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;padding:7px 8px;font-weight:500}
+      .psl-teacher-section .psl-student-checks label:hover{background:#eff6ff}
+      .psl-teacher-section .psl-student-checks input{min-width:16px;width:16px;height:16px}
       .psl-teacher-section td,.psl-teacher-section th{padding:8px;text-align:left;border-bottom:1px solid #e2e8f0}
       @media(max-width:700px){.psl-teacher-section .psl-grid{grid-template-columns:1fr}}
     </style>
@@ -84,6 +88,15 @@ document.addEventListener('DOMContentLoaded', () => {
       <label>PIC FLASH合格タイム（秒） <input id="pslPassSeconds" type="number" min="1" max="1800" step="1" value="90"></label>
     </div>
     <p class="psl-muted" id="pslModeHint"></p>
+    <div class="psl-grid" style="grid-template-columns:minmax(170px,1fr) minmax(250px,2fr)">
+      <label>配布対象 <select id="pslAudience"><option value="targeted">生徒を指定（推奨）</option><option value="class">クラス全員</option></select></label>
+      <div id="pslRecipientsWrap">
+        <label>生徒を検索 <input id="pslStudentFilter" type="search" placeholder="例：Test" autocomplete="off"></label>
+        <div id="pslRecipientList" class="psl-student-checks" aria-label="配布する生徒を選択">クラスを選択してください。</div>
+        <p id="pslRecipientStatus" class="psl-muted" role="status"></p>
+      </div>
+    </div>
+    <p class="psl-muted">※ 配布先は保存時に確定します。「クラス全員」を選んだ場合は公開前に追加確認します。</p>
     <div class="psl-actions">
       <button type="button" class="primary" id="pslSave">💾 課題を保存</button>
       <button type="button" id="pslNew">＋ 新規課題</button>
@@ -105,6 +118,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let pictureOptions=[];
   let editing=null, opened=false, busy=false, currentGradeRows=[], activeGrade=null;
   let drafts=[];
+  let targetsByAssignment=new Map();
+  let recipientClassId=null;
+  let recipientGeneration=0;
+  const audienceEl=el('pslAudience');
+  const recipientBox=el('pslRecipientList');
+  const recipientStatus=el('pslRecipientStatus');
+  const recipientsWrap=el('pslRecipientsWrap');
+  const recipientFilter=el('pslStudentFilter');
+  const selectedRecipientIds=()=>Array.from(recipientBox.querySelectorAll('input[type="checkbox"]:checked')).map(c=>c.value).sort();
+  const sortedIds=ids=>[...ids].sort().join(',');
+  audienceEl.addEventListener('change',()=>{recipientsWrap.hidden=audienceEl.value!=='targeted';});
+  recipientFilter.addEventListener('input',()=>{
+    const term=recipientFilter.value.trim().toLowerCase();
+    for(const label of recipientBox.querySelectorAll('label'))label.hidden=!label.textContent.toLowerCase().includes(term);
+  });
   const oldReview=$('picSpeakBetaReview');
   const status=(txt,bad=false)=>{el('pslMessage').style.color=bad?'#b91c1c':'#166534';el('pslMessage').textContent=txt;};
   const permittedUUID=x=>/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(x||'');
@@ -115,6 +143,57 @@ document.addEventListener('DOMContentLoaded', () => {
       throw Error('PicSpeak βの接続先が指定のClassroomと異なります。');
     const sb=getClient('teacher');if(!sb) throw Error('ログインが必要です。');return sb;
   };
+  async function loadRecipients(classId, selectedIds=null){
+    const generation=++recipientGeneration;
+    const previouslySelected=recipientClassId===classId?selectedRecipientIds():[];
+    recipientClassId=null;
+    recipientBox.textContent='生徒一覧を読み込んでいます…';
+    recipientStatus.textContent='';
+    if(!permittedUUID(classId)){
+      recipientBox.textContent='配布先クラスを選択してください。';return;
+    }
+    const sb=client();
+    const {data:members,error}=await sb.from('class_members')
+      .select('student_id').eq('class_id',classId).limit(1000);
+    if(error)throw error;
+    const ids=[...new Set((members||[]).map(m=>m.student_id).filter(permittedUUID))];
+    let profiles=[];
+    for(let i=0;i<ids.length;i+=100){
+      const {data,error:pe}=await sb.from('profiles')
+        .select('id,display_name').in('id',ids.slice(i,i+100));
+      if(pe)throw pe;
+      profiles.push(...(data||[]));
+    }
+    const nameById=new Map(profiles.map(p=>[p.id,p.display_name||'生徒']));
+    // Roster labels, when readable, distinguish duplicate display names.
+    const {data:roster}=await sb.from('class_roster')
+      .select('linked_student_id,display_name,student_number')
+      .eq('class_id',classId).limit(1000);
+    for(const r of roster||[]){
+      if(ids.includes(r.linked_student_id)){
+        nameById.set(r.linked_student_id,(r.display_name||nameById.get(r.linked_student_id)||'生徒')+
+          (r.student_number?'（'+r.student_number+'）':''));
+      }
+    }
+    if(generation!==recipientGeneration || fields.classId.value!==classId)return;
+    const keep=new Set(selectedIds||previouslySelected);
+    recipientBox.replaceChildren();
+    ids.sort((a,b)=>(nameById.get(a)||a).localeCompare(nameById.get(b)||b,'ja'));
+    for(const id of ids){
+      const label=document.createElement('label');
+      const cb=document.createElement('input');
+      cb.type='checkbox';cb.value=id;cb.checked=keep.has(id);
+      const span=document.createElement('span');span.textContent=nameById.get(id)||id;
+      label.append(cb,span);recipientBox.append(label);
+    }
+    recipientClassId=classId;
+    if(!ids.length)recipientBox.textContent='このクラスにはログイン済みの生徒がいません。';
+    recipientStatus.textContent=ids.length+'名の登録済み生徒から配布先を選べます。';
+  }
+  fields.classId.addEventListener('change',()=>{
+    recipientFilter.value='';
+    void loadRecipients(fields.classId.value).catch(e=>status('生徒名簿の読込に失敗: '+e.message,true));
+  });
   const fmtLocal=s=>{
     const d=new Date(s),offset=d.getTimezoneOffset()*60000;
     return new Date(d.getTime()-offset).toISOString().slice(0,16);
@@ -174,18 +253,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if(![30,45,60].includes(time_limit))throw Error('制限時間が不正です。');
     if(!Number.isFinite(t1.getTime())||!Number.isFinite(t2.getTime())||t2<=t1)throw Error('公開と締切の日時を確認してください。');
     if(!(pass_percent>=0&&pass_percent<=100&&pass_seconds>=1&&pass_seconds<=1800))throw Error('合格ラインが不正です。');
-    return {title,class_id,theme_id,mode,level,time_limit,pass_percent,pass_seconds,release_at:t1.toISOString(),due_at:t2.toISOString()};
+    if(!['targeted','class'].includes(audienceEl.value))throw Error('配布対象を選んでください。');
+    return {title,class_id,theme_id,mode,level,time_limit,pass_percent,pass_seconds,
+      audience_type:audienceEl.value,release_at:t1.toISOString(),due_at:t2.toISOString()};
   };
   const runBusy=async task=>{if(busy)return;busy=true;el('pslSave').disabled=true;
     try{await task();}catch(e){status('エラー: '+(e.message||String(e)),true);}finally{busy=false;el('pslSave').disabled=false;}
   };
-  const openEdit=item=>{
+  const openEdit=async item=>{
     if(!Array.from(fields.classId.options).some(o=>o.value===item.class_id)) {status('先にクラスの読込を完了してください。',true);return;}
-    editing={id:item.id,class_id:item.class_id};
+    editing={id:item.id,class_id:item.class_id,audience_type:item.audience_type||'targeted',
+      student_ids:targetsByAssignment.get(item.id)||[],is_published:item.is_published};
     modeEl.value=item.mode||'snapshot';applyMode();
     if(!Array.from(fields.theme.options).some(o=>o.value===item.theme_id)) {status('教材が見つかりません。教材一覧の読込を確認してください。',true);return;}
     fields.title.value=item.title;fields.title.dataset.manuallyEdited='1';
     fields.theme.value=item.theme_id;fields.classId.value=item.class_id;
+    audienceEl.value=item.audience_type||'targeted';
+    recipientsWrap.hidden=audienceEl.value!=='targeted';
+    recipientFilter.value='';
+    const targets=targetsByAssignment.get(item.id)||[];
+    await loadRecipients(item.class_id,targets);
     fields.level.value=item.level;fields.duration.value=String(item.time_limit);
     fields.release.value=fmtLocal(item.release_at);fields.due.value=fmtLocal(item.due_at);
     fields.theme.dispatchEvent(new Event('change'));
@@ -198,26 +285,43 @@ document.addEventListener('DOMContentLoaded', () => {
   const clear=()=>{
     editing=null;fields.title.value='';fields.title.dataset.manuallyEdited='0';
     fields.published.checked=false;modeEl.value='snapshot';applyMode();
+    audienceEl.value='targeted';recipientsWrap.hidden=false;
+    recipientFilter.value='';
+    for(const cb of recipientBox.querySelectorAll('input[type="checkbox"]'))cb.checked=false;
     el('pslSave').textContent='💾 課題を保存';status('新規課題を作成できます。');
   };
   const refresh=async()=>{
     if(!opened)return;
     const box=el('pslList');box.replaceChildren(document.createTextNode('読込中…'));
-    const {data,error}=await client().from('picspeak_assignments').select('id,class_id,title,theme_id,mode,level,time_limit,pass_percent,pass_seconds,release_at,due_at,is_published,created_at').order('created_at',{ascending:false}).limit(250);
+    const {data,error}=await client().from('picspeak_assignments').select('id,class_id,title,theme_id,mode,level,time_limit,pass_percent,pass_seconds,release_at,due_at,is_published,created_at,audience_type').order('created_at',{ascending:false}).limit(250);
     if(error)throw error;drafts=data||[];box.replaceChildren();
+    targetsByAssignment=new Map();
+    if(drafts.length){
+      const {data:targets,error:te}=await client().from('picspeak_assignment_targets')
+        .select('assignment_id,student_id').in('assignment_id',drafts.map(a=>a.id)).limit(5000);
+      if(te)throw te;
+      for(const t of targets||[]){const ids=targetsByAssignment.get(t.assignment_id)||[];
+        ids.push(t.student_id);targetsByAssignment.set(t.assignment_id,ids);}
+    }
     if(!drafts.length){box.textContent='PicSpeakの課題はまだありません。';return;}
     drafts.forEach(a=>{
       const card=document.createElement('div');card.className='psl-card';
       const strong=document.createElement('strong');strong.textContent=a.title;
       const details=document.createElement('p');details.className='psl-muted';
-      details.textContent=[a.mode||'snapshot',a.theme_id,a.level,a.time_limit+'秒',a.is_published?'公開':'下書き','締切: '+new Date(a.due_at).toLocaleString('ja-JP')].join(' / ');
+      details.textContent=[a.mode||'snapshot',a.theme_id,a.level,a.time_limit+'秒',
+        a.audience_type==='class'?'クラス全員':'個別：'+(targetsByAssignment.get(a.id)||[]).length+'名',
+        a.is_published?'公開':'下書き','締切: '+new Date(a.due_at).toLocaleString('ja-JP')].join(' / ');
       const actions=document.createElement('div');actions.className='psl-actions';
       function btn(label,cb,kind=''){const b=document.createElement('button');b.type='button';b.textContent=label;b.className=kind;b.addEventListener('click',()=>void runBusy(cb));actions.append(b);}
-      btn('編集',async()=>openEdit(a));
+      btn('編集',async()=>{await openEdit(a);});
       btn(a.is_published?'非公開に戻す':'公開する',async()=>{
         const phrase=a.is_published?'この課題を非公開に戻しますか？':'この課題を生徒に公開しますか？';
         if(!confirm(phrase+'\n'+a.title))return;
         if(!a.is_published&&new Date(a.due_at)<=new Date())throw Error('締切を未来に変更してから公開してください。');
+        if(!a.is_published && a.audience_type!=='class' && !(targetsByAssignment.get(a.id)||[]).length)
+          throw Error('公開前に生徒を指定してください。');
+        if(!a.is_published && a.audience_type==='class'
+          && !confirm('【再確認】クラス全員に表示されます。個別テストでは使わないでください。全員に公開しますか？'))return;
         const {data,error}=await client().from('picspeak_assignments').update({is_published:!a.is_published}).eq('id',a.id).select('id').single();
         if(error)throw error;if(!data)throw Error('更新を確認できません。');
         status(a.is_published?'非公開に戻しました。':'生徒への公開を設定しました。');await refresh();
@@ -241,7 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
       sb.from('picspeak_attempts').select('student_id,score_raw,score_percent,completion_percent,wpm,duration_seconds,recorded_at').eq('assignment_id',a.id).order('recorded_at',{ascending:false}).limit(5000)
     ]);
     if(merr)throw merr;if(aerr)throw aerr;
-    const ids=[...new Set((members||[]).map(x=>x.student_id))];
+    const allIds=[...new Set((members||[]).map(x=>x.student_id))];
+    const ids=a.audience_type==='class'?allIds:
+      allIds.filter(id=>(targetsByAssignment.get(a.id)||[]).includes(id));
     let names=[];
     for(let start=0;start<ids.length;start+=100){const {data,error}=await sb.from('profiles').select('id,display_name').in('id',ids.slice(start,start+100));if(error)throw error;names.push(...(data||[]));}
     const nameById=new Map(names.map(p=>[p.id,p.display_name||p.id]));
@@ -278,11 +384,28 @@ document.addEventListener('DOMContentLoaded', () => {
   el('pslSave').addEventListener('click',()=>void runBusy(async()=>{
     const value=payload();
     if(editing&&value.class_id!==editing.class_id)throw Error('編集中は配布先クラスを変更できません。');
+    if(value.audience_type==='targeted' && recipientClassId!==value.class_id)
+      throw Error('対象クラスの生徒一覧を読み込んでください。');
+    const selected=value.audience_type==='targeted'?selectedRecipientIds():[];
+    if(value.audience_type==='targeted'&&!selected.length)
+      throw Error('個別配布では生徒を1名以上選んでください。');
+    const changed=editing&&(value.audience_type!==editing.audience_type||
+      (value.audience_type==='targeted'&&sortedIds(selected)!==sortedIds(editing.student_ids||[])));
+    if(editing?.is_published && changed)
+      throw Error('公開中の配布先は変更できません。先に非公開に戻してください。');
     const query=editing?client().from('picspeak_assignments').update(value).eq('id',editing.id)
       :client().from('picspeak_assignments').insert({...value,is_published:false});
     const {data,error}=await query.select('id').single();if(error)throw error;
-    editing={id:data.id,class_id:value.class_id};el('pslSave').textContent='💾 変更を保存';
-    status('課題を保存しました。公開は課題一覧から操作できます。');await refresh();
+    if(!editing?.is_published){
+      const {error:recError}=await client().rpc('picspeak_set_assignment_recipients',{
+        p_assignment_id:data.id,p_audience_type:value.audience_type,p_student_ids:selected
+      });
+      if(recError)throw Error('課題は下書き保存されましたが、配布先の保存に失敗: '+recError.message);
+    }
+    editing={id:data.id,class_id:value.class_id,audience_type:value.audience_type,
+      student_ids:selected,is_published:Boolean(editing?.is_published)};
+    el('pslSave').textContent='💾 変更を保存';
+    status('課題と配布先を保存しました。公開は課題一覧から操作できます。');await refresh();
   }));
   el('pslNew').addEventListener('click',clear);
   el('pslReload').addEventListener('click',()=>void runBusy(refresh));
@@ -291,7 +414,9 @@ document.addEventListener('DOMContentLoaded', () => {
   opener.addEventListener('click',()=>{
     opened=true;
     // Preserve compatibility with the existing class dropdown and catalog loaders.
-    window.setTimeout(()=>void runBusy(refresh),350);
+    window.setTimeout(()=>{
+      void runBusy(async()=>{await refresh();await loadRecipients(fields.classId.value);});
+    },450);
   });
   // Old review area and checkbox stay as preview-only; publication is deliberate via the task list.
   if(oldReview)oldReview.insertAdjacentText('beforebegin','\n公開操作は下の PicSpeak β 課題一覧から行います。');
