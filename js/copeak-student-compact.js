@@ -99,10 +99,89 @@
   @media(max-width:710px){#csoBoard .cso-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#csoBoard .cso-top{align-items:flex-start}#csoBoard .cso-tile{min-height:94px}body.cso-enabled .student-progress-hero{padding:13px!important}#csoBoard{padding:12px}}
   @media(max-width:550px){#csoModal{padding:8px}#csoModal .cso-dialog{border-radius:14px;max-height:95dvh}#csoModal .cso-modalbody{padding:12px}#csoModal .cso-dialogtop{padding:12px}#csoModal .cso-source .psl-card{grid-template-columns:1fr}#csoModal .cso-source .psl-card-actions{grid-column:1;grid-row:auto;flex-direction:row;flex-wrap:wrap}#csoModal .cso-source .psl-card-actions button{flex:1;min-width:110px}#csoModal .cso-source .psl-scores{grid-column:1}#csoBoard .cso-grid{gap:7px}#csoBoard .cso-tile{padding:9px}#csoBoard .cso-count{padding:7px 9px}}
   @media(prefers-reduced-motion:reduce){#csoBoard .cso-tile{transition:none}#csoModal{backdrop-filter:none}}
+
+  /* Student dashboard v2: polished surfaces instead of colored side stripes. */
+  #csoBoard .cso-tile{
+    isolation:isolate;overflow:hidden;min-height:111px;padding:12px 13px;
+    border:1px solid #cde8da;border-left:1px solid #cde8da;
+    border-radius:17px;
+    background:linear-gradient(132deg,#eaf8f1 0%,#f6fcf9 60%,#ffffff 100%);
+    box-shadow:0 2px 5px rgba(19,66,51,.035),0 8px 18px rgba(19,66,51,.045);
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+  }
+  #csoBoard .cso-tile::before{
+    content:"";position:absolute;right:-36px;top:-44px;width:122px;height:122px;
+    border-radius:50%;background:radial-gradient(circle,rgba(90,211,154,.17),transparent 68%);
+    z-index:-1;pointer-events:none;
+  }
+  #csoBoard .cso-tile.cso-picspeak{
+    background:linear-gradient(132deg,#fff0f5 0%,#fff8fb 60%,#ffffff 100%);
+    border-color:#f7d4e2;border-left-color:#f7d4e2;
+    box-shadow:0 2px 5px rgba(144,42,94,.035),0 8px 18px rgba(144,42,94,.05);
+  }
+  #csoBoard .cso-tile.cso-picspeak::before{
+    background:radial-gradient(circle,rgba(246,119,164,.18),transparent 68%);
+  }
+  #csoBoard .cso-tile.cso-done{opacity:1;background:linear-gradient(135deg,#f9fcfa,#ffffff);border-color:#e0e9e5}
+  #csoBoard .cso-tile.cso-done.cso-picspeak{background:linear-gradient(135deg,#fdf9fb,#fff);border-color:#f0e3e9}
+  #csoBoard .cso-tile.cso-overdue{border-color:#e7c1a7}
+  #csoBoard .cso-tile:hover{transform:translateY(-3px);box-shadow:0 12px 27px rgba(15,77,57,.10)}
+  #csoBoard .cso-tile.cso-picspeak:hover{box-shadow:0 12px 27px rgba(129,35,77,.12)}
+  #csoBoard .cso-tile:focus-visible{outline:3px solid #13ab80;outline-offset:2px}
+  #csoBoard .cso-tile.cso-picspeak:focus-visible{outline-color:#dc4e91}
+  #csoBoard .cso-mode{display:inline-flex;align-self:flex-start;max-width:100%;padding:5px 9px;border-radius:999px;
+    background:rgba(9,128,94,.09);color:#007e5d;font-size:10px;font-weight:850;letter-spacing:.055em}
+  #csoBoard .cso-picspeak .cso-mode{background:rgba(198,42,108,.095);color:#ab245e}
+  #csoBoard .cso-title{font-size:13px;line-height:1.38;color:#133e32;letter-spacing:-.01em}
+  #csoBoard .cso-picspeak .cso-title{color:#632b44}
+  #csoBoard .cso-picspeak .cso-action{color:#ad2863}
+  #csoBoard .cso-tally .cso-pic{background:#fff0f6;color:#9e2860}
+  #csoModal .cso-dialogtop{background:linear-gradient(122deg,#eaf9f0,#fff)}
+  #csoModal .cso-dialogtop.cso-picspeak{background:linear-gradient(122deg,#ffedf5,#fff)}
+  #csoModal .cso-picspeak .cso-modaltype{color:#b82463}
+  #csoModal .cso-source .psl-card{background:#fff9fc;border-color:#f2deea}
+  #csoModal .cso-source .psl-scores>div{background:#fff0f6;color:#86405e}
+  #csoModal .cso-source .psl-scores strong{color:#9c245a}
+  #csoModal .cso-source .psl-trend span{background:#ed75a5}
+  #csoModal .cso-source .start-btn,#csoModal .cso-source .psl-challenge{display:none!important}
+  #csoModal .cso-source .student-assignment-rank-mini{display:none!important}
+  #csoModal .cso-rank{border:1px solid #dcece5;background:#f8fcfa;border-radius:13px;padding:12px 14px;margin:0 0 13px}
+  #csoModal .cso-rank.cso-rank-pink{background:#fff8fb;border-color:#f5e0e9}
+  #csoModal .cso-rank-title{font-size:12px;font-weight:850;color:#315d4d;margin:0 0 7px}
+  #csoModal .cso-rank-pink .cso-rank-title{color:#993c65}
+  #csoModal .cso-rank .student-assignment-rank-mini{display:flex!important;gap:7px;flex-wrap:wrap;margin:0}
+  #csoModal .cso-rank-note{font-size:11px;color:#627a6f;margin:6px 0 0;line-height:1.45}
+  #csoModal .cso-rank-pink .cso-rank-note{color:#93677d}
+  #csoModal .cso-foot{
+    flex:none;padding:12px 18px max(12px,env(safe-area-inset-bottom));
+    border-top:1px solid #e8efeb;background:rgba(255,255,255,.98);
+    box-shadow:0 -6px 17px rgba(32,67,53,.04)
+  }
+  #csoModal .cso-launch{
+    display:block;width:100%;min-height:60px;border:0;border-radius:14px;
+    background:linear-gradient(110deg,#008e6d 0%,#12b987 100%);color:white;
+    font-family:inherit;font-size:clamp(16px,2vw,18px);font-weight:850;
+    letter-spacing:.01em;cursor:pointer;box-shadow:0 5px 14px rgba(0,142,109,.22);
+    animation:cso-soft-breathe 3.4s ease-in-out infinite;
+  }
+  #csoModal .cso-launch.cso-launch-pink{
+    background:linear-gradient(110deg,#d33074,#f0629d);
+    box-shadow:0 5px 14px rgba(211,48,116,.22);
+  }
+  #csoModal .cso-launch:hover{filter:brightness(1.04);transform:translateY(-1px)}
+  #csoModal .cso-launch:focus-visible{outline:3px solid #0f6b58;outline-offset:3px}
+  #csoModal .cso-launch:disabled{animation:none;box-shadow:none;filter:none;cursor:not-allowed;color:#677771;background:#e3eae7}
+  #csoModal .cso-foot-note{text-align:center;color:#6b8376;font-size:11px;margin:7px 0 0}
+  @keyframes cso-soft-breathe{0%,100%{box-shadow:0 5px 14px rgba(0,142,109,.19)}50%{box-shadow:0 6px 22px rgba(0,142,109,.31)}}
+  #csoModal .cso-launch.cso-launch-pink{animation-name:cso-pink-breathe}
+  @keyframes cso-pink-breathe{0%,100%{box-shadow:0 5px 14px rgba(211,48,116,.19)}50%{box-shadow:0 6px 22px rgba(211,48,116,.33)}}
+  @media(max-width:710px){#csoBoard .cso-tile{min-height:112px;padding:10px 11px}#csoModal .cso-foot{padding:10px 13px max(10px,env(safe-area-inset-bottom))}}
+  @media(max-width:550px){#csoBoard .cso-tile{border-radius:14px;min-height:114px}#csoModal .cso-launch{min-height:60px}#csoModal .cso-rank{padding:10px}}
+  @media(prefers-reduced-motion:reduce){#csoModal .cso-launch{animation:none!important}#csoBoard .cso-tile{transition:none}}
   `;
 
   const state = {filter:'todo',page:0,selected:null,items:[],modalOpen:false,restoreFocus:null,prevOverflow:''};
-  let board, grid, tally, totals, filters, pager, modal, modalBody, modalTitle, modalType, modalStatus, modalTop;
+  let board, grid, tally, totals, filters, pager, modal, modalBody, modalTitle, modalType, modalStatus, modalTop, modalFooter, modalLaunch, modalFootNote;
   let readingList, picList, rankPanel, rankWatch;
   let pendingRender = false;
   const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
@@ -151,7 +230,16 @@
     modalTop=make('header','cso-dialogtop');
     const summary=make('div');modalType=make('div','cso-modaltype');modalTitle=make('h2','cso-modaltitle');modalTitle.id='csoModalTitle';modalStatus=make('div','cso-modalstatus');summary.append(modalType,modalTitle,modalStatus);
     const close=make('button','cso-close','×');close.type='button';close.setAttribute('aria-label','詳細を閉じる');close.addEventListener('click',closeModal);
-    modalTop.append(summary,close);dialog.append(modalTop);modalBody=make('div','cso-modalbody');dialog.append(modalBody);modal.append(dialog);document.body.append(modal);
+    modalTop.append(summary,close);dialog.append(modalTop);modalBody=make('div','cso-modalbody');dialog.append(modalBody);
+    modalFooter=make('footer','cso-foot');modalLaunch=make('button','cso-launch','Copeakで音読を始める →');modalLaunch.type='button';
+    modalFootNote=make('p','cso-foot-note','タップして課題を始めましょう');modalFooter.append(modalLaunch,modalFootNote);dialog.append(modalFooter);
+    modal.append(dialog);document.body.append(modal);
+    modalLaunch.addEventListener('click',()=>{
+      const item=state.items.find(x=>x.key===state.selected);
+      const start=item?.source.querySelector('.start-btn,.psl-challenge');
+      if(!start||start.disabled)return;
+      start.click();closeModal();
+    });
     modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
     modal.addEventListener('keydown',e=>{
       if(e.key==='Escape'){e.preventDefault();closeModal();return;}
@@ -246,6 +334,22 @@
     modalType.textContent=item.type==='copeak'?'COPEAK · 音読の成果':'PICSPEAK · '+(item.mode||'画像描写')+'の成果';
     modalTitle.textContent=item.title;modalStatus.textContent=item.status;
     modalBody.replaceChildren();
+    const start=item.source.querySelector('.start-btn,.psl-challenge');
+    modalLaunch.classList.toggle('cso-launch-pink',item.type==='picspeak');
+    modalLaunch.disabled=!start||start.disabled;
+    modalLaunch.textContent=!start||start.disabled?'現在は開始できません':item.type==='picspeak'?'PicSpeakに挑戦する →':'Copeakで音読を始める →';
+    modalFootNote.textContent=modalLaunch.disabled?'締切や公開条件を確認してください':'タップして課題を始めましょう';
+    const rank=make('section','cso-rank'+(item.type==='picspeak'?' cso-rank-pink':''));
+    rank.append(make('h3','cso-rank-title','🏆 この課題のクラス内順位'));
+    if(item.type==='copeak'){
+      const existing=item.source.querySelector('.student-assignment-rank-mini');
+      if(existing)rank.append(existing.cloneNode(true));
+      else rank.append(make('p','cso-rank-note','順位はまだ取得できていません。提出・更新後に表示されます。'));
+      rank.append(make('p','cso-rank-note','Accuracy・WPM・練習回数の順位。未提出の場合は順位が付きません。'));
+    }else{
+      rank.append(make('p','cso-rank-note','PicSpeakのクラス順位は次の開発段階で対応予定です。成績・達成率は下で確認できます。'));
+    }
+    modalBody.append(rank);
     if(item.type==='copeak'){
       const quick=make('div','cso-quickstats');
       for(const [label,val] of [['Accuracy',item.accuracy===''?'—':`${Math.round(Number(item.accuracy)*10)/10}%`],['WPM',item.wpm===''?'—':`${Math.round(Number(item.wpm))}`]]){
@@ -269,7 +373,7 @@
       if(original.classList.contains('start-btn')||original.classList.contains('psl-challenge'))closeModal();
     });
     host.append(clone);modalBody.append(host);
-    modalBody.append(make('p','cso-hint','閉じる：× または Esc キー／課題を始める場合は上のボタンを押してください'));
+    modalBody.append(make('p','cso-hint','閉じる：× または Esc キー／画面下の大きなボタンから課題を始められます'));
   }
 
   function scheduleRender(){
