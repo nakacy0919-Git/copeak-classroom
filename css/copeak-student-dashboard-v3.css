@@ -1,4 +1,4 @@
-/* Copeak Classroom Student Dashboard v3 — genuine assignment data / purely visual layer */
+/* Copeak Classroom Student Dashboard v3.2 — genuine assignment data / purely visual layer */
 body.cso-v3 .student-progress-hero,
 body.cso-v3 .student-next-assignment,
 body.cso-v3 .student-metrics,
@@ -92,11 +92,12 @@ body.cso-v3 .student-main{min-width:0}
 #csoBoard .cso-state-done{color:#007c4c;background:#dff7e8}
 #csoBoard .cso-state-late{color:#a34b25;background:#fff0e4}
 #csoBoard .cso-state-next{color:#58718c;background:#eaf2f7}
-#csoBoard .cso-tile-middle{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;flex:1}
-#csoBoard .cso-tile-title{font-size:clamp(12px,1.05vw,14px);line-height:1.38;font-weight:850;letter-spacing:-.012em;color:#20353c;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;word-break:break-word}
-#csoBoard .cso-tile-illustration{display:flex;align-items:center;justify-content:center;flex:none;width:61px;height:61px;border-radius:19px;transform:rotate(-8deg);color:#0b9a65;background:radial-gradient(circle at 35% 30%,#e8fff4,#b6edd2);box-shadow:inset 0 -4px 12px rgba(15,151,95,.065),0 6px 14px rgba(0,105,65,.08);transition:transform .25s ease}
+#csoBoard .cso-tile-middle{display:flex;align-items:center;justify-content:space-between;gap:7px;min-width:0;flex:1}
+#csoBoard .cso-tile-title{flex:1;min-width:0;font-size:clamp(12px,1.05vw,14px);line-height:1.38;font-weight:700;letter-spacing:0;color:#20353c;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;word-break:break-word}
+#csoBoard .cso-tile-illustration{display:flex;align-items:center;justify-content:center;flex:none;width:38px;height:38px;border-radius:12px;transform:rotate(-3deg);color:#0b9a65;background:radial-gradient(circle at 35% 30%,#e8fff4,#b6edd2);box-shadow:inset 0 -4px 12px rgba(15,151,95,.065),0 6px 14px rgba(0,105,65,.08);transition:transform .25s ease}
+#csoBoard .cso-tile-illustration .cso-icon svg{width:22px;height:22px;stroke-width:1.8}
 #csoBoard .cso-pink .cso-tile-illustration{color:#e55a95;background:radial-gradient(circle at 35% 30%,#fff2f9,#fad2e5);box-shadow:inset 0 -4px 12px rgba(196,74,118,.06),0 6px 14px rgba(144,31,78,.08)}
-#csoBoard .cso-tile:hover .cso-tile-illustration{transform:translateY(-3px) rotate(-2deg)}
+#csoBoard .cso-tile:hover .cso-tile-illustration{transform:translateY(-2px) rotate(0)}
 #csoBoard .cso-tile-footer{display:flex;justify-content:space-between;align-items:center;gap:6px;padding-top:8px;border-top:1px solid #e9f1ed;color:#7a898c;font-size:10px}
 #csoBoard .cso-pink .cso-tile-footer{border-color:#f4eaf0}
 #csoBoard .cso-tile-data{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -109,23 +110,16 @@ body.cso-v3 .student-main{min-width:0}
 #csoBoard .cso-layout-watermark{display:none}
 /* Accessible, independently scrolling modal with large sticky CTA. */
 #csoModal{--accent:#078858;--accent2:#25ba7e;--tint:#e8f8ef;position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(23,39,47,.57);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
-#csoModal .cso-dialog{width:min(100%,1030px);max-height:min(94dvh,990px);min-width:0;border-radius:25px;background:#fff;box-shadow:0 30px 90px rgba(13,29,37,.24);border:1px solid rgba(255,255,255,.72);display:flex;flex-direction:column;overflow:hidden;animation:cso-rise .23s ease-out}
+#csoModal .cso-dialog{width:min(100%,960px);max-height:min(94dvh,990px);min-width:0;border-radius:25px;background:#fff;box-shadow:0 30px 90px rgba(13,29,37,.24);border:1px solid rgba(255,255,255,.72);display:flex;flex-direction:column;overflow:hidden;animation:cso-rise .23s ease-out}
 #csoModal .cso-modal-pink{--accent:#d7397b;--accent2:#f276a9;--tint:#fff1f7}
-#csoModal .cso-modal-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:22px 27px 16px;background:#fff;border-bottom:1px solid #edf1f2}
+#csoModal .cso-modal-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:18px 24px 14px;background:#fff;border-bottom:1px solid #edf1f2}
 #csoModal .cso-modaltype{font-size:11px;font-weight:850;color:var(--accent);letter-spacing:.07em;margin:0 0 6px}
 #csoModal .cso-dialogtitle{color:#152b36;font-size:clamp(19px,2.6vw,28px);line-height:1.24;font-weight:900;letter-spacing:-.04em;margin:0;word-break:break-word}
 #csoModal .cso-close{display:flex;align-items:center;justify-content:center;flex:none;height:40px;width:40px;border:1px solid #e5edef;border-radius:12px;background:#fff;color:#617780}
 #csoModal .cso-close:hover{background:#f3f7f8}
-#csoModal .cso-modalcontent{padding:18px 26px;overflow-y:auto;overscroll-behavior:contain;min-height:0}
-#csoModal .cso-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
-#csoModal .cso-details-left,#csoModal .cso-details-right{min-width:0;display:flex;flex-direction:column;gap:13px}
-#csoModal .cso-study-art{display:flex;align-items:center;justify-content:space-evenly;gap:20px;min-height:160px;padding:26px;border-radius:19px;color:#fff;background:radial-gradient(ellipse at 75% 10%,rgba(215,255,211,.66),transparent 58%),linear-gradient(120deg,#0a7958,#1cad7d 65%,#a7e1b7);overflow:hidden}
-#csoModal .cso-modal-pink .cso-study-art{background:radial-gradient(ellipse at 75% 10%,rgba(255,233,234,.66),transparent 58%),linear-gradient(120deg,#a62d70,#e25e9e 65%,#ffbdd8)}
-#csoModal .cso-study-art>.cso-icon{transform:rotate(-11deg);filter:drop-shadow(0 10px 10px rgba(10,53,45,.2))}
-#csoModal .cso-study-art .cso-icon svg{width:96px;height:96px;stroke-width:1.1}
-#csoModal .cso-study-art>div{display:flex;flex-direction:column;gap:8px;max-width:60%}
-#csoModal .cso-study-art>div span{font-size:10px;font-weight:750;letter-spacing:.16em;opacity:.82}
-#csoModal .cso-study-art>div strong{font-size:clamp(14px,1.8vw,20px);line-height:1.4;font-weight:880;letter-spacing:-.025em}
+#csoModal .cso-modalcontent{padding:15px 24px;overflow-y:auto;overscroll-behavior:contain;min-height:0}
+#csoModal .cso-modal-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+#csoModal .cso-details-left,#csoModal .cso-details-right{min-width:0;display:flex;flex-direction:column;gap:11px}
 #csoModal .cso-info-card,#csoModal .cso-perf,#csoModal .cso-modal-rank{border:1px solid #e9eff1;background:#fff;border-radius:17px;padding:17px}
 #csoModal h3{color:#19323b;font-size:14px;font-weight:850;margin:0 0 12px}
 #csoModal .cso-info-bits{display:flex;gap:7px;flex-wrap:wrap}
@@ -157,7 +151,7 @@ body.cso-v3 .student-main{min-width:0}
 #csoModal .cso-info-card .psl-detail{display:block!important;border:0!important;padding:0!important;margin-top:12px;grid-column:auto!important;color:#61757c;font-size:12px}
 #csoModal .cso-info-card .psl-trend{display:flex;align-items:flex-end;gap:5px;height:52px;margin-top:10px}
 #csoModal .cso-info-card .psl-trend span{display:block;border-radius:4px 4px 0 0;background:var(--accent2);width:17px;min-height:3px}
-#csoModal .cso-modalactions{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 26px max(14px,env(safe-area-inset-bottom));border-top:1px solid #ecf0f1;background:#fff;flex:none}
+#csoModal .cso-modalactions{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:12px 24px max(12px,env(safe-area-inset-bottom));border-top:1px solid #ecf0f1;background:#fff;flex:none}
 #csoModal .cso-launch-note{font-size:11px;color:#77908a}
 #csoModal .cso-primary{width:min(410px,65%);min-height:59px;display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(110deg,var(--accent),var(--accent2));border:1px solid rgba(255,255,255,.42);border-radius:16px;color:white;font-size:clamp(15px,1.7vw,18px);font-weight:900;letter-spacing:-.015em;box-shadow:0 7px 20px color-mix(in srgb,var(--accent) 22%,transparent);animation:cso-soft-glow 3.4s ease-in-out infinite;transition:transform .2s ease,filter .2s ease}
 #csoModal .cso-primary:hover{transform:translateY(-2px);filter:brightness(1.035)}
@@ -167,60 +161,61 @@ body.cso-v3 .student-main{min-width:0}
 @keyframes cso-rise{from{opacity:.6;transform:translateY(12px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:1100px){#csoBoard .cso-topgrid{grid-template-columns:minmax(0,1.5fr) minmax(220px,.85fr)}#csoBoard .cso-stats{gap:8px}#csoBoard .cso-metric{padding:12px 10px;gap:8px}#csoBoard .cso-metric-icon{width:36px;height:36px}#csoBoard .cso-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}#csoBoard .cso-tile{padding:12px}}
 @media(max-width:870px){#csoBoard .cso-topgrid{grid-template-columns:minmax(0,1fr)}#csoBoard .cso-feature{min-height:190px;padding:20px}#csoBoard .cso-feature-art{top:13%}#csoBoard .cso-rankmini{padding:12px 16px;min-height:0}#csoBoard .cso-rankmini .cso-side-eyebrow,#csoBoard .cso-rankmini .cso-side-caption{display:none}#csoBoard .cso-side-heading{margin:0}#csoBoard .cso-rank-summary{padding:7px 10px;margin-top:8px}#csoBoard .cso-rankdetails{padding-top:7px}#csoBoard .cso-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#csoBoard .cso-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:650px){#csoBoard .cso-pagehead{align-items:flex-start;flex-direction:column;gap:10px}#csoBoard .cso-headerprogress{width:100%;min-width:0;padding:10px 13px}#csoBoard .cso-task-head{align-items:flex-start;flex-direction:column;gap:9px}#csoBoard .cso-controls{width:100%;justify-content:space-between}#csoBoard .cso-source-select{max-width:44%;min-width:0}#csoBoard .cso-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#csoBoard .cso-tile{min-height:135px;padding:10px 9px;border-radius:14px}#csoBoard .cso-tile-illustration{height:42px;width:42px;border-radius:13px}#csoBoard .cso-tile-illustration svg{height:26px;width:26px}#csoBoard .cso-tile-kind{font-size:9px}#csoBoard .cso-tile-title{font-size:12px}#csoBoard .cso-tile-data{display:none}#csoBoard .cso-tile-footer{justify-content:flex-end}#csoBoard .cso-tabs{gap:2px}#csoBoard .cso-tab{padding:7px 10px;font-size:10px}#csoModal{padding:10px}#csoModal .cso-dialog{max-height:96dvh;border-radius:19px}#csoModal .cso-modal-top{padding:15px 16px 13px}#csoModal .cso-modalcontent{padding:14px 15px}#csoModal .cso-modal-grid{grid-template-columns:minmax(0,1fr);gap:10px}#csoModal .cso-criteria .student-pass-gauges{grid-template-columns:repeat(2,minmax(0,1fr))}#csoModal .cso-study-art{min-height:104px;padding:15px;gap:10px}#csoModal .cso-study-art .cso-icon svg{height:62px;width:62px}#csoModal .cso-info-card,#csoModal .cso-perf,#csoModal .cso-modal-rank{padding:13px}#csoModal .cso-modalactions{padding:11px 15px max(11px,env(safe-area-inset-bottom));flex-direction:column;gap:7px}#csoModal .cso-primary{width:100%;min-height:58px}#csoModal .cso-launch-note{font-size:10px}}
+@media(max-width:650px){#csoBoard .cso-pagehead{align-items:flex-start;flex-direction:column;gap:10px}#csoBoard .cso-headerprogress{width:100%;min-width:0;padding:10px 13px}#csoBoard .cso-task-head{align-items:flex-start;flex-direction:column;gap:9px}#csoBoard .cso-controls{width:100%;justify-content:space-between}#csoBoard .cso-source-select{max-width:44%;min-width:0}#csoBoard .cso-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#csoBoard .cso-tile{min-height:135px;padding:10px 9px;border-radius:14px}#csoBoard .cso-tile-illustration{height:30px;width:30px;border-radius:10px}#csoBoard .cso-tile-illustration .cso-icon svg{height:19px;width:19px}#csoBoard .cso-tile-kind{font-size:9px}#csoBoard .cso-tile-title{font-size:12px}#csoBoard .cso-tile-data{display:none}#csoBoard .cso-tile-footer{justify-content:flex-end}#csoBoard .cso-tabs{gap:2px}#csoBoard .cso-tab{padding:7px 10px;font-size:10px}#csoModal{padding:10px}#csoModal .cso-dialog{max-height:96dvh;border-radius:19px}#csoModal .cso-modal-top{padding:15px 16px 13px}#csoModal .cso-modalcontent{padding:14px 15px}#csoModal .cso-modal-grid{grid-template-columns:minmax(0,1fr);gap:10px}#csoModal .cso-criteria .student-pass-gauges{grid-template-columns:repeat(2,minmax(0,1fr))}#csoModal .cso-info-card,#csoModal .cso-perf,#csoModal .cso-modal-rank{padding:13px}#csoModal .cso-modalactions{padding:11px 15px max(11px,env(safe-area-inset-bottom));flex-direction:column;gap:7px}#csoModal .cso-primary{width:100%;min-height:58px}#csoModal .cso-launch-note{font-size:10px}}
 @media(max-width:380px){#csoBoard .cso-grid{grid-template-columns:1fr}#csoBoard .cso-feature{min-height:195px}#csoBoard .cso-feature-art{opacity:.35}#csoBoard .cso-feature-content{max-width:94%}#csoBoard .cso-metric{padding:9px;gap:6px}#csoBoard .cso-metric-value{font-size:18px}#csoBoard .cso-source-select{font-size:10px}}
 @media(prefers-reduced-motion:reduce){#csoBoard *,#csoModal *{animation:none!important;transition:none!important;scroll-behavior:auto!important}#csoModal{backdrop-filter:none;-webkit-backdrop-filter:none}}
 
-/* Copeak Student Dashboard v3.1: UI polish */
-
-#csoBoard .cso-tile-illustration {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  transform: rotate(-3deg);
-}
-
-#csoBoard .cso-tile-illustration .cso-icon svg {
-  width: 25px;
-  height: 25px;
-  stroke-width: 1.8;
-}
-
-#csoBoard .cso-tile:hover .cso-tile-illustration {
-  transform: translateY(-2px) rotate(0);
-}
-
-/* Remove unnecessary modal illustration */
-#csoModal .cso-study-art {
-  display: none !important;
-}
-
-/* Readable Japanese titles */
+/* Readable UD Gothic titles. Uses only locally available fonts and fallbacks. */
 #csoBoard .cso-tile-title,
 #csoBoard .cso-feature h2,
-#csoModal .cso-dialogtitle {
-  font-family:
-    "BIZ UDPGothic",
-    "BIZ UDゴシック",
-    "Yu Gothic UI",
-    "Hiragino Kaku Gothic ProN",
-    "Yu Gothic",
-    Meiryo,
-    sans-serif;
-  font-weight: 700;
-  letter-spacing: 0;
+#csoBoard .cso-identity h1,
+#csoBoard .cso-task-head h2,
+#csoModal .cso-dialogtitle,
+#csoModal .cso-info-card h3,
+#csoModal .cso-perf h3,
+#csoModal .cso-modal-rank h3 {
+  font-family:"BIZ UDPGothic","BIZ UDGothic","Yu Gothic","Noto Sans JP","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+  letter-spacing:0;
 }
 
-/* Smartphone adjustments */
-@media (max-width: 650px) {
-  #csoBoard .cso-tile-illustration {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+/* v3.2.1: prevent narrow pass-criteria labels and numeric scores from splitting. */
+#csoModal .cso-details-left { container-type:inline-size; }
+@container (max-width:390px) {
+  #csoModal .cso-criteria .student-pass-gauges {
+    grid-template-columns:repeat(2,minmax(0,1fr));
   }
-
-  #csoBoard .cso-tile-illustration .cso-icon svg {
-    width: 20px;
-    height: 20px;
-  }
+}
+#csoModal .cso-criteria .student-gauge-card {
+  padding:11px 9px 12px;
+}
+#csoModal .cso-criteria .student-gauge-head {
+  flex-direction:column;
+  align-items:flex-start;
+  gap:6px;
+}
+#csoModal .cso-criteria .student-gauge-label {
+  max-width:100%;
+  overflow:visible;
+  text-overflow:clip;
+  font-size:10px;
+  line-height:1.3;
+}
+#csoModal .cso-criteria .student-gauge-value {
+  display:block;
+  font-size:22px;
+  line-height:1.12;
+  white-space:nowrap;
+  overflow-wrap:normal;
+  word-break:normal;
+}
+#csoModal .cso-criteria .student-gauge-sub {
+  flex-wrap:wrap;
+  align-items:center;
+  gap:3px 6px;
+  line-height:1.4;
+  min-height:29px;
+}
+#csoModal .cso-criteria .student-gauge-goal-text,
+#csoModal .cso-criteria .student-gauge-gap {
+  white-space:nowrap;
 }

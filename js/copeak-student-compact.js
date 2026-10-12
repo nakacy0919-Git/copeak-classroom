@@ -1,4 +1,4 @@
-/* Copeak Classroom — Student Dashboard v3 / 2026-10-13
+/* Copeak Classroom — Student Dashboard v3.2 / 2026-10-13
  * Presentation-only layer. Reads existing access-controlled Copeak/PicSpeak cards.
  * Score calculation, launch, filtering permissions and database writes are unchanged.
  */
@@ -153,7 +153,7 @@
     b.setAttribute('aria-label',`${label(item)}、${item.title}、${standardStatus(item)}。詳細を開く`);
     const row=make('div','cso-tile-top');const kind=make('span','cso-tile-kind');kind.append(icon(glyph(item),16),make('span','',label(item)));
     const state=make('span','cso-state '+(item.done?'cso-state-done':item.overdue?'cso-state-late':item.upcoming?'cso-state-next':/練習中/.test(item.status)?'cso-state-practice':'cso-state-todo'),standardStatus(item));row.append(kind,state);b.append(row);
-    const inner=make('div','cso-tile-middle');inner.append(make('strong','cso-tile-title',item.title));const stamp=make('span','cso-tile-illustration');stamp.append(icon(glyph(item),40));inner.append(stamp);b.append(inner);
+    const inner=make('div','cso-tile-middle');inner.append(make('strong','cso-tile-title',item.title));const stamp=make('span','cso-tile-illustration');stamp.append(icon(glyph(item),22));inner.append(stamp);b.append(inner);
     const foot=make('div','cso-tile-footer');let detail=item.type==='picspeak'&&item.headline&&item.headline!=='—'?'最高 '+item.headline:item.deadline||'';
     foot.append(make('span','cso-tile-data',detail||'タップして詳細を確認'),make('span','cso-tile-link',item.done?'成果を見る ↗':'課題を見る ↗'));b.append(foot);
     b.addEventListener('click',()=>openModal(item,b));return b;
@@ -172,7 +172,9 @@
     const filtered=all.filter(r=>(main.status==='all'||(main.status==='done'?r.done:!r.done))&&(main.source==='all'||r.type===main.source));
     const ordered=filtered.slice().sort((a,b)=>Number(a.done)-Number(b.done));
     const limit=12,max=Math.max(0,Math.ceil(ordered.length/limit)-1);main.page=Math.min(Math.max(main.page,0),max);
-    root.querySelector('#csoStatusLine').textContent=`今すぐ取り組める ${todo.length} 件 · 全 ${all.length} 件から表示中 ${ordered.length} 件`;
+    const statusLabel=main.status==='done'?'完了した課題':main.status==='todo'?'未完了の課題':'すべての課題';
+    const sourceLabel=main.source==='copeak'?' · Copeak':main.source==='picspeak'?' · PicSpeak':'';
+    root.querySelector('#csoStatusLine').textContent=`${statusLabel}${sourceLabel} ${ordered.length} 件 · 全 ${all.length} 件`;
     grid.replaceChildren();for(const item of ordered.slice(main.page*limit,(main.page+1)*limit))grid.append(tile(item));
     if(!filtered.length)grid.append(make('p','cso-empty',main.status==='todo'?'未完了の課題はありません。':'該当する課題はありません。'));
     footer.replaceChildren();if(ordered.length>limit){const prev=make('button','cso-pagination','前へ');prev.type='button';prev.disabled=main.page<=0;prev.addEventListener('click',()=>{main.page--;render();});const cur=make('span','',`${main.page+1} / ${max+1} ページ`);const next=make('button','cso-pagination','次へ');next.type='button';next.disabled=main.page>=max;next.addEventListener('click',()=>{main.page++;render();});footer.append(prev,cur,next);}
@@ -194,7 +196,6 @@
     dialogNote.textContent=dialogCTA.disabled?'公開日時または締切をご確認ください':'タップして教材を開きます';
     dialogContent.replaceChildren();
     const summary=make('div','cso-modal-grid');const left=make('div','cso-details-left');const right=make('div','cso-details-right');
-    const art=make('div','cso-study-art');art.append(icon(glyph(item),82));const artCopy=make('div');artCopy.append(make('span','',pink?'PICTURE SPEAKING':'READING PRACTICE'),make('strong','',pink?'画像を見て、英語で伝えよう':'英語を声に出して、力を伸ばそう'));art.append(artCopy);left.append(art);
     const description=make('section','cso-info-card');description.append(make('h3','','学習について'));const bits=make('div','cso-info-bits');bits.append(chip('layers',label(item)),chip('check',standardStatus(item)));if(item.deadline)bits.append(chip('clock',item.deadline));else if(item.subtitle){const d=item.subtitle.match(/締切.*/)?.[0];if(d)bits.append(chip('clock',d));}description.append(bits);
     if(item.type==='copeak'){
       const panel=item.source.querySelector('.student-pass-panel');if(panel){const note=make('div','cso-criteria');note.append(make('h4','','合格基準と進捗'));note.append(panel.cloneNode(true));description.append(note);}
