@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div id="pslGradebook" hidden>
       <h3>成績一覧 <span id="pslGradeTitle"></span></h3>
       <div class="psl-actions"><button id="pslExport" type="button">CSVダウンロード</button><button id="pslCloseGrades" type="button">閉じる</button></div>
-      <div class="psl-table-scroll"><table><thead><tr><th>生徒</th><th>練習回数</th><th>最高達成率 / 最速タイム</th><th>Score (pt)</th><th>WPM</th><th>合格</th></tr></thead><tbody id="pslGradesBody"></tbody></table></div>
+      <div class="psl-table-scroll"><table><thead><tr><th>生徒</th><th>練習回数</th><th>最高達成率 / 最速タイム</th><th>累計発話単語数</th><th>WPM</th><th>合格</th></tr></thead><tbody id="pslGradesBody"></tbody></table></div>
     </div>
   `;
   closeButton.parentElement.insertAdjacentElement('beforebegin',section);
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // RLS limits both requests to the teacher's own classes.
     const [{data:members,error:merr},{data:attempts,error:aerr}]=await Promise.all([
       sb.from('class_members').select('student_id').eq('class_id',a.class_id).limit(2000),
-      sb.from('picspeak_attempts').select('student_id,score_raw,score_percent,completion_percent,wpm,duration_seconds,recorded_at').eq('assignment_id',a.id).order('recorded_at',{ascending:false}).limit(5000)
+      sb.from('picspeak_attempts').select('student_id,score_percent,completion_percent,word_count,wpm,duration_seconds,recorded_at').eq('assignment_id',a.id).order('recorded_at',{ascending:false}).limit(5000)
     ]);
     if(merr)throw merr;if(aerr)throw aerr;
     const allIds=[...new Set((members||[]).map(x=>x.student_id))];
@@ -362,13 +362,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const pass=rows.some(x=>a.mode==='picflash'?(x.duration_seconds!=null&&x.duration_seconds<=a.pass_seconds):(completionValue(x)!=null&&Number(completionValue(x))>=a.pass_percent));
       return {student_id:id,name:nameById.get(id)||id,attempts:rows.length,
         best:best?(a.mode==='picflash'?Number(best.duration_seconds):Number(completionValue(best))):null,
-        points:a.mode==='picflash'?null:(best?.score_raw??null),wpm:a.mode==='picflash'?null:(best?.wpm??null),pass};
+        words:a.mode==='picflash'||!rows.some(r=>r.word_count!=null)?null:rows.reduce((n,r)=>n+Math.max(0,Number(r.word_count)||0),0),wpm:a.mode==='picflash'?null:(best?.wpm??null),pass};
     });
     const tbody=el('pslGradesBody');tbody.replaceChildren();
     const th=val=>{const td=document.createElement('td');td.textContent=String(val??'—');return td;};
     for(const row of currentGradeRows){const tr=document.createElement('tr');
       tr.append(th(row.name),th(row.attempts+'回'),th(row.best==null?'—':row.best+(a.mode==='picflash'?'秒':'%')),
-        th(row.points==null?'—':row.points+'pt'),th(row.wpm),th(row.pass?'合格':'未達成'));
+        th(row.words==null?'—':row.words+'語'),th(row.wpm),th(row.pass?'合格':'未達成'));
       tbody.append(tr);}
     el('pslGradeTitle').textContent=a.title+'（'+currentGradeRows.length+'名）';
     el('pslGradebook').hidden=false;el('pslGradebook').scrollIntoView({behavior:'smooth'});
@@ -376,8 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const csvEscape=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const exportCSV=()=>{
     if(!activeGrade)return;
-    const headers=['生徒ID','氏名','練習回数','最高達成率 (%) / PIC FLASH最速(秒)','Score (pt)','WPM','合格'];
-    const data=[headers,...currentGradeRows.map(x=>[x.student_id,x.name,x.attempts,x.best,x.points,x.wpm,x.pass?'合格':'未達成'])];
+    const headers=['生徒ID','氏名','練習回数','最高達成率 (%) / PIC FLASH最速(秒)','累計発話単語数 (語)','WPM','合格'];
+    const data=[headers,...currentGradeRows.map(x=>[x.student_id,x.name,x.attempts,x.best,x.words,x.wpm,x.pass?'合格':'未達成'])];
     const contents='\ufeff'+data.map(row=>row.map(csvEscape).join(',')).join('\r\n');
     const blob=new Blob([contents],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download='picspeak-results-'+activeGrade.id+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
