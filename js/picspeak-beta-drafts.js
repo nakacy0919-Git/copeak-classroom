@@ -200,15 +200,29 @@ document.addEventListener('DOMContentLoaded', () => {
     return new Date(d.getTime()-offset).toISOString().slice(0,16);
   };
   const getOptions=()=>Array.from(fields.theme.options).filter(o=>o.value).map(o=>[o.value,o.textContent]);
+  // The native SNAPSHOT catalog is populated separately, sometimes asynchronously.
+  // Cache only genuine SNAPSHOT IDs *before* switching this shared <select> to another mode.
+  // The old code could leave STORY or PIC FLASH options on screen when its catalog was empty.
+  const isSnapshotTheme=id=>/^(?:[0-9]{3,4}|theme_l2_[0-9]{3})$/i.test(id||'');
+  const snapshotOptionsNow=()=>getOptions().filter(([id])=>isSnapshotTheme(id));
+  const rememberSnapshotOptions=()=>{
+    const options=snapshotOptionsNow();
+    if(options.length && options.length>=pictureOptions.length) pictureOptions=options;
+  };
   const applyMode=()=>{
+    rememberSnapshotOptions();
     const mode=modeEl.value;
     const options=mode==='snapshot'?pictureOptions
       :mode==='story'?STORIES
       :mode==='picflash'?FLASH
       :MODE_LESSONS[mode];
-    if(options?.length){
+    // Clear stale selections even when the native SNAPSHOT catalog is still loading.
+    // Never allow a mode to display or save a lesson from a different mode.
+    if(Array.isArray(options)){
       const prev=fields.theme.value;
-      fields.theme.replaceChildren(...options.map(([v,t])=>new Option(t,v)));
+      fields.theme.replaceChildren(...(
+        options.length ? options : [['','SNAPSHOTの教材を読み込み中…']]
+      ).map(([v,t])=>new Option(t,v)));
       if(options.some(([v])=>v===prev)) fields.theme.value=prev;
     }
     fields.theme.dispatchEvent(new Event('change'));
@@ -226,10 +240,12 @@ document.addEventListener('DOMContentLoaded', () => {
   modeEl.addEventListener('change',applyMode);
   // Original catalog is filled asynchronously by the existing beta teacher module.
   const observer=new MutationObserver(()=>{
-    if(modeEl.value==='snapshot' && fields.theme.options.length>10 && !Array.from(fields.theme.options).some(o=>o.value.startsWith('mosaic_')||o.value.startsWith('oq_')||o.value.startsWith('detective_'))){pictureOptions=getOptions();}
+    // Native beta teacher can deliver the image catalog after page load. Keep it
+    // whenever SNAPSHOT option IDs appear, even if another mode is currently active.
+    rememberSnapshotOptions();
   });
   observer.observe(fields.theme,{childList:true});
-  pictureOptions=getOptions();
+  pictureOptions=snapshotOptionsNow();
   applyMode();
   fields.theme.addEventListener('change',()=>{
     if(!MODE_LESSONS[modeEl.value]||!fields.theme.value)return;
@@ -293,9 +309,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const clear=()=>{
     editing=null;fields.title.value='';fields.title.dataset.manuallyEdited='0';
     fields.published.checked=false;modeEl.value='snapshot';applyMode();
-    audienceEl.value='targeted';recipientsWrap.hidden=false;
+    // applyMode dispatches a theme change, which can auto-fill the old title.
+    // A fresh assignment must start with an empty title and no selected student.
+    fields.title.value='';fields.title.dataset.manuallyEdited='0';
+    audienceEl.value='targeted';audienceEl.dispatchEvent(new Event('change',{bubbles:true}));
     recipientFilter.value='';
     for(const cb of recipientBox.querySelectorAll('input[type="checkbox"]'))cb.checked=false;
+    // Set a fresh 7-day period, instead of inheriting the previous assignment dates.
+    const release=new Date();release.setMinutes(release.getMinutes()+5);release.setSeconds(0,0);
+    const due=new Date(release);due.setDate(due.getDate()+7);
+    fields.release.value=fmtLocal(release);fields.due.value=fmtLocal(due);
+    el('pslPassPercent').value='70';el('pslPassSeconds').value='90';
+    for(const [id,value] of [['pslPassCorrect',8],['pslPassReading',70],['pslPassPicture',70],['pslPassQA',1]]){
+      const input=document.getElementById(id);if(input)input.value=String(value);
+    }
     el('pslSave').textContent='💾 課題を保存';status('新規課題を作成できます。');
   };
   const refresh=async()=>{
@@ -333,6 +360,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const {data,error}=await client().from('picspeak_assignments').update({is_published:!a.is_published}).eq('id',a.id).select('id').single();
         if(error)throw error;if(!data)throw Error('更新を確認できません。');
         status(a.is_published?'非公開に戻しました。':'生徒への公開を設定しました。');await refresh();
+        // After confirmed publication, leave edit mode so the next assignment can
+        // be created without reloading. Do not clear an unrelated draft being edited.
+        if(!a.is_published && editing?.id===a.id){
+          clear();
+          status('公開が完了しました。新しい課題を作成できます。');
+        }
       });
       btn('成績を見る',async()=>{await showGrades(a);});
       btn('削除',async()=>{
