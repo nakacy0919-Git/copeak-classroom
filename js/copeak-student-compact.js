@@ -1,402 +1,233 @@
-/* Copeak Classroom | Student Focus Board
- * 2026-10-12: Compact first-screen assignments and keyboard-accessible detail modal.
- * Existing cards and their actual launch handlers remain the source of truth.
+/* Copeak Classroom — Student Dashboard v3 / 2026-10-13
+ * Presentation-only layer. Reads existing access-controlled Copeak/PicSpeak cards.
+ * Score calculation, launch, filtering permissions and database writes are unchanged.
  */
 (() => {
   'use strict';
+  if (window.__csoV3Loaded) return;
+  window.__csoV3Loaded = true;
+  const scriptUrl = document.currentScript?.src || new URL('js/copeak-student-compact.js', location.href).href;
+  const cssUrl = new URL('../css/copeak-student-dashboard-v3.css', scriptUrl);
+  const link = document.createElement('link');
+  link.rel = 'stylesheet'; link.href = cssUrl.href;
+  link.id = 'csoV3Styles';
+  document.head.append(link);
 
-  const css = `
-  #csoBoard, #csoModal {box-sizing:border-box;font-family:inherit}
-  #csoBoard *, #csoModal *{box-sizing:border-box}
-  #csoBoard [hidden], #csoModal [hidden]{display:none!important}
-  body.cso-enabled .student-next-assignment,
-  body.cso-enabled .student-metrics,
-  body.cso-enabled .student-roadmap,
-  body.cso-enabled .psl-student-section {display:none!important}
-  body.cso-enabled .student-progress-hero {padding:18px 22px!important;margin-bottom:10px!important;min-height:0!important;gap:15px!important}
-  body.cso-enabled .student-progress-copy h1{font-size:clamp(23px,2.7vw,32px)!important;line-height:1.15;margin:4px 0!important}
-  body.cso-enabled .student-progress-copy p{margin:4px 0!important;font-size:12px}
-  body.cso-enabled .student-progress-summary{padding:13px 16px!important;min-height:0!important}
-  #csoBoard{border:1px solid #d8e7e0;border-radius:19px;background:#fff;padding:18px 18px 13px;margin:0 0 12px;box-shadow:0 8px 25px rgba(20,64,49,.035);max-width:100%;min-width:0}
-  #csoBoard .cso-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
-  #csoBoard h2{margin:0;font-size:19px;line-height:1.3;color:#123e32;letter-spacing:-.035em}
-  #csoBoard .cso-eyebrow{display:block;color:#087b61;font-size:10px;font-weight:850;letter-spacing:.13em;margin-bottom:4px}
-  #csoBoard .cso-help{color:#6b7f77;font-size:11px;margin:3px 0 0}
-  #csoBoard .cso-counts{display:flex;gap:7px;align-items:stretch;flex-wrap:wrap}
-  #csoBoard .cso-count{display:flex;align-items:baseline;gap:6px;border-radius:10px;background:#f1f7f4;padding:9px 12px;color:#45695e;font-size:11px;font-weight:750;white-space:nowrap}
-  #csoBoard .cso-count strong{font-size:19px;line-height:1;color:#0c785d;font-variant-numeric:tabular-nums}
-  #csoBoard .cso-count.cso-urgent{background:#fff2e6;color:#ae6327}
-  #csoBoard .cso-count.cso-urgent strong{color:#ba5b17}
-  #csoBoard .cso-tally{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:12px 0 10px;color:#586c66;font-size:11px}
-  #csoBoard .cso-tally>span{padding:5px 9px;border-radius:7px;background:#f2f6f5}
-  #csoBoard .cso-tally .cso-read{background:#e9f7f1;color:#006f55}
-  #csoBoard .cso-tally .cso-pic{background:#eeefff;color:#4b47aa}
-  #csoBoard .cso-filters{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
-  #csoBoard button{cursor:pointer;font-family:inherit}
-  #csoBoard .cso-filter{border:1px solid #dce7e3;background:#fff;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:750;color:#56716a;white-space:nowrap}
-  #csoBoard .cso-filter[aria-pressed="true"]{background:#007e62;color:#fff;border-color:#007e62}
-  #csoBoard .cso-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0 9px}
-  #csoBoard .cso-tile{position:relative;min-width:0;width:100%;min-height:104px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid #d8e9e1;border-left:4px solid #009a71;background:#f6fcf9;display:flex;flex-direction:column;gap:5px;transition:transform .14s,box-shadow .14s,border-color .14s}
-  #csoBoard .cso-tile:hover,#csoBoard .cso-tile:focus-visible{transform:translateY(-2px);box-shadow:0 9px 18px rgba(0,79,62,.10);outline:2px solid #80c2ad;outline-offset:0}
-  #csoBoard .cso-tile.cso-picspeak{border-color:#dce0fd;border-left-color:#6661dc;background:#f7f7ff}
-  #csoBoard .cso-tile.cso-picspeak:hover,#csoBoard .cso-tile.cso-picspeak:focus-visible{outline-color:#adaaf3}
-  #csoBoard .cso-tile.cso-done{background:#fbfdfc;border-left-color:#a3b5ad;opacity:.82}
-  #csoBoard .cso-tile.cso-overdue{border-left-color:#e98443;background:#fffbf7}
-  #csoBoard .cso-mode{font-size:10px;line-height:1.2;font-weight:850;letter-spacing:.035em;color:#007e62;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #csoBoard .cso-picspeak .cso-mode{color:#5956b7}
-  #csoBoard .cso-title{color:#193d33;font-size:13px;line-height:1.35;font-weight:800;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;min-height:18px;word-break:break-word}
-  #csoBoard .cso-bottom{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-top:auto;font-size:10px;color:#61766c}
-  #csoBoard .cso-action{font-weight:800;color:#007c64;white-space:nowrap}
-  #csoBoard .cso-picspeak .cso-action{color:#5b53bb}
-  #csoBoard .cso-badge{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72%}
-  #csoBoard .cso-tile.cso-done .cso-action{color:#698178}
-  #csoBoard .cso-empty{grid-column:1/-1;text-align:center;color:#657a71;font-size:13px;padding:22px 14px;background:#f7faf9;border-radius:11px}
-  #csoBoard .cso-bottomrow{min-height:31px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-  #csoBoard .cso-page{display:flex;align-items:center;justify-content:center;gap:10px;font-size:11px;color:#63786f;margin:auto}
-  #csoBoard .cso-page button{border:1px solid #d7e5de;background:#fff;border-radius:7px;padding:6px 10px;font-size:12px;font-weight:700}
-  #csoBoard .cso-page button:disabled{opacity:.35;cursor:default}
-  #csoBoard .cso-ranking{border-top:1px solid #edf1ef;margin-top:9px;padding-top:9px;min-width:0}
-  #csoBoard .cso-ranking>summary{cursor:pointer;list-style:none;color:#527166;font-size:12px;font-weight:750;display:flex;align-items:center;gap:7px}
-  #csoBoard .cso-ranking>summary::-webkit-details-marker{display:none}
-  #csoBoard .cso-ranking>summary::before{content:'▸';font-size:12px;color:#0a8464}
-  #csoBoard .cso-ranking[open]>summary::before{content:'▾'}
-  #csoBoard .cso-ranking #studentReadingRankCard{margin:10px 0 0!important;padding:14px!important;box-shadow:none!important;border:1px solid #e6efea!important;max-width:100%}
-  #csoBoard .cso-ranking .student-rank-heading p{display:none}
-  #csoBoard .cso-ranking .student-rank-heading h2{font-size:15px}
-  #csoModal{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,28,24,.60);backdrop-filter:blur(4px)}
-  #csoModal[hidden]{display:none!important}
-  #csoModal .cso-dialog{width:min(850px,100%);max-height:min(92dvh,960px);display:flex;flex-direction:column;background:#fff;border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.25);overflow:hidden}
-  #csoModal .cso-dialogtop{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;border-bottom:1px solid #e1eae7;padding:17px 19px;background:linear-gradient(110deg,#f1faf6,#fff)}
-  #csoModal .cso-dialogtop.cso-picspeak{background:linear-gradient(110deg,#f1f0ff,#fff)}
-  #csoModal .cso-modaltype{font-size:11px;font-weight:850;color:#007c62;letter-spacing:.09em;margin-bottom:5px}
-  #csoModal .cso-picspeak .cso-modaltype{color:#5f57c9}
-  #csoModal .cso-modaltitle{font-size:clamp(17px,2.6vw,22px);line-height:1.3;font-weight:850;margin:0;color:#143a30;word-break:break-word}
-  #csoModal .cso-modalstatus{color:#6e8179;font-size:12px;margin-top:5px}
-  #csoModal .cso-close{flex:none;border:1px solid #d9e8e1;background:#fff;color:#315449;border-radius:10px;padding:8px 11px;font-size:18px;line-height:1;cursor:pointer}
-  #csoModal .cso-close:hover{background:#eef7f3}
-  #csoModal .cso-modalbody{padding:16px 19px 22px;overflow-y:auto;overscroll-behavior:contain;min-height:0}
-  #csoModal .cso-quickstats{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}
-  #csoModal .cso-quickstat{display:flex;gap:6px;align-items:baseline;background:#f1f7f4;border-radius:10px;padding:11px 14px;min-width:115px;color:#527167;font-size:12px}
-  #csoModal .cso-quickstat strong{font-size:20px;color:#00816a}
-  #csoModal .cso-source .student-assignment-card{margin:0!important;max-width:none!important}
-  #csoModal .cso-source .psl-card{border:1px solid #dce0f1;border-radius:12px;background:#f9faff;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,180px);gap:8px;align-items:center}
-  #csoModal .cso-source .psl-card>h3{margin:0;grid-column:1;font-size:17px;color:#223956}
-  #csoModal .cso-source .psl-card>.psl-chip{grid-column:1;justify-self:start;background:#e2e8f0;border-radius:20px;padding:4px 9px;font-size:11px}
-  #csoModal .cso-source .psl-card>.psl-chip.ok{background:#dcfce7;color:#166534}
-  #csoModal .cso-source .psl-subtitle{grid-column:1;color:#64748b;font-size:12px;margin:0}
-  #csoModal .cso-source .psl-scores{grid-column:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-  #csoModal .cso-source .psl-scores>div{text-align:center;background:#eef1fb;border-radius:9px;padding:10px 5px;font-size:11px;color:#5a6580}
-  #csoModal .cso-source .psl-scores strong{display:block;font-size:19px;color:#283d73}
-  #csoModal .cso-source .psl-card-actions{grid-column:2;grid-row:1 / span 4;display:flex;flex-direction:column;gap:9px}
-  #csoModal .cso-source .psl-card-actions button{border:0;border-radius:10px;background:#e8ecfa;color:#344f89;font-weight:800;padding:12px 10px;cursor:pointer}
-  #csoModal .cso-source .psl-card-actions .psl-challenge{background:#4e57d8;color:#fff}
-  #csoModal .cso-source .psl-card-actions button:disabled{background:#d3dae7;color:#8592a8;cursor:not-allowed}
-  #csoModal .cso-source .psl-detail{grid-column:1 / -1;border-top:1px solid #dce0ef;padding-top:10px;font-size:12px;color:#536577}
-  #csoModal .cso-source .psl-trend{display:flex;align-items:end;height:62px;gap:5px}
-  #csoModal .cso-source .psl-trend span{display:block;width:20px;min-height:3px;background:#818cf8;border-radius:4px 4px 0 0}
-  #csoModal .cso-hint{font-size:11px;color:#789086;margin:12px 0 0;text-align:center}
-  @media(max-width:900px){#csoBoard .cso-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-  @media(max-width:710px){#csoBoard .cso-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#csoBoard .cso-top{align-items:flex-start}#csoBoard .cso-tile{min-height:94px}body.cso-enabled .student-progress-hero{padding:13px!important}#csoBoard{padding:12px}}
-  @media(max-width:550px){#csoModal{padding:8px}#csoModal .cso-dialog{border-radius:14px;max-height:95dvh}#csoModal .cso-modalbody{padding:12px}#csoModal .cso-dialogtop{padding:12px}#csoModal .cso-source .psl-card{grid-template-columns:1fr}#csoModal .cso-source .psl-card-actions{grid-column:1;grid-row:auto;flex-direction:row;flex-wrap:wrap}#csoModal .cso-source .psl-card-actions button{flex:1;min-width:110px}#csoModal .cso-source .psl-scores{grid-column:1}#csoBoard .cso-grid{gap:7px}#csoBoard .cso-tile{padding:9px}#csoBoard .cso-count{padding:7px 9px}}
-  @media(prefers-reduced-motion:reduce){#csoBoard .cso-tile{transition:none}#csoModal{backdrop-filter:none}}
-
-  /* Student dashboard v2: polished surfaces instead of colored side stripes. */
-  #csoBoard .cso-tile{
-    isolation:isolate;overflow:hidden;min-height:111px;padding:12px 13px;
-    border:1px solid #cde8da;border-left:1px solid #cde8da;
-    border-radius:17px;
-    background:linear-gradient(132deg,#eaf8f1 0%,#f6fcf9 60%,#ffffff 100%);
-    box-shadow:0 2px 5px rgba(19,66,51,.035),0 8px 18px rgba(19,66,51,.045);
-    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+  const ICONS = {
+    book: '<path d="M12 6.2c-2.6-2-5.9-2.3-9-1.3v13.5c3.3-1.2 6.5-.7 9 1.2m0-13.4c2.6-2 5.9-2.3 9-1.3v13.5c-3.3-1.2-6.5-.7-9 1.2m0-13.4v13.4"/>',
+    photo: '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.7" cy="9" r="1.5"/><path d="m4 17 5.3-5 3.6 3 3-3 5 5"/>',
+    film: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 3v18M3 12h18"/>',
+    search: '<circle cx="10.7" cy="10.7" r="6.2"/><path d="m16 16 5 5"/>',
+    tiles: '<rect x="3" y="3" width="7" height="7" rx="1.3"/><rect x="14" y="3" width="7" height="7" rx="1.3"/><rect x="3" y="14" width="7" height="7" rx="1.3"/><rect x="14" y="14" width="7" height="7" rx="1.3"/>',
+    microphone: '<rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M6 11.5a6 6 0 0 0 12 0M12 17.5v4m-4 0h8"/>',
+    bolt: '<path d="m13.5 2-9 11h7l-1 9 9-12h-7z"/>',
+    crown: '<path d="m3 8 4 4 5-7 5 7 4-4-2 11H5z"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2"/>',
+    check: '<path d="m5 12 5 5L20 7"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
+    layers: '<path d="m12 3-9 5 9 5 9-5-9-5Zm-9 10 9 5 9-5m-18 5 9 5 9-5"/>',
+    sparkles: '<path d="m12 2 1.4 5.6L19 9l-5.6 1.4L12 16l-1.4-5.6L5 9l5.6-1.4L12 2Zm6 13 .8 2.3L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.7L18 15Z"/>',
+    x: '<path d="M5 5 19 19M19 5 5 19"/>'
+  };
+  const NAMES = {SNAPSHOT:'SNAPSHOT',MOSAIC:'MOSAIC',DETECTIVE:'DETECTIVE',ORALQUEST:'ORAL QUEST',STORY:'STORY',PICFLASH:'PIC FLASH'};
+  const make=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=String(text);return el;};
+  const icon=(name,size=20)=>{const wrap=make('span','cso-icon');wrap.setAttribute('aria-hidden','true');wrap.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||ICONS.book}</svg>`;return wrap;};
+  const num=(t)=>{const n=Number(t);return t!==''&&t!=null&&Number.isFinite(n)?n:null;};
+  const clean=(s)=>String(s||'').replace(/\s+/g,' ').trim();
+  const standardStatus=(row)=>row.done?'完了':row.upcoming?'公開前':row.overdue?'締切終了':/練習中|あと少し/.test(row.status)?'練習中':clean(row.status)||'未完了';
+  const label=(row)=>row.type==='copeak'?'Copeak · 音読':'PicSpeak · '+(NAMES[row.mode?.replace(/\s/g,'')]||row.mode||'画像描写');
+  const glyph=(row)=>row.type==='copeak'?'book':({SNAPSHOT:'photo',MOSAIC:'tiles',DETECTIVE:'search',ORALQUEST:'microphone',STORY:'film',PICFLASH:'bolt'})[row.mode?.replace(/\s/g,'')]||'photo';
+  const main={status:'todo',source:'all',page:0,selected:null,items:[],modal:false,activeTrigger:null,prevOverflow:'',focusKey:null};
+  let root,grid,nav,hero,mini,stats,footer,dialog,dialogContent,dialogTitle,dialogType,dialogClose,dialogCTA,dialogNote,rankingTarget,readingList,picList,rankObserver;
+  let observer,pending=false;
+  const readingId=(card)=>card.querySelector('.start-btn')?.dataset.id;
+  const identities=new WeakMap();let identityCounter=0;
+  const stableKey=(element,prefix)=>{if(!identities.has(element))identities.set(element,prefix+':'+(++identityCounter));return identities.get(element);};
+  function sourceRows(){
+    const rows=[];
+    readingList.querySelectorAll('.student-assignment-card').forEach((card,i)=>{
+      const key=card.dataset.status||'';
+      const status=clean(card.querySelector('.student-status-badge')?.textContent)||'未完了';
+      const rank=card.querySelector('.student-assignment-rank-mini');
+      const pct=card.querySelector('.student-pass-panel');
+      rows.push({key:'c:'+(readingId(card)||i),type:'copeak',title:clean(card.querySelector('.assignment-title')?.textContent)||'Copeak課題',status,
+        done:key==='done'||(!key&&/提出済み|完了|合格/.test(status)),upcoming:key==='upcoming'||/公開前/.test(status),overdue:key==='late'||/締切済み|締切終了/.test(status),
+        source:card,rank,pct,acc:card.dataset.csoAccuracy||'',wpm:card.dataset.csoWpm||'',deadline:clean(card.querySelector('.student-deadline-inline')?.textContent)||''});
+    });
+    picList?.querySelectorAll('.psl-card').forEach((card,i)=>{
+      const status=clean(card.querySelector('.psl-chip')?.textContent)||'未完了';
+      const subtitle=clean(card.querySelector('.psl-subtitle')?.textContent)||'';
+      const mode=clean(subtitle.split(/[•·]/)[0]).toUpperCase();
+      rows.push({key:card.dataset.csoAssignmentId?('p:'+card.dataset.csoAssignmentId):stableKey(card,'p'),type:'picspeak',title:clean(card.querySelector('h3')?.textContent)||'PicSpeak課題',mode,subtitle,status,
+        done:/合格/.test(status),upcoming:/公開前/.test(status),overdue:/締切済み|締切終了/.test(status),source:card,
+        headline:clean(card.querySelector('.psl-scores strong')?.textContent)});
+    });
+    return rows;
   }
-  #csoBoard .cso-tile::before{
-    content:"";position:absolute;right:-36px;top:-44px;width:122px;height:122px;
-    border-radius:50%;background:radial-gradient(circle,rgba(90,211,154,.17),transparent 68%);
-    z-index:-1;pointer-events:none;
+  function liftRank(){
+    const existing=document.getElementById('studentReadingRankCard');
+    if(existing&&rankingTarget&&existing.parentElement!==rankingTarget){rankingTarget.append(existing);rankObserver?.disconnect();rankObserver=null;}
   }
-  #csoBoard .cso-tile.cso-picspeak{
-    background:linear-gradient(132deg,#fff0f5 0%,#fff8fb 60%,#ffffff 100%);
-    border-color:#f7d4e2;border-left-color:#f7d4e2;
-    box-shadow:0 2px 5px rgba(144,42,94,.035),0 8px 18px rgba(144,42,94,.05);
-  }
-  #csoBoard .cso-tile.cso-picspeak::before{
-    background:radial-gradient(circle,rgba(246,119,164,.18),transparent 68%);
-  }
-  #csoBoard .cso-tile.cso-done{opacity:1;background:linear-gradient(135deg,#f9fcfa,#ffffff);border-color:#e0e9e5}
-  #csoBoard .cso-tile.cso-done.cso-picspeak{background:linear-gradient(135deg,#fdf9fb,#fff);border-color:#f0e3e9}
-  #csoBoard .cso-tile.cso-overdue{border-color:#e7c1a7}
-  #csoBoard .cso-tile:hover{transform:translateY(-3px);box-shadow:0 12px 27px rgba(15,77,57,.10)}
-  #csoBoard .cso-tile.cso-picspeak:hover{box-shadow:0 12px 27px rgba(129,35,77,.12)}
-  #csoBoard .cso-tile:focus-visible{outline:3px solid #13ab80;outline-offset:2px}
-  #csoBoard .cso-tile.cso-picspeak:focus-visible{outline-color:#dc4e91}
-  #csoBoard .cso-mode{display:inline-flex;align-self:flex-start;max-width:100%;padding:5px 9px;border-radius:999px;
-    background:rgba(9,128,94,.09);color:#007e5d;font-size:10px;font-weight:850;letter-spacing:.055em}
-  #csoBoard .cso-picspeak .cso-mode{background:rgba(198,42,108,.095);color:#ab245e}
-  #csoBoard .cso-title{font-size:13px;line-height:1.38;color:#133e32;letter-spacing:-.01em}
-  #csoBoard .cso-picspeak .cso-title{color:#632b44}
-  #csoBoard .cso-picspeak .cso-action{color:#ad2863}
-  #csoBoard .cso-tally .cso-pic{background:#fff0f6;color:#9e2860}
-  #csoModal .cso-dialogtop{background:linear-gradient(122deg,#eaf9f0,#fff)}
-  #csoModal .cso-dialogtop.cso-picspeak{background:linear-gradient(122deg,#ffedf5,#fff)}
-  #csoModal .cso-picspeak .cso-modaltype{color:#b82463}
-  #csoModal .cso-source .psl-card{background:#fff9fc;border-color:#f2deea}
-  #csoModal .cso-source .psl-scores>div{background:#fff0f6;color:#86405e}
-  #csoModal .cso-source .psl-scores strong{color:#9c245a}
-  #csoModal .cso-source .psl-trend span{background:#ed75a5}
-  #csoModal .cso-source .start-btn,#csoModal .cso-source .psl-challenge{display:none!important}
-  #csoModal .cso-source .student-assignment-rank-mini{display:none!important}
-  #csoModal .cso-rank{border:1px solid #dcece5;background:#f8fcfa;border-radius:13px;padding:12px 14px;margin:0 0 13px}
-  #csoModal .cso-rank.cso-rank-pink{background:#fff8fb;border-color:#f5e0e9}
-  #csoModal .cso-rank-title{font-size:12px;font-weight:850;color:#315d4d;margin:0 0 7px}
-  #csoModal .cso-rank-pink .cso-rank-title{color:#993c65}
-  #csoModal .cso-rank .student-assignment-rank-mini{display:flex!important;gap:7px;flex-wrap:wrap;margin:0}
-  #csoModal .cso-rank-note{font-size:11px;color:#627a6f;margin:6px 0 0;line-height:1.45}
-  #csoModal .cso-rank-pink .cso-rank-note{color:#93677d}
-  #csoModal .cso-foot{
-    flex:none;padding:12px 18px max(12px,env(safe-area-inset-bottom));
-    border-top:1px solid #e8efeb;background:rgba(255,255,255,.98);
-    box-shadow:0 -6px 17px rgba(32,67,53,.04)
-  }
-  #csoModal .cso-launch{
-    display:block;width:100%;min-height:60px;border:0;border-radius:14px;
-    background:linear-gradient(110deg,#008e6d 0%,#12b987 100%);color:white;
-    font-family:inherit;font-size:clamp(16px,2vw,18px);font-weight:850;
-    letter-spacing:.01em;cursor:pointer;box-shadow:0 5px 14px rgba(0,142,109,.22);
-    animation:cso-soft-breathe 3.4s ease-in-out infinite;
-  }
-  #csoModal .cso-launch.cso-launch-pink{
-    background:linear-gradient(110deg,#d33074,#f0629d);
-    box-shadow:0 5px 14px rgba(211,48,116,.22);
-  }
-  #csoModal .cso-launch:hover{filter:brightness(1.04);transform:translateY(-1px)}
-  #csoModal .cso-launch:focus-visible{outline:3px solid #0f6b58;outline-offset:3px}
-  #csoModal .cso-launch:disabled{animation:none;box-shadow:none;filter:none;cursor:not-allowed;color:#677771;background:#e3eae7}
-  #csoModal .cso-foot-note{text-align:center;color:#6b8376;font-size:11px;margin:7px 0 0}
-  @keyframes cso-soft-breathe{0%,100%{box-shadow:0 5px 14px rgba(0,142,109,.19)}50%{box-shadow:0 6px 22px rgba(0,142,109,.31)}}
-  #csoModal .cso-launch.cso-launch-pink{animation-name:cso-pink-breathe}
-  @keyframes cso-pink-breathe{0%,100%{box-shadow:0 5px 14px rgba(211,48,116,.19)}50%{box-shadow:0 6px 22px rgba(211,48,116,.33)}}
-  @media(max-width:710px){#csoBoard .cso-tile{min-height:112px;padding:10px 11px}#csoModal .cso-foot{padding:10px 13px max(10px,env(safe-area-inset-bottom))}}
-  @media(max-width:550px){#csoBoard .cso-tile{border-radius:14px;min-height:114px}#csoModal .cso-launch{min-height:60px}#csoModal .cso-rank{padding:10px}}
-  @media(prefers-reduced-motion:reduce){#csoModal .cso-launch{animation:none!important}#csoBoard .cso-tile{transition:none}}
-  `;
-
-  const state = {filter:'todo',page:0,selected:null,items:[],modalOpen:false,restoreFocus:null,prevOverflow:''};
-  let board, grid, tally, totals, filters, pager, modal, modalBody, modalTitle, modalType, modalStatus, modalTop, modalFooter, modalLaunch, modalFootNote;
-  let readingList, picList, rankPanel, rankWatch;
-  let pendingRender = false;
-  const make=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
-  const short=(s,n=115)=>String(s||'').slice(0,n);
-  const M_LABEL={SNAPSHOT:'SNAPSHOT',MOSAIC:'MOSAIC',DETECTIVE:'DETECTIVE',ORALQUEST:'ORAL QUEST',STORY:'STORY',PICFLASH:'PIC FLASH'};
-
-  function mountBoard(){
+  function build(){
     readingList=document.getElementById('assignmentList');
-    const hero=document.querySelector('.student-progress-hero');
-    if(!readingList||!hero)return false;
-    const st=make('style');st.id='csoStyles';st.textContent=css;document.head.append(st);
-    board=make('section');board.id='csoBoard';board.setAttribute('aria-label','課題一覧・学習状況');
-    const head=make('div','cso-top');
-    const title=make('div');title.append(make('span','cso-eyebrow','YOUR TASKS'),make('h2','','取り組む課題'),make('p','cso-help','カードを押すと成績と挑戦ボタンが表示されます'));
-    head.append(title);totals=make('div','cso-counts');head.append(totals);board.append(head);
-    tally=make('div','cso-tally');board.append(tally);
-    const filterWrap=make('div','cso-filters');
-    for(const [value,label] of [['todo','未完了'],['done','完了・合格'],['all','すべて']]){
-      const b=make('button','cso-filter',label);b.type='button';b.dataset.filter=value;b.setAttribute('aria-pressed','false');
-      b.addEventListener('click',()=>{state.filter=value;state.page=0;render();});filterWrap.append(b);
-    }
-    board.append(filterWrap);filters=filterWrap;
-    grid=make('div','cso-grid');board.append(grid);
-    pager=make('div','cso-bottomrow');board.append(pager);
-    const rank=make('details','cso-ranking');rank.id='csoRanking';
-    rank.append(make('summary','','📊 課題別クラス順位を見る（必要なときだけ開く）'));
-    rankPanel=make('div');rank.append(rankPanel);board.append(rank);
-    hero.insertAdjacentElement('afterend',board);
-    buildModal();document.body.classList.add('cso-enabled');
-    moveRanking();
-    if(!document.getElementById('studentReadingRankCard')){
-      rankWatch=new MutationObserver(()=>moveRanking());rankWatch.observe(document.body,{childList:true,subtree:false});
-      const metrics=document.querySelector('.student-metrics');if(metrics?.parentElement && metrics.parentElement!==document.body){rankWatch.disconnect();rankWatch.observe(metrics.parentElement,{childList:true});}
-    }
-    return true;
-  }
-
-  function moveRanking(){
-    const rank=document.getElementById('studentReadingRankCard');
-    if(rank&&rankPanel&&rank.parentElement!==rankPanel){rankPanel.append(rank);rankWatch?.disconnect();rankWatch=null;}
-  }
-
-  function buildModal(){
-    modal=make('div');modal.id='csoModal';modal.hidden=true;modal.setAttribute('aria-hidden','true');
-    const dialog=make('section','cso-dialog');dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','csoModalTitle');
-    modalTop=make('header','cso-dialogtop');
-    const summary=make('div');modalType=make('div','cso-modaltype');modalTitle=make('h2','cso-modaltitle');modalTitle.id='csoModalTitle';modalStatus=make('div','cso-modalstatus');summary.append(modalType,modalTitle,modalStatus);
-    const close=make('button','cso-close','×');close.type='button';close.setAttribute('aria-label','詳細を閉じる');close.addEventListener('click',closeModal);
-    modalTop.append(summary,close);dialog.append(modalTop);modalBody=make('div','cso-modalbody');dialog.append(modalBody);
-    modalFooter=make('footer','cso-foot');modalLaunch=make('button','cso-launch','Copeakで音読を始める →');modalLaunch.type='button';
-    modalFootNote=make('p','cso-foot-note','タップして課題を始めましょう');modalFooter.append(modalLaunch,modalFootNote);dialog.append(modalFooter);
-    modal.append(dialog);document.body.append(modal);
-    modalLaunch.addEventListener('click',()=>{
-      const item=state.items.find(x=>x.key===state.selected);
-      const start=item?.source.querySelector('.start-btn,.psl-challenge');
+    const top=document.querySelector('.student-progress-hero');
+    if(!readingList||!top)return false;
+    root=make('section','cso-dashboard');root.id='csoBoard';root.setAttribute('aria-label','Copeak Classroom 学習ダッシュボード');
+    const heading=make('header','cso-pagehead');
+    const identity=make('div','cso-identity');identity.append(make('span','cso-overline','MY LEARNING'),make('h1','','マイ・ダッシュボード'));
+    const overview=make('div','cso-headerprogress');overview.append(make('span','','学習の進捗'));const gauge=make('div','cso-hprogress');const bar=make('span');bar.id='csoHeaderBar';gauge.append(bar);overview.append(gauge,make('strong',''));overview.querySelector('strong').id='csoHeaderRatio';
+    heading.append(identity,overview);root.append(heading);
+    const topGrid=make('div','cso-topgrid');hero=make('div','cso-feature');mini=make('div','cso-rankmini');topGrid.append(hero,mini);root.append(topGrid);
+    stats=make('div','cso-stats');root.append(stats);
+    const taskTop=make('div','cso-task-head');const title=make('div');title.append(make('span','cso-overline','YOUR ASSIGNMENTS'),make('h2','','課題一覧'));const controls=make('div','cso-controls');nav=make('div','cso-tabs');nav.setAttribute('role','group');nav.setAttribute('aria-label','課題の絞り込み');
+    for(const [id,text] of [['todo','未完了'],['done','完了'],['all','すべて']]){const b=make('button','cso-tab',text);b.type='button';b.dataset.status=id;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{main.status=id;main.page=0;render();});nav.append(b);}
+    const source=make('select','cso-source-select');source.setAttribute('aria-label','課題の種類');for(const [id,text] of [['all','すべての種類'],['copeak','Copeak 音読'],['picspeak','PicSpeak 画像描写']]){const o=make('option','',text);o.value=id;source.append(o);}source.addEventListener('change',()=>{main.source=source.value;main.page=0;render();});source.id='csoSourceSelect';
+    controls.append(nav,source);taskTop.append(title,controls);root.append(taskTop);
+    const statusline=make('div','cso-statusline');statusline.id='csoStatusLine';statusline.setAttribute('role','status');root.append(statusline);
+    grid=make('div','cso-grid');root.append(grid);
+    footer=make('div','cso-footer');root.append(footer);
+    root.insertAdjacentElement('beforeend',make('div','cso-layout-watermark','')); // no visible decoration; reserved for layout
+    top.insertAdjacentElement('beforebegin',root);
+    const layer=make('div','cso-modal');layer.id='csoModal';layer.hidden=true;layer.setAttribute('aria-hidden','true');
+    dialog=make('section','cso-dialog');dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','csoDialogTitle');
+    const modalTop=make('div','cso-modal-top');const left=make('div');dialogType=make('div','cso-modaltype');dialogTitle=make('h2','cso-dialogtitle');dialogTitle.id='csoDialogTitle';left.append(dialogType,dialogTitle);dialogClose=make('button','cso-close');dialogClose.type='button';dialogClose.setAttribute('aria-label','閉じる');dialogClose.append(icon('x',22));dialogClose.addEventListener('click',closeModal);modalTop.append(left,dialogClose);dialog.append(modalTop);
+    dialogContent=make('div','cso-modalcontent');dialog.append(dialogContent);
+    const actions=make('div','cso-modalactions');dialogNote=make('span','cso-launch-note','課題へ進みます');dialogCTA=make('button','cso-primary');dialogCTA.type='button';dialogCTA.append(icon('arrow',22),make('span','','学習を始める'));actions.append(dialogNote,dialogCTA);dialog.append(actions);
+    dialogCTA.addEventListener('click',()=>{
+      const item=main.items.find(v=>v.key===main.selected);const start=item?.source?.querySelector('.start-btn,.psl-challenge');
       if(!start||start.disabled)return;
       start.click();closeModal();
     });
-    modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
-    modal.addEventListener('keydown',e=>{
+    layer.append(dialog);document.body.append(layer);layer.addEventListener('click',e=>{if(e.target===layer)closeModal();});
+    layer.addEventListener('keydown',e=>{
       if(e.key==='Escape'){e.preventDefault();closeModal();return;}
       if(e.key!=='Tab')return;
-      const active=[...dialog.querySelectorAll('button:not(:disabled),select:not(:disabled),a[href],input:not(:disabled),[tabindex]:not([tabindex="-1"])')].filter(x=>x.getClientRects().length);
-      if(!active.length)return;
-      const first=active[0],last=active[active.length-1];
-      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
-      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+      const nodes=[...dialog.querySelectorAll('button:not(:disabled),select:not(:disabled),a[href],input:not(:disabled),[tabindex]:not([tabindex="-1"])')].filter(n=>n.getClientRects().length);
+      if(!nodes.length)return;
+      if(e.shiftKey&&document.activeElement===nodes[0]){e.preventDefault();nodes[nodes.length-1].focus();}
+      else if(!e.shiftKey&&document.activeElement===nodes[nodes.length-1]){e.preventDefault();nodes[0].focus();}
     });
+    document.body.classList.add('cso-v3');
+    liftRank();
+    if(!document.getElementById('studentReadingRankCard')){
+      rankObserver=new MutationObserver(liftRank);rankObserver.observe(document.querySelector('#mainApp')||document.body,{childList:true,subtree:true});
+    }
+    return true;
   }
-
-  function closeModal(){
-    if(!state.modalOpen)return;
-    state.modalOpen=false;modal.hidden=true;modal.setAttribute('aria-hidden','true');document.body.style.overflow=state.prevOverflow;
-    state.restoreFocus?.isConnected&&state.restoreFocus.focus();state.restoreFocus=null;
+  function metricBox(glyphName,caption,value,sub){
+    const el=make('div','cso-metric');const circle=make('span','cso-metric-icon');circle.append(icon(glyphName,22));const copy=make('div','cso-metric-text');copy.append(make('span','cso-metric-caption',caption),make('strong','cso-metric-value',value));if(sub)copy.append(make('span','cso-metric-sub',sub));el.append(circle,copy);return el;
   }
-
-  const keyOf=(type,card,i)=>type+':'+(card.querySelector('.start-btn')?.dataset.id||card.querySelector('h3')?.textContent?.trim()||card.querySelector('.assignment-title')?.textContent?.trim()||i);
-  function readItems(){
-    const rows=[];
-    readingList.querySelectorAll('.student-assignment-card').forEach((card,i)=>{
-      const title=card.querySelector('.assignment-title')?.textContent?.trim()||'Copeak課題';
-      const status=card.querySelector('.student-status-badge')?.textContent?.trim()||'未完了';
-      const k=card.dataset.status||'';
-      const done=k==='done'||(!k&&!/未完了|未達成|未着手|練習中/.test(status)&&/提出済み|完了|completed|合格/i.test(status));
-      const upcoming=k==='upcoming'||/公開前/.test(status);
-      const overdue=k==='late'||/締切終了|締切済み/.test(status);
-      rows.push({key:keyOf('copeak',card,i),type:'copeak',title,status,done,upcoming,overdue,source:card,
-        accuracy:card.dataset.csoAccuracy||'',wpm:card.dataset.csoWpm||''});
-    });
-    if(picList){picList.querySelectorAll('.psl-card').forEach((card,i)=>{
-      const title=card.querySelector('h3')?.textContent?.trim()||'PicSpeak課題';
-      const status=card.querySelector('.psl-chip')?.textContent?.trim()||'未完了';
-      const subtitle=card.querySelector('.psl-subtitle')?.textContent?.trim()||'';
-      const mode=(subtitle.split(/[•·]/)[0]||'').trim().toUpperCase();
-      rows.push({key:keyOf('picspeak',card,i),type:'picspeak',title,status,subtitle,mode,done:/合格/.test(status),upcoming:/公開前/.test(status),overdue:/締切済み|締切終了/.test(status),source:card});
-    });}
-    return rows;
+  function renderHero(rows){
+    const todo=rows.filter(r=>!r.done&&!r.upcoming&&!r.overdue);const next=todo[0]||rows.find(r=>!r.done)||rows[0];
+    hero.replaceChildren();hero.classList.toggle('cso-hero-pink',next?.type==='picspeak');
+    const content=make('div','cso-feature-content');
+    if(!next){content.append(make('span','cso-feature-pill','学習ダッシュボード'),make('h2','','課題の公開をお待ちください'),make('p','cso-feature-description','新しい課題が公開されると、ここに表示されます。'));}
+    else{
+      content.append(make('span','cso-feature-pill',todo.length?'次の課題':next.done?'取り組みの記録':'課題を確認'),make('h2','',next.title));
+      const type=make('div','cso-featuretype');type.append(icon(glyph(next),18),make('span','',label(next)));content.append(type);
+      const hints=make('div','cso-featurechips');if(next.deadline)hints.append(chip('clock',next.deadline));else if(next.subtitle){const suffix=next.subtitle.match(/締切.*/)?.[0];if(suffix)hints.append(chip('clock',suffix));}
+      hints.append(chip('layers',standardStatus(next)));content.append(hints);
+      const button=make('button','cso-feature-button',todo.length?'この課題を見る':next.done?'成果を見る':'課題の詳細');button.type='button';button.append(icon('arrow',18));button.addEventListener('click',()=>openModal(next,button));content.append(button);
+    }
+    const deco=make('div','cso-feature-art');deco.setAttribute('aria-hidden','true');deco.append(icon(next?glyph(next):'book',106),make('span','cso-orb cso-orb-a'),make('span','cso-orb cso-orb-b'),make('span','cso-orb cso-orb-c'));hero.append(content,deco);
   }
-
-  function addCount(n,label,urgent=false){const c=make('div','cso-count'+(urgent?' cso-urgent':''));c.append(make('strong','',n),make('span','',label));totals.append(c);}
-  function addTally(s,cls){tally.append(make('span',cls,s));}
-
+  function chip(name,txt){const c=make('span','cso-chip');c.append(icon(name,15),make('span','',txt));return c;}
+  function renderRank(rows){
+    // Preserve the live, access-controlled ranking panel across dashboard rerenders.
+    const originalRank=document.getElementById('studentReadingRankCard');
+    if(originalRank)originalRank.remove();
+    mini.replaceChildren();mini.append(make('div','cso-side-eyebrow','CLASS PERFORMANCE'));
+    const title=make('div','cso-side-heading');title.append(icon('crown',22),make('strong','','クラス順位'));mini.append(title);
+    const candidate=rows.find(r=>r.type==='copeak'&&r.source.querySelector('.student-assignment-rank-mini'));
+    if(candidate){
+      mini.append(make('div','cso-side-caption',candidate.title));
+      const cloned=candidate.source.querySelector('.student-assignment-rank-mini').cloneNode(true);const host=make('div','cso-rank-summary');host.append(cloned);mini.append(host);
+    }else mini.append(make('p','cso-side-note','音読課題の成績があると順位が表示されます。'));
+    const details=make('details','cso-rankdetails');details.append(make('summary','','順位の詳しい情報を見る'));
+    rankingTarget=make('div','cso-rank-original');details.append(rankingTarget);mini.append(details);
+    if(originalRank)rankingTarget.append(originalRank);else liftRank();
+  }
+  function tile(item){
+    const b=make('button','cso-tile '+(item.type==='picspeak'?'cso-pink':'cso-green')+(item.done?' cso-complete':'')+(item.overdue?' cso-expired':''));b.type='button';b.title=item.title;
+    b.setAttribute('aria-label',`${label(item)}、${item.title}、${standardStatus(item)}。詳細を開く`);
+    const row=make('div','cso-tile-top');const kind=make('span','cso-tile-kind');kind.append(icon(glyph(item),16),make('span','',label(item)));
+    const state=make('span','cso-state '+(item.done?'cso-state-done':item.overdue?'cso-state-late':item.upcoming?'cso-state-next':/練習中/.test(item.status)?'cso-state-practice':'cso-state-todo'),standardStatus(item));row.append(kind,state);b.append(row);
+    const inner=make('div','cso-tile-middle');inner.append(make('strong','cso-tile-title',item.title));const stamp=make('span','cso-tile-illustration');stamp.append(icon(glyph(item),40));inner.append(stamp);b.append(inner);
+    const foot=make('div','cso-tile-footer');let detail=item.type==='picspeak'&&item.headline&&item.headline!=='—'?'最高 '+item.headline:item.deadline||'';
+    foot.append(make('span','cso-tile-data',detail||'タップして詳細を確認'),make('span','cso-tile-link',item.done?'成果を見る ↗':'課題を見る ↗'));b.append(foot);
+    b.addEventListener('click',()=>openModal(item,b));return b;
+  }
   function render(){
-    if(!board)return;
-    state.items=readItems();
-    const all=state.items,pending=all.filter(x=>!x.done),done=all.filter(x=>x.done);
-    const pendingRead=pending.filter(x=>x.type==='copeak').length;
-    const pendingPic=pending.filter(x=>x.type==='picspeak').length;
-    totals.replaceChildren();addCount(pending.length,'件 未完了',pending.length>0);addCount(done.length,'件 完了・合格');
-    tally.replaceChildren();addTally('Copeak 残り '+pendingRead+'件','cso-read');addTally('PicSpeak 残り '+pendingPic+'件','cso-pic');
-    const accuracy=document.getElementById('avgAccuracy')?.textContent?.trim(),wpm=document.getElementById('bestWpm')?.textContent?.trim();
-    if(accuracy&&accuracy!=='—')addTally('平均 Accuracy '+accuracy,'');
-    if(wpm&&wpm!=='—')addTally('最高 WPM '+wpm,'');
-    const view=state.filter==='all'?all:(state.filter==='done'?done:pending);
-    const pageSize=12,maxPage=Math.max(0,Math.ceil(view.length/pageSize)-1);
-    state.page=Math.max(0,Math.min(state.page,maxPage));
-    grid.replaceChildren();
-    const slice=view.slice(state.page*pageSize,(state.page+1)*pageSize);
-    for(const item of slice){
-      const b=make('button','cso-tile cso-'+item.type+(item.done?' cso-done':'')+(item.overdue?' cso-overdue':''));b.type='button';b.title=item.title+' — '+item.status;
-      b.setAttribute('aria-label',((item.type==='copeak'?'Copeak':'PicSpeak '+(item.mode||''))+' '+item.title+'。'+item.status+'。詳細を見る'));
-      b.append(make('span','cso-mode',item.type==='copeak'?'● COPEAK · 音読':'◆ PICSPEAK · '+(M_LABEL[item.mode?.replace(/\s/g,'')]||item.mode||'画像描写')),
-        make('strong','cso-title',item.title));
-      const bottom=make('div','cso-bottom');bottom.append(make('span','cso-badge',item.status),make('span','cso-action',item.done?'成果を見る ↗':'詳細を見る ↗'));b.append(bottom);
-      b.addEventListener('click',()=>openModal(item,b));grid.append(b);
-    }
-    if(!slice.length)grid.append(make('div','cso-empty',state.filter==='todo'?'未完了の課題はありません。':'該当する課題はありません。'));
-    for(const f of filters.querySelectorAll('button'))f.setAttribute('aria-pressed',String(f.dataset.filter===state.filter));
-    pager.replaceChildren();
-    if(view.length>pageSize){
-      const pag=make('div','cso-page');const prev=make('button','','← 前へ');prev.type='button';prev.disabled=state.page===0;prev.addEventListener('click',()=>{state.page--;render();});
-      const curr=make('span','',`${state.page+1} / ${maxPage+1} ページ・${view.length}件`);
-      const next=make('button','','次へ →');next.type='button';next.disabled=state.page===maxPage;next.addEventListener('click',()=>{state.page++;render();});pag.append(prev,curr,next);pager.append(pag);
-    }else{pager.append(make('span','cso-help',view.length?`${view.length}件を表示中`:'結果はありません'));}
-    if(state.modalOpen){
-      const refreshed=all.find(x=>x.key===state.selected);
-      if(refreshed)showModalContent(refreshed);else closeModal();
-    }
+    if(!root)return;
+    main.items=sourceRows();
+    const className=clean(document.getElementById('className')?.textContent);
+    root.querySelector('.cso-overline').textContent=className&&className!=='My Class'?className+' · MY LEARNING':'MY LEARNING';
+    const all=main.items,pending=all.filter(r=>!r.done),done=all.filter(r=>r.done),todo=pending.filter(r=>!r.overdue&&!r.upcoming);
+    const pct=all.length?Math.round(100*done.length/all.length):0;
+    root.querySelector('#csoHeaderBar').style.width=pct+'%';root.querySelector('#csoHeaderRatio').textContent=`${done.length}/${all.length} · ${pct}%`;
+    renderHero(all);renderRank(all);
+    stats.replaceChildren(metricBox('layers','残っている課題',String(pending.length)+' 件','公開前・期限切れを含む'),metricBox('check','完了した課題',`${done.length} / ${all.length}`,'Copeak提出・PicSpeak合格'),metricBox('target','Copeak 平均Accuracy',clean(document.querySelector('#avgAccuracy')?.textContent)||'—','音読の記録'),metricBox('bolt','Copeak 最高WPM',clean(document.querySelector('#bestWpm')?.textContent)||'—','音読の記録'));
+    for(const b of nav.querySelectorAll('button')){b.setAttribute('aria-pressed',String(b.dataset.status===main.status));b.textContent=(b.dataset.status==='todo'?'未完了':b.dataset.status==='done'?'完了':'すべて')+'  '+(b.dataset.status==='todo'?pending.length:b.dataset.status==='done'?done.length:all.length);}
+    const filtered=all.filter(r=>(main.status==='all'||(main.status==='done'?r.done:!r.done))&&(main.source==='all'||r.type===main.source));
+    const ordered=filtered.slice().sort((a,b)=>Number(a.done)-Number(b.done));
+    const limit=12,max=Math.max(0,Math.ceil(ordered.length/limit)-1);main.page=Math.min(Math.max(main.page,0),max);
+    root.querySelector('#csoStatusLine').textContent=`今すぐ取り組める ${todo.length} 件 · 全 ${all.length} 件から表示中 ${ordered.length} 件`;
+    grid.replaceChildren();for(const item of ordered.slice(main.page*limit,(main.page+1)*limit))grid.append(tile(item));
+    if(!filtered.length)grid.append(make('p','cso-empty',main.status==='todo'?'未完了の課題はありません。':'該当する課題はありません。'));
+    footer.replaceChildren();if(ordered.length>limit){const prev=make('button','cso-pagination','前へ');prev.type='button';prev.disabled=main.page<=0;prev.addEventListener('click',()=>{main.page--;render();});const cur=make('span','',`${main.page+1} / ${max+1} ページ`);const next=make('button','cso-pagination','次へ');next.type='button';next.disabled=main.page>=max;next.addEventListener('click',()=>{main.page++;render();});footer.append(prev,cur,next);}
+    if(main.modal){const latest=all.find(r=>r.key===main.selected);if(latest)fillModal(latest);else closeModal();}
   }
-
-  function openModal(item,origin){
-    state.selected=item.key;state.restoreFocus=origin;state.prevOverflow=document.body.style.overflow;
-    state.modalOpen=true;modal.hidden=false;modal.setAttribute('aria-hidden','false');
-    document.body.style.overflow='hidden';showModalContent(item);
-    modal.querySelector('.cso-close').focus();
-  }
-
-  function showModalContent(item){
-    modalTop.classList.toggle('cso-picspeak',item.type==='picspeak');
-    modalType.textContent=item.type==='copeak'?'COPEAK · 音読の成果':'PICSPEAK · '+(item.mode||'画像描写')+'の成果';
-    modalTitle.textContent=item.title;modalStatus.textContent=item.status;
-    modalBody.replaceChildren();
-    const start=item.source.querySelector('.start-btn,.psl-challenge');
-    modalLaunch.classList.toggle('cso-launch-pink',item.type==='picspeak');
-    modalLaunch.disabled=!start||start.disabled;
-    modalLaunch.textContent=!start||start.disabled?'現在は開始できません':item.type==='picspeak'?'PicSpeakに挑戦する →':'Copeakで音読を始める →';
-    modalFootNote.textContent=modalLaunch.disabled?'締切や公開条件を確認してください':'タップして課題を始めましょう';
-    const rank=make('section','cso-rank'+(item.type==='picspeak'?' cso-rank-pink':''));
-    rank.append(make('h3','cso-rank-title','🏆 この課題のクラス内順位'));
+  function kpi(key,value,hint,iconName){const el=make('div','cso-kpi');const at=make('div','cso-kpi-label');at.append(icon(iconName||'target',19),make('span','',key));el.append(at,make('strong','cso-kpi-number',value));if(hint)el.append(make('small','cso-kpi-note',hint));return el;}
+  function getRankContent(item){const box=make('div','cso-modal-rank');const heading=make('h3','');heading.append(icon('crown',20),make('span','','この課題のクラス順位'));box.append(heading);
     if(item.type==='copeak'){
-      const existing=item.source.querySelector('.student-assignment-rank-mini');
-      if(existing)rank.append(existing.cloneNode(true));
-      else rank.append(make('p','cso-rank-note','順位はまだ取得できていません。提出・更新後に表示されます。'));
-      rank.append(make('p','cso-rank-note','Accuracy・WPM・練習回数の順位。未提出の場合は順位が付きません。'));
+      const source=item.source.querySelector('.student-assignment-rank-mini');if(source)box.append(source.cloneNode(true));else box.append(make('p','','順位はまだ取得できていません。'));
+      box.append(make('small','','Accuracy・WPM・練習回数を別々に集計しています。'));
+    }else{box.append(make('p','','PicSpeakの順位集計は準備中です。成績は上の欄で確認できます。'));}
+    return box;
+  }
+  function fillModal(item){
+    const pink=item.type==='picspeak';dialog.classList.toggle('cso-modal-pink',pink);
+    dialogType.textContent=label(item)+'  /  '+standardStatus(item);dialogTitle.textContent=item.title;
+    const start=item.source.querySelector('.start-btn,.psl-challenge');dialogCTA.disabled=!start||start.disabled;
+    dialogCTA.querySelector('span:last-child').textContent=dialogCTA.disabled?'現在は開始できません':pink?'PicSpeakに挑戦する':'Copeakで音読を始める';
+    dialogNote.textContent=dialogCTA.disabled?'公開日時または締切をご確認ください':'タップして教材を開きます';
+    dialogContent.replaceChildren();
+    const summary=make('div','cso-modal-grid');const left=make('div','cso-details-left');const right=make('div','cso-details-right');
+    const art=make('div','cso-study-art');art.append(icon(glyph(item),82));const artCopy=make('div');artCopy.append(make('span','',pink?'PICTURE SPEAKING':'READING PRACTICE'),make('strong','',pink?'画像を見て、英語で伝えよう':'英語を声に出して、力を伸ばそう'));art.append(artCopy);left.append(art);
+    const description=make('section','cso-info-card');description.append(make('h3','','学習について'));const bits=make('div','cso-info-bits');bits.append(chip('layers',label(item)),chip('check',standardStatus(item)));if(item.deadline)bits.append(chip('clock',item.deadline));else if(item.subtitle){const d=item.subtitle.match(/締切.*/)?.[0];if(d)bits.append(chip('clock',d));}description.append(bits);
+    if(item.type==='copeak'){
+      const panel=item.source.querySelector('.student-pass-panel');if(panel){const note=make('div','cso-criteria');note.append(make('h4','','合格基準と進捗'));note.append(panel.cloneNode(true));description.append(note);}
     }else{
-      rank.append(make('p','cso-rank-note','PicSpeakのクラス順位は次の開発段階で対応予定です。成績・達成率は下で確認できます。'));
+      const details=item.source.querySelector('.psl-detail');if(details){const breakdown=details.cloneNode(true);breakdown.hidden=false;description.append(breakdown);}
     }
-    modalBody.append(rank);
-    if(item.type==='copeak'){
-      const quick=make('div','cso-quickstats');
-      for(const [label,val] of [['Accuracy',item.accuracy===''?'—':`${Math.round(Number(item.accuracy)*10)/10}%`],['WPM',item.wpm===''?'—':`${Math.round(Number(item.wpm))}`]]){
-        const box=make('div','cso-quickstat');box.append(make('strong','',val),make('span','',label));quick.append(box);
-      }
-      modalBody.append(quick);
+    left.append(description);
+    const perf=make('section','cso-perf');perf.append(make('h3','','あなたの学習成果'));const quick=make('div','cso-kpis');
+    if(pink){const scores=[...item.source.querySelectorAll('.psl-scores>div')];for(let i=0;i<Math.min(3,scores.length);i++){
+      const value=clean(scores[i].querySelector('strong')?.textContent)||'—';const cap=clean(scores[i].querySelector('span')?.textContent)||['最高達成率','練習回数','累計単語'][i];quick.append(kpi(cap,value,'',i===0?'target':i===1?'layers':'microphone'));}
+    }else{
+      const acc=num(item.acc),wpm=num(item.wpm);quick.append(kpi('Accuracy',acc===null?'—':acc.toFixed(1)+'%','音読の正確率','target'),kpi('WPM',wpm===null?'—':Math.round(wpm).toString(),'1分間に読む単語数','bolt'));
     }
-    const host=make('div','cso-source');
-    const clone=item.source.cloneNode(true);
-    clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
-    clone.querySelectorAll('[onclick]').forEach(el=>el.removeAttribute('onclick'));
-    clone.addEventListener('click',event=>{
-      const button=event.target.closest('button');if(!button)return;
-      event.preventDefault();event.stopPropagation();
-      const pos=[...clone.querySelectorAll('button')].indexOf(button);
-      const original=[...item.source.querySelectorAll('button')][pos];
-      if(!original||original.disabled)return;
-      original.click();
-      const origDetail=item.source.querySelector('.psl-detail');const copyDetail=clone.querySelector('.psl-detail');
-      if(origDetail&&copyDetail)copyDetail.hidden=origDetail.hidden;
-      if(original.classList.contains('start-btn')||original.classList.contains('psl-challenge'))closeModal();
-    });
-    host.append(clone);modalBody.append(host);
-    modalBody.append(make('p','cso-hint','閉じる：× または Esc キー／画面下の大きなボタンから課題を始められます'));
+    if(!quick.children.length)quick.append(kpi('成績','—','課題に取り組むと表示されます','target'));
+    perf.append(quick);right.append(perf,getRankContent(item));
+    const about=make('div','cso-coach');about.append(icon('sparkles',21),make('div','',item.done?'取り組みの成果を確認できます。':'少しずつの練習が、次の成長につながります。'));right.append(about);
+    summary.append(left,right);dialogContent.append(summary);
   }
-
-  function scheduleRender(){
-    if(pendingRender)return;pendingRender=true;
-    window.setTimeout(()=>{pendingRender=false;render();},100);
+  function openModal(item,trigger){
+    main.selected=item.key;main.activeTrigger=trigger;main.prevOverflow=document.body.style.overflow;main.modal=true;
+    const m=document.getElementById('csoModal');m.hidden=false;m.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';fillModal(item);dialogClose.focus();
   }
+  function closeModal(){
+    if(!main.modal)return;main.modal=false;const m=document.getElementById('csoModal');m.hidden=true;m.setAttribute('aria-hidden','true');document.body.style.overflow=main.prevOverflow;
+    if(main.activeTrigger?.isConnected)main.activeTrigger.focus();main.activeTrigger=null;
+  }
+  function update(){if(pending)return;pending=true;window.setTimeout(()=>{pending=false;render();},100);}
   function mount(){
-    if(!mountBoard())return;
-    picList=document.getElementById('pslStudentList');
-    const observer=new MutationObserver(scheduleRender);
-    observer.observe(readingList,{childList:true});
-    if(picList)observer.observe(picList,{childList:true});
-    if(!picList){
-      const watch=new MutationObserver(()=>{
-        picList=document.getElementById('pslStudentList');
-        if(picList){observer.observe(picList,{childList:true});watch.disconnect();scheduleRender();}
-      });watch.observe(document.body,{childList:true,subtree:true});
-      window.setTimeout(()=>watch.disconnect(),30000);
-    }
-    for(const id of ['avgAccuracy','bestWpm']){
-      const el=document.getElementById(id);
-      if(el)observer.observe(el,{childList:true,characterData:true,subtree:true});
-    }
+    if(!build())return;
+    picList=document.getElementById('pslStudentList');observer=new MutationObserver(update);
+    observer.observe(readingList,{childList:true});if(picList)observer.observe(picList,{childList:true});
+    if(!picList){const waiting=new MutationObserver(()=>{const el=document.getElementById('pslStudentList');if(el){picList=el;observer.observe(picList,{childList:true});waiting.disconnect();update();}});waiting.observe(document.body,{childList:true,subtree:true});window.setTimeout(()=>waiting.disconnect(),30000);}
+    for(const id of ['avgAccuracy','bestWpm','progressPct']){const el=document.getElementById(id);if(el)observer.observe(el,{childList:true,characterData:true,subtree:true});}
     render();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
