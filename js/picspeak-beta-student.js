@@ -13,17 +13,21 @@ document.addEventListener('DOMContentLoaded', () => {
     .psl-student-section{margin-top:18px;padding:18px;border:1px solid #dbeafe;border-radius:16px;background:#fff}
     .psl-student-section .psl-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
     .psl-student-section h2{font-size:1.25rem;margin:0}
-    .psl-student-section .psl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:16px}
-    .psl-student-section .psl-card{border:1px solid #dbe5f0;border-radius:14px;padding:15px;background:#f8fafc;display:flex;flex-direction:column;gap:9px}
-    .psl-student-section .psl-card h3{font-size:1rem;margin:0}
+    .psl-student-section .psl-grid{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+    .psl-student-section .psl-card{border:1px solid #dbe5f0;border-radius:14px;padding:15px;background:#f8fafc;display:grid;grid-template-columns:minmax(0,1fr) minmax(172px,auto);grid-template-areas:'state action' 'title action' 'subtitle action' 'metrics action' 'details details';align-items:center;column-gap:18px;row-gap:6px}
+    .psl-student-section .psl-card h3{font-size:1rem;margin:0;grid-area:title}
     .psl-student-section .psl-muted{font-size:12px;color:#64748b}
-    .psl-student-section .psl-chip{font-size:12px;display:inline-block;padding:4px 9px;border-radius:99px;background:#e2e8f0;width:max-content}
+    .psl-student-section .psl-chip{grid-area:state;font-size:12px;display:inline-block;padding:4px 9px;border-radius:99px;background:#e2e8f0;width:max-content}
     .psl-student-section .psl-chip.ok{background:#dcfce7;color:#166534}
     .psl-student-section button{border:0;border-radius:10px;padding:11px 12px;background:#2563eb;color:#fff;font-weight:750;cursor:pointer}
     .psl-student-section button:disabled{background:#94a3b8;cursor:not-allowed}
     .psl-student-section .psl-secondary{background:#e9eff8;color:#245288}
-    .psl-student-section .psl-detail{border-top:1px solid #e2e8f0;padding-top:10px}
-    .psl-student-section .psl-scores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    .psl-student-section .psl-card>.psl-subtitle{grid-area:subtitle;margin:0}
+    .psl-student-section .psl-card>.psl-card-actions{grid-area:action;display:flex;flex-direction:column;gap:8px;min-width:172px}
+    .psl-student-section .psl-card-actions>.psl-challenge{background:#2563eb;color:#fff;font-size:15px;padding:14px 16px}
+    @media(max-width:700px){.psl-student-section .psl-card{grid-template-columns:1fr;grid-template-areas:'state' 'title' 'subtitle' 'metrics' 'action' 'details'}.psl-student-section .psl-card>.psl-card-actions{min-width:0;flex-direction:row;flex-wrap:wrap}.psl-student-section .psl-card-actions>button{flex:1;min-width:135px}}
+    .psl-student-section .psl-detail{grid-area:details;border-top:1px solid #e2e8f0;padding-top:10px}
+    .psl-student-section .psl-scores{grid-area:metrics;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
     .psl-student-section .psl-scores>div{border-radius:8px;background:#eef4fa;text-align:center;padding:9px 4px}
     .psl-student-section .psl-scores strong{display:block;font-size:1.1rem}
     .psl-student-section .psl-trend{display:flex;align-items:end;gap:4px;height:48px;padding:2px}
@@ -77,12 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const card=document.createElement('article');card.className='psl-card';
         const state=document.createElement('span');state.className='psl-chip'+(pass?' ok':'');state.textContent=pass?'合格':expired?'締切済み':rows.length?'練習中':'未完了';
         const h=document.createElement('h3');h.textContent=a.title;
-        const small=document.createElement('p');small.className='psl-muted';small.textContent=LABELS[a.mode]+' • '+a.level+' • 締切 '+fmt(a.due_at);
+        const small=document.createElement('p');small.className='psl-muted psl-subtitle';small.textContent=LABELS[a.mode]+' • '+a.level+' • 締切 '+fmt(a.due_at);
         const scores=document.createElement('div');scores.className='psl-scores';
         function metric(title,value){const d=document.createElement('div'),strong=document.createElement('strong'),cap=document.createElement('span');strong.textContent=String(value);cap.textContent=title;cap.className='psl-muted';d.append(strong,cap);scores.append(d);}
         metric('最高結果',!best?'—':a.mode==='picflash'?best.duration_seconds+'秒':(best.score_raw??best.score_percent)+'pt');
         metric('練習回数',rows.length);metric('WPM',best?.wpm??'—');
-        const btn=document.createElement('button');btn.textContent=expired?'締切済み':'PicSpeakを開始 ↗';btn.disabled=expired;
+        const btn=document.createElement('button');btn.textContent=expired?'締切済み':'PicSpeakに挑戦！ ↗';btn.className='psl-challenge';btn.disabled=expired;
         btn.addEventListener('click',()=>void launch(a,btn));
         const detailsBtn=document.createElement('button');detailsBtn.className='psl-secondary';detailsBtn.textContent='成果を見る';
         const details=document.createElement('div');details.className='psl-detail';details.hidden=true;
@@ -92,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sample=rows.slice(0,8).reverse();
         for(const r of sample){const bar=document.createElement('span');const pct=a.mode==='picflash'?Math.max(0,100-(Number(r.duration_seconds)||100)):Number(r.score_percent)||0;bar.style.height=Math.max(4,Math.min(100,pct))+'%';bar.title=fmt(r.recorded_at)+': '+(a.mode==='picflash'?r.duration_seconds+'秒':r.score_percent+'%');trend.append(bar);}
         details.append(dtext,trend);detailsBtn.addEventListener('click',()=>{details.hidden=!details.hidden;});
-        card.append(state,h,small,scores,btn,detailsBtn,details);host.append(card);
+        const actions=document.createElement('div');actions.className='psl-card-actions';actions.append(btn,detailsBtn);card.append(state,h,small,scores,actions,details);host.append(card);
       }
       $('pslStudentStatus').textContent=(assignments||[]).length+'件のPicSpeak課題を表示しています。';
       if(!(assignments||[]).length)host.textContent='現在、公開中のPicSpeak課題はありません。';
