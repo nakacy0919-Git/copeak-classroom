@@ -1,4 +1,5 @@
 import { getClient, demoRole } from './supabase.js';
+import {bestAttempt,passByHistory,metric,headline,breakdown,condition} from './picspeak-assessment.js';
 
 // Completely separate UI + tables from Copeak reading assignments/results.
 document.addEventListener('DOMContentLoaded', () => {
@@ -66,19 +67,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const client=sb();if(!client){$('pslStudentStatus').textContent='デモではPicSpeak課題は表示されません。';return;}
       const {data:auth}=await client.auth.getUser();if(!auth?.user){$('pslStudentStatus').textContent='ログインすると課題が表示されます。';return;}
       const [{data:assignments,error:e1},{data:attempts,error:e2}]=await Promise.all([
-        client.from('picspeak_assignments').select('id,title,mode,theme_id,level,time_limit,due_at,pass_percent,pass_seconds').eq('is_published',true).order('due_at',{ascending:true}).limit(250),
-        client.from('picspeak_attempts').select('assignment_id,score_raw,score_percent,completion_percent,word_count,wpm,duration_seconds,recorded_at').order('recorded_at',{ascending:false}).limit(5000)
+        client.from('picspeak_assignments').select('id,title,mode,theme_id,level,time_limit,due_at,pass_percent,pass_seconds,pass_correct,pass_reading_percent,pass_picture_percent,pass_qa_rating').eq('is_published',true).order('due_at',{ascending:true}).limit(250),
+        client.from('picspeak_attempts').select('assignment_id,score_raw,score_percent,completion_percent,word_count,wpm,duration_seconds,metrics,recorded_at').order('recorded_at',{ascending:false}).limit(5000)
       ]);
       if(e1)throw e1;if(e2)throw e2;
       const byA=new Map();for(const record of attempts||[]){const rows=byA.get(record.assignment_id)||[];rows.push(record);byA.set(record.assignment_id,rows);}
       const host=$('pslStudentList');host.replaceChildren();
       for(const a of assignments||[]){
         const rows=byA.get(a.id)||[];
-        const completionValue=r=>r.completion_percent??r.score_percent;
-        const pctText=v=>v==null?'—':Number(v).toLocaleString('ja-JP',{maximumFractionDigits:1})+'%';
-        const best=a.mode==='picflash'?rows.filter(r=>r.duration_seconds!=null).sort((x,y)=>x.duration_seconds-y.duration_seconds)[0]
-          :rows.filter(r=>completionValue(r)!=null).sort((x,y)=>Number(completionValue(y))-Number(completionValue(x)))[0];
-        const pass=rows.some(r=>a.mode==='picflash'?r.duration_seconds!=null&&r.duration_seconds<=a.pass_seconds:completionValue(r)!=null&&Number(completionValue(r))>=a.pass_percent);
+        const best=bestAttempt(a,rows);
+        const pass=passByHistory(a,rows);
         const expired=Date.now()>new Date(a.due_at).getTime();
         const card=document.createElement('article');card.className='psl-card';
         const state=document.createElement('span');state.className='psl-chip'+(pass?' ok':'');state.textContent=pass?'合格':expired?'締切済み':rows.length?'練習中':'未完了';
@@ -86,19 +84,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const small=document.createElement('p');small.className='psl-muted psl-subtitle';small.textContent=LABELS[a.mode]+' • '+a.level+' • 締切 '+fmt(a.due_at);
         const scores=document.createElement('div');scores.className='psl-scores';
         function metric(title,value){const d=document.createElement('div'),strong=document.createElement('strong'),cap=document.createElement('span');strong.textContent=String(value);cap.textContent=title;cap.className='psl-muted';d.append(strong,cap);scores.append(d);}
-        metric(a.mode==='picflash'?'最速タイム':'最高達成率',!best?'—':a.mode==='picflash'?best.duration_seconds+'秒':pctText(completionValue(best)));
-        metric('練習回数',rows.length+'回');metric('累計発話単語数',a.mode==='picflash'||!rows.some(r=>r.word_count!=null)?'—':rows.reduce((total,r)=>total+Math.max(0,Number(r.word_count)||0),0)+'語');
+        metric(a.mode==='picflash'?'最速タイム':a.mode==='detective'?'発見率':a.mode==='oralquest'?'画像描写':a.mode==='story'?'情報伝達率':'最高達成率',best?headline(a,best):'—');
+        metric('練習回数',rows.length+'回');
+        const totalWords=rows.reduce((n,r)=>n+(Number(r.word_count)||0),0);
+        const third=a.mode==='picflash'?((best?.metrics?.correct??'—')+'/10問')
+          :a.mode==='detective'?((best?.metrics?.found??'—')+'/'+(best?.metrics?.total??'—')+'件')
+          :rows.some(r=>r.word_count!=null)?totalWords+'語':'—';
+        metric(a.mode==='picflash'?'正答数':a.mode==='detective'?'発見数':'累計発話単語数',third);
         const btn=document.createElement('button');btn.textContent=expired?'締切済み':'PicSpeakに挑戦！ ↗';btn.className='psl-challenge';btn.disabled=expired;
         btn.addEventListener('click',()=>void launch(a,btn));
         const detailsBtn=document.createElement('button');detailsBtn.className='psl-secondary';detailsBtn.textContent='成果を見る';
         const details=document.createElement('div');details.className='psl-detail';details.hidden=true;
         const dtext=document.createElement('p');dtext.className='psl-muted';
-        dtext.textContent=a.mode==='picflash'
-          ? '挑戦履歴: '+rows.length+'回 / 最速: '+(best?.duration_seconds??'—')+'秒 / 合格ライン: '+a.pass_seconds+'秒以内'
-          : '挑戦履歴: '+rows.length+'回 / 最高達成率: '+pctText(best?completionValue(best):null)+' / 最高達成率時: '+(best?.word_count==null?'—':best.word_count+'語')+' / WPM: '+(best?.wpm??'—')+' / 合格ライン: '+a.pass_percent+'%以上';
+        dtext.textContent='練習 '+rows.length+'回 · '+breakdown(a,best)+' · 合格条件: '+condition(a)+' · '+(pass?'合格':'未達成');
         const trend=document.createElement('div');trend.className='psl-trend';trend.setAttribute('aria-label',a.mode==='picflash'?'タイム履歴':'達成率の推移');
         const sample=rows.slice(0,8).reverse();
-        for(const r of sample){const bar=document.createElement('span');const pct=a.mode==='picflash'?Math.max(0,100-(Number(r.duration_seconds)||100)):Number(completionValue(r))||0;bar.style.height=Math.max(4,Math.min(100,pct))+'%';bar.title=fmt(r.recorded_at)+': '+(a.mode==='picflash'?r.duration_seconds+'秒':pctText(completionValue(r)));trend.append(bar);}
+        for(const r of sample){const bar=document.createElement('span');
+          const value=a.mode==='picflash'?Math.max(0,100-(Number(r.duration_seconds)||100)):(metric(a,r)||0);
+          bar.style.height=Math.max(4,Math.min(100,value))+'%';
+          bar.title=fmt(r.recorded_at)+' '+breakdown(a,r);trend.append(bar);}
         details.append(dtext,trend);detailsBtn.addEventListener('click',()=>{details.hidden=!details.hidden;});
         const actions=document.createElement('div');actions.className='psl-card-actions';actions.append(btn,detailsBtn);card.append(state,h,small,scores,actions,details);host.append(card);
       }

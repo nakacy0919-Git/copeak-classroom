@@ -1,4 +1,5 @@
 import { getClient, demoRole } from './supabase.js';
+import {bestAttempt,passByHistory,headline,breakdown,condition} from './picspeak-assessment.js';
 
 /* PicSpeak LMS only. This module never touches Copeak assignments or submissions. */
 document.addEventListener('DOMContentLoaded', () => {
@@ -241,6 +242,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const t1=new Date(fields.release.value),t2=new Date(fields.due.value);
     const time_limit=Number(fields.duration.value),level=fields.level.value;
     const pass_percent=Number(el('pslPassPercent').value),pass_seconds=Number(el('pslPassSeconds').value);
+    const pass_correct=Number(document.getElementById('pslPassCorrect')?.value??8);
+    const pass_reading_percent=Number(document.getElementById('pslPassReading')?.value??70);
+    const pass_picture_percent=Number(document.getElementById('pslPassPicture')?.value??70);
+    const pass_qa_rating=Number(document.getElementById('pslPassQA')?.value??1);
     if(!title||title.length>200)throw Error('課題名を1〜200文字で入力してください。');
     if(!permittedUUID(class_id)||fields.classId.disabled)throw Error('配布先クラスを選択してください。');
     if(!MODES.some(([m])=>m===mode))throw Error('練習モードが不正です。');
@@ -254,7 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!Number.isFinite(t1.getTime())||!Number.isFinite(t2.getTime())||t2<=t1)throw Error('公開と締切の日時を確認してください。');
     if(!(pass_percent>=0&&pass_percent<=100&&pass_seconds>=1&&pass_seconds<=1800))throw Error('合格ラインが不正です。');
     if(!['targeted','class'].includes(audienceEl.value))throw Error('配布対象を選んでください。');
-    return {title,class_id,theme_id,mode,level,time_limit,pass_percent,pass_seconds,
+    if(!Number.isInteger(pass_correct)||pass_correct<1||pass_correct>10||pass_reading_percent<0||pass_reading_percent>100||pass_picture_percent<0||pass_picture_percent>100||![1,2].includes(pass_qa_rating))throw Error('モード別の合格条件を確認してください。');
+    return {title,class_id,theme_id,mode,level,time_limit,pass_percent,pass_seconds,pass_correct,pass_reading_percent,pass_picture_percent,pass_qa_rating,
       audience_type:audienceEl.value,release_at:t1.toISOString(),due_at:t2.toISOString()};
   };
   const runBusy=async task=>{if(busy)return;busy=true;el('pslSave').disabled=true;
@@ -278,6 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
     fields.theme.dispatchEvent(new Event('change'));
     el('pslPassPercent').value=item.pass_percent??70;
     el('pslPassSeconds').value=item.pass_seconds??90;
+    for(const [id,value] of [['pslPassCorrect',item.pass_correct??8],['pslPassReading',item.pass_reading_percent??70],['pslPassPicture',item.pass_picture_percent??70],['pslPassQA',item.pass_qa_rating??1]]){const field=document.getElementById(id);if(field)field.value=value;}
+    modeEl.dispatchEvent(new Event('change'));
     fields.published.checked=Boolean(item.is_published);
     el('pslSave').textContent='💾 変更を保存';status('編集中: '+item.title);
     panel.scrollIntoView({behavior:'smooth'});
@@ -293,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const refresh=async()=>{
     if(!opened)return;
     const box=el('pslList');box.replaceChildren(document.createTextNode('読込中…'));
-    const {data,error}=await client().from('picspeak_assignments').select('id,class_id,title,theme_id,mode,level,time_limit,pass_percent,pass_seconds,release_at,due_at,is_published,created_at,audience_type').order('created_at',{ascending:false}).limit(250);
+    const {data,error}=await client().from('picspeak_assignments').select('id,class_id,title,theme_id,mode,level,time_limit,pass_percent,pass_seconds,pass_correct,pass_reading_percent,pass_picture_percent,pass_qa_rating,release_at,due_at,is_published,created_at,audience_type').order('created_at',{ascending:false}).limit(250);
     if(error)throw error;drafts=data||[];box.replaceChildren();
     targetsByAssignment=new Map();
     if(drafts.length){

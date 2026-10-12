@@ -4,6 +4,7 @@
  * No writes to the database are performed by this module.
  */
 import { getClient, demoRole } from './supabase.js';
+import {bestAttempt,passByHistory,metric,headline,breakdown,condition,gradeLabel} from './picspeak-assessment.js';
 
 const css = `
 .psw-tabs{display:flex;gap:7px;align-items:center;margin:15px 0 16px;padding:5px;border:1px solid #dfe8ef;border-radius:14px;background:#f2f6f9;width:max-content;max-width:100%;flex-wrap:wrap}
@@ -195,7 +196,7 @@ function initGradebookTabs(){
       const classId=selectClass.value;
       if(classId){
         const {data,error}=await client().from('picspeak_assignments')
-          .select('id,title,mode,class_id,audience_type,pass_percent,pass_seconds,is_published,created_at')
+          .select('id,title,mode,class_id,audience_type,pass_percent,pass_seconds,pass_correct,pass_reading_percent,pass_picture_percent,pass_qa_rating,is_published,created_at')
           .eq('class_id',classId).order('created_at',{ascending:false}).limit(250);
         if(error)throw error;
         assignments=data||[];
@@ -219,7 +220,7 @@ function initGradebookTabs(){
       const [m,t,ar,rosterResult]=await Promise.all([
         sb.from('class_members').select('student_id').eq('class_id',a.class_id).limit(2000),
         sb.from('picspeak_assignment_targets').select('student_id').eq('assignment_id',a.id).limit(2000),
-        sb.from('picspeak_attempts').select('student_id,completion_percent,score_percent,word_count,wpm,duration_seconds,recorded_at')
+        sb.from('picspeak_attempts').select('student_id,completion_percent,score_percent,word_count,wpm,duration_seconds,metrics,recorded_at')
           .eq('assignment_id',a.id).order('recorded_at',{ascending:false}).limit(5000),
         sb.from('class_roster').select('linked_student_id,display_name,student_number').eq('class_id',a.class_id).limit(2000)
       ]);
@@ -241,27 +242,24 @@ function initGradebookTabs(){
       for(const attempt of attempts)if(byStudent.has(attempt.student_id))byStudent.get(attempt.student_id).push(attempt);
       tableRows=ids.map(id=>{
         const history=byStudent.get(id)||[];
-        const applicable=a.mode==='picflash'?history.filter(x=>x.duration_seconds!=null):history.filter(x=>(x.completion_percent??x.score_percent)!=null);
-        applicable.sort((x,y)=>a.mode==='picflash'?Number(x.duration_seconds)-Number(y.duration_seconds)
-          :Number(y.completion_percent??y.score_percent)-Number(x.completion_percent??x.score_percent));
-        const best=applicable[0];
-        const passed=history.some(x=>a.mode==='picflash'
-          ?x.duration_seconds!=null&&Number(x.duration_seconds)<=Number(a.pass_seconds)
-          :(x.completion_percent??x.score_percent)!=null&&Number(x.completion_percent??x.score_percent)>=Number(a.pass_percent));
+        const best=bestAttempt(a,history);
+        const passed=passByHistory(a,history);
         return {id,name:names.get(id)||'登録済み生徒',attempts:history.length,
-          achievement:best?(a.mode==='picflash'?Number(best.duration_seconds):Number(best.completion_percent??best.score_percent)):null,
+          achievement:metric(a,best),
           words:history.some(r=>r.word_count!=null)?history.reduce((total,r)=>total+Math.max(0,Number(r.word_count)||0),0):null,
-          bestWords:best?.word_count??null,wpm:best?.wpm??null,passed,history};
+          bestWords:best?.word_count??null,wpm:best?.wpm??null,passed,history,best};
       });
       tableRows.sort((x,y)=>x.name.localeCompare(y.name,'ja'));
       render(a);
-      note(`表示：${tableRows.length}名／記録${attempts.length}件。発話単語数は累計、WPMは最高達成率時の値です。`+
+      note(`表示：${tableRows.length}名／記録${attempts.length}件。合格条件: ${condition(a)}。スコアはアプリ生成の未検証値です。`+
         (attempts.length===5000?' ※提出データが上限に達しています。':''));
       csv.disabled=false;
     }catch(e){problem(e);fallback('成績を表示できませんでした。');}finally{busy(false);}
   }
   function render(a){
     body.replaceChildren();stats.replaceChildren();
+    const table=body.closest('table');
+    if(table){const cells=table.querySelectorAll('thead th');if(cells[2])cells[2].textContent=gradeLabel(a);if(cells[3])cells[3].textContent=a.mode==='picflash'?'最高記録の正答数':'累計発話単語数';}
     kpi('この課題の配布対象',tableRows.length+'名');
     kpi('学習した生徒',tableRows.filter(x=>x.attempts>0).length+'名');
     kpi('練習記録',tableRows.reduce((n,x)=>n+x.attempts,0)+'回');
@@ -273,8 +271,8 @@ function initGradebookTabs(){
     for(const person of tableRows){
       const row=document.createElement('tr');
       cell(row,person.name);cell(row,person.attempts+'回');
-      cell(row,person.achievement==null?'—':a.mode==='picflash'?person.achievement+'秒':fmtPct(person.achievement));
-      cell(row,person.words==null?'—':person.words+'語');cell(row,person.wpm);
+      cell(row,headline(a,person.best));
+      cell(row,a.mode==='picflash'?(person.best?.metrics?.correct??'—')+'/10問':person.words==null?'—':person.words+'語');cell(row,a.mode==='picflash'?'—':person.wpm);
       const td=cell(row,person.passed?'合格':person.attempts?'未達成':'未着手');
       const tag=document.createElement('span');tag.className='psw-tag'+(person.passed?' ok':'');tag.textContent=td.textContent;td.replaceChildren(tag);
       const detailsCell=document.createElement('td');
@@ -283,8 +281,7 @@ function initGradebookTabs(){
       const expanded=document.createElement('tr');expanded.className='psw-detail-line';expanded.hidden=true;
       const inner=document.createElement('td');inner.colSpan=7;
       const recent=person.history.slice(0,15).map((rec,i)=>{
-        const metric=a.mode==='picflash'?fmtNumber(rec.duration_seconds)+'秒':fmtPct(rec.completion_percent??rec.score_percent);
-        return `${i+1}回目（${fmtDate(rec.recorded_at)}）: ${metric} · 単語 ${rec.word_count??'—'}語 · WPM ${rec.wpm??'—'}`;
+        return (i+1)+'回目（'+fmtDate(rec.recorded_at)+'）: '+breakdown(a,rec)+' · '+(passByHistory(a,[rec])?'合格':'未達成');
       });
       inner.textContent=recent.join('　／　');expanded.append(inner);
       detailButton.addEventListener('click',()=>{expanded.hidden=!expanded.hidden;detailButton.setAttribute('aria-expanded',String(!expanded.hidden));});
@@ -295,8 +292,8 @@ function initGradebookTabs(){
   function download(){
     if(!selectedAssignment||!tableRows.length)return;
     const a=selectedAssignment;
-    const rows=[['生徒ID','氏名','練習回数',a.mode==='picflash'?'最速タイム(秒)':'最高達成率(%)','累計発話単語数(語)','最高達成率時の単語数(語)','WPM','合格'],
-      ...tableRows.map(r=>[r.id,r.name,r.attempts,r.achievement??'',r.words??'',r.bestWords??'',r.wpm??'',r.passed?'合格':'未達成'])];
+    const rows=[['生徒ID','氏名','練習回数',gradeLabel(a),'累計発話単語数(語)','最高記録時の単語数(語)','WPM','合格','内訳','合格条件'],
+      ...tableRows.map(r=>[r.id,r.name,r.attempts,r.achievement??'',r.words??'',r.bestWords??'',r.wpm??'',r.passed?'合格':'未達成',breakdown(a,r.best),condition(a)])];
     csvDownload(rows,'picspeak-gradebook-'+a.id+'.csv');
   }
   selectClass.addEventListener('change',()=>void loadAssignments());
