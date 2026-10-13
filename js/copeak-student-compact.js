@@ -39,7 +39,7 @@
   const label=(row)=>row.type==='copeak'?'Copeak · 音読':'PicSpeak · '+(NAMES[row.mode?.replace(/\s/g,'')]||row.mode||'画像描写');
   const glyph=(row)=>row.type==='copeak'?'book':({SNAPSHOT:'photo',MOSAIC:'tiles',DETECTIVE:'search',ORALQUEST:'microphone',STORY:'film',PICFLASH:'bolt'})[row.mode?.replace(/\s/g,'')]||'photo';
   const main={status:'todo',source:'all',page:0,selected:null,items:[],modal:false,activeTrigger:null,prevOverflow:'',focusKey:null};
-  let root,grid,nav,hero,mini,stats,footer,dialog,dialogContent,dialogTitle,dialogType,dialogClose,dialogCTA,dialogNote,rankingTarget,readingList,picList,rankObserver;
+  let root,grid,nav,mini,stats,footer,dialog,dialogContent,dialogTitle,dialogType,dialogClose,dialogCTA,dialogNote,rankingTarget,readingList,picList,rankObserver;
   let observer,pending=false;
   const readingId=(card)=>card.querySelector('.start-btn')?.dataset.id;
   const identities=new WeakMap();let identityCounter=0;
@@ -75,11 +75,11 @@
     if(!readingList||!top)return false;
     root=make('section','cso-dashboard');root.id='csoBoard';root.setAttribute('aria-label','Copeak Classroom 学習ダッシュボード');
     const heading=make('header','cso-pagehead');
-    const identity=make('div','cso-identity');identity.append(make('span','cso-overline','MY LEARNING'),make('h1','','マイ・ダッシュボード'));
+    const identity=make('div','cso-identity');identity.append(make('span','cso-overline','COPEAK CLASSROOM'),make('h1','','My Learning'));
     const overview=make('div','cso-headerprogress');overview.append(make('span','','学習の進捗'));const gauge=make('div','cso-hprogress');const bar=make('span');bar.id='csoHeaderBar';gauge.append(bar);overview.append(gauge,make('strong',''));overview.querySelector('strong').id='csoHeaderRatio';
     heading.append(identity,overview);root.append(heading);
-    const topGrid=make('div','cso-topgrid');hero=make('div','cso-feature');mini=make('div','cso-rankmini');topGrid.append(hero,mini);root.append(topGrid);
     stats=make('div','cso-stats');root.append(stats);
+    mini=make('div','cso-rankmini');root.append(mini);
     const taskTop=make('div','cso-task-head');const title=make('div');title.append(make('span','cso-overline','YOUR ASSIGNMENTS'),make('h2','','課題一覧'));const controls=make('div','cso-controls');nav=make('div','cso-tabs');nav.setAttribute('role','group');nav.setAttribute('aria-label','課題の絞り込み');
     for(const [id,text] of [['todo','未完了'],['done','完了'],['all','すべて']]){const b=make('button','cso-tab',text);b.type='button';b.dataset.status=id;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{main.status=id;main.page=0;render();});nav.append(b);}
     const source=make('select','cso-source-select');source.setAttribute('aria-label','課題の種類');for(const [id,text] of [['all','すべての種類'],['copeak','Copeak 音読'],['picspeak','PicSpeak 画像描写']]){const o=make('option','',text);o.value=id;source.append(o);}source.addEventListener('change',()=>{main.source=source.value;main.page=0;render();});source.id='csoSourceSelect';
@@ -118,35 +118,30 @@
   function metricBox(glyphName,caption,value,sub){
     const el=make('div','cso-metric');const circle=make('span','cso-metric-icon');circle.append(icon(glyphName,22));const copy=make('div','cso-metric-text');copy.append(make('span','cso-metric-caption',caption),make('strong','cso-metric-value',value));if(sub)copy.append(make('span','cso-metric-sub',sub));el.append(circle,copy);return el;
   }
-  function renderHero(rows){
-    const todo=rows.filter(r=>!r.done&&!r.upcoming&&!r.overdue);const next=todo[0]||rows.find(r=>!r.done)||rows[0];
-    hero.replaceChildren();hero.classList.toggle('cso-hero-pink',next?.type==='picspeak');
-    const content=make('div','cso-feature-content');
-    if(!next){content.append(make('span','cso-feature-pill','学習ダッシュボード'),make('h2','','課題の公開をお待ちください'),make('p','cso-feature-description','新しい課題が公開されると、ここに表示されます。'));}
-    else{
-      content.append(make('span','cso-feature-pill',todo.length?'次の課題':next.done?'取り組みの記録':'課題を確認'),make('h2','',next.title));
-      const type=make('div','cso-featuretype');type.append(icon(glyph(next),18),make('span','',label(next)));content.append(type);
-      const hints=make('div','cso-featurechips');if(next.deadline)hints.append(chip('clock',next.deadline));else if(next.subtitle){const suffix=next.subtitle.match(/締切.*/)?.[0];if(suffix)hints.append(chip('clock',suffix));}
-      hints.append(chip('layers',standardStatus(next)));content.append(hints);
-      const button=make('button','cso-feature-button',todo.length?'この課題を見る':next.done?'成果を見る':'課題の詳細');button.type='button';button.append(icon('arrow',18));button.addEventListener('click',()=>openModal(next,button));content.append(button);
-    }
-    const deco=make('div','cso-feature-art');deco.setAttribute('aria-hidden','true');deco.append(icon(next?glyph(next):'book',106),make('span','cso-orb cso-orb-a'),make('span','cso-orb cso-orb-b'),make('span','cso-orb cso-orb-c'));hero.append(content,deco);
-  }
   function chip(name,txt){const c=make('span','cso-chip');c.append(icon(name,15),make('span','',txt));return c;}
   function renderRank(rows){
-    // Preserve the live, access-controlled ranking panel across dashboard rerenders.
-    const originalRank=document.getElementById('studentReadingRankCard');
-    if(originalRank)originalRank.remove();
-    mini.replaceChildren();mini.append(make('div','cso-side-eyebrow','CLASS PERFORMANCE'));
-    const title=make('div','cso-side-heading');title.append(icon('crown',22),make('strong','','クラス順位'));mini.append(title);
-    const candidate=rows.find(r=>r.type==='copeak'&&r.source.querySelector('.student-assignment-rank-mini'));
-    if(candidate){
-      mini.append(make('div','cso-side-caption',candidate.title));
-      const cloned=candidate.source.querySelector('.student-assignment-rank-mini').cloneNode(true);const host=make('div','cso-rank-summary');host.append(cloned);mini.append(host);
-    }else mini.append(make('p','cso-side-note','音読課題の成績があると順位が表示されます。'));
-    const details=make('details','cso-rankdetails');details.append(make('summary','','順位の詳しい情報を見る'));
-    rankingTarget=make('div','cso-rank-original');details.append(rankingTarget);mini.append(details);
-    if(originalRank)rankingTarget.append(originalRank);else liftRank();
+    // Preserve expanded state across data refreshes.
+    let details=mini.querySelector('.cso-rankdetails');
+    if(!details){
+      details=make('details','cso-rankdetails');
+      details.append(make('summary','','順位の詳細を表示'));
+      rankingTarget=make('div','cso-rank-original');
+      details.append(rankingTarget);
+      mini.append(details);
+    }else{
+      rankingTarget=details.querySelector('.cso-rank-original');
+    }
+    for(const child of [...mini.children]){
+      if(child!==details)child.remove();
+    }
+    const eyebrow=make('div','cso-side-eyebrow','CLASS PERFORMANCE');
+    mini.insertBefore(eyebrow,details);
+    const title=make('div','cso-side-heading');
+    title.append(icon('crown',22),make('strong','','音読のクラス順位'));
+    mini.insertBefore(title,details);
+    const guide=make('p','cso-side-note','課題を選ぶとAccuracy・WPM・練習回数の順位を確認できます。');
+    mini.insertBefore(guide,details);
+    liftRank();
   }
   function tile(item){
     const b=make('button','cso-tile '+(item.type==='picspeak'?'cso-pink':'cso-green')+(item.done?' cso-complete':'')+(item.overdue?' cso-expired':''));b.type='button';b.title=item.title;
@@ -162,11 +157,14 @@
     if(!root)return;
     main.items=sourceRows();
     const className=clean(document.getElementById('className')?.textContent);
-    root.querySelector('.cso-overline').textContent=className&&className!=='My Class'?className+' · MY LEARNING':'MY LEARNING';
+    const classMatch=className.normalize('NFKC').match(/(\d+)\s*年\s*(\d+)\s*組/);
+    root.querySelector('.cso-overline').textContent=classMatch
+      ? `CLASS ${classMatch[1]}-${classMatch[2]}`
+      : (className && className !== 'My Class' ? className : 'COPEAK CLASSROOM');
     const all=main.items,pending=all.filter(r=>!r.done),done=all.filter(r=>r.done),todo=pending.filter(r=>!r.overdue&&!r.upcoming);
     const pct=all.length?Math.round(100*done.length/all.length):0;
     root.querySelector('#csoHeaderBar').style.width=pct+'%';root.querySelector('#csoHeaderRatio').textContent=`${done.length}/${all.length} · ${pct}%`;
-    renderHero(all);renderRank(all);
+    renderRank(all);
     stats.replaceChildren(metricBox('layers','残っている課題',String(pending.length)+' 件','公開前・期限切れを含む'),metricBox('check','完了した課題',`${done.length} / ${all.length}`,'Copeak提出・PicSpeak合格'),metricBox('target','Copeak 平均Accuracy',clean(document.querySelector('#avgAccuracy')?.textContent)||'—','音読の記録'),metricBox('bolt','Copeak 最高WPM',clean(document.querySelector('#bestWpm')?.textContent)||'—','音読の記録'));
     for(const b of nav.querySelectorAll('button')){b.setAttribute('aria-pressed',String(b.dataset.status===main.status));b.textContent=(b.dataset.status==='todo'?'未完了':b.dataset.status==='done'?'完了':'すべて')+'  '+(b.dataset.status==='todo'?pending.length:b.dataset.status==='done'?done.length:all.length);}
     const filtered=all.filter(r=>(main.status==='all'||(main.status==='done'?r.done:!r.done))&&(main.source==='all'||r.type===main.source));

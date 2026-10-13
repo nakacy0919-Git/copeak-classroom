@@ -219,3 +219,46 @@ body.cso-v3 .student-main{min-width:0}
 #csoModal .cso-criteria .student-gauge-gap {
   white-space:nowrap;
 }
+
+/* v3.3: Full-width ranking without the arbitrary featured assignment. */
+#csoBoard .cso-rankmini {
+  width:100%;
+  min-width:0;
+  margin:0 0 18px;
+  padding:15px 20px 17px;
+  overflow:visible;
+}
+#csoBoard .cso-rankmini .cso-side-heading {
+  margin-top:4px;
+}
+#csoBoard .cso-rankmini .cso-side-note {
+  margin:7px 0 9px;
+}
+#csoBoard .cso-rankdetails {
+  margin-top:0;
+  padding-top:0;
+}
+#csoBoard .cso-rank-original {
+  max-height:none;
+  overflow:visible;
+  margin-top:12px;
+}
+#csoBoard .cso-rank-original #studentReadingRankCard {
+  width:100%;
+  max-width:none;
+  padding:12px 0 0!important;
+  margin:0!important;
+}
+@media (min-width:901px) {
+  #csoBoard .cso-rank-original .student-rank-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media (max-width:650px) {
+  #csoBoard .cso-rankmini {
+    padding:12px 14px;
+  }
+  #csoBoard .cso-rankmini .cso-side-note {
+    margin:5px 0 9px;
+  }
+}
