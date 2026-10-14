@@ -86,8 +86,8 @@ function renderHeader() {
   $('#activityTitle').textContent = {teachers:'先生を選択',assignments:'配布課題',students:'生徒別の成績',history:'提出履歴',diagnostics:'エラー報告'}[state.view];
   $('#activityContext').textContent = [state.teacherName,state.assignmentTitle,state.studentName].filter(Boolean).join(' → ') || '先生から課題・生徒・提出履歴へ進めます。';
   $('#activityBack').classList.toggle('hidden',!stack.length);
-  $('#activityPrevious').classList.toggle('hidden',state.view==='students');
-  $('#activityNext').classList.toggle('hidden',state.view==='students');
+  $('#activityPrevious').classList.remove('hidden');
+  $('#activityNext').classList.remove('hidden');
   $('#activityFilter').classList.toggle('hidden',state.view!=='teachers');
   $('#activityErrors').classList.toggle('hidden',state.view==='diagnostics');
   $('#activityPreviewButton').classList.toggle('hidden',!state.assignmentId || state.view==='diagnostics');
@@ -99,7 +99,7 @@ async function load() {
   $('#activityTable').innerHTML='<div class="admin-loading" role="status">読み込み中…</div>';
   $('#activityPrevious').disabled=true; $('#activityNext').disabled=true; $('#activityPage').textContent='';
   let items,total;
-  const batchSize = state.view==='students' ? 50 : size;
+  const batchSize = state.view==='students' ? 20 : size;
   if (state.view==='teachers') {
     const search=$('#activitySearch').value.trim().toLowerCase(), filter=$('#activityFilter').value;
     const found=teachers.filter(t=>[t.teacher_name,t.school_name].join(' ').toLowerCase().includes(search) &&
@@ -108,34 +108,20 @@ async function load() {
   } else {
     const {data,error}=await client.rpc('admin_inspect_activity',{
       p_view:state.view,p_teacher_id:state.teacherId||null,p_assignment_id:state.assignmentId||null,
-      p_student_id:state.studentId||null,p_search:$('#activitySearch').value.trim(),p_page:state.view==='students' ? 0 : state.page,p_size:batchSize
+      p_student_id:state.studentId||null,p_search:$('#activitySearch').value.trim(),p_page:state.page,p_size:batchSize
     });
     if (current!==serial) return;
     if (error) throw error;
     total=Number(data?.total||0); items=Array.isArray(data?.items)?data.items:[];
   }
-  // ADMIN_STUDENT_SCROLL_20261009: fetch all matching students in bounded batches.
-  if (state.view==='students') {
-    for (let page=1; page*batchSize<total; page++) {
-      const {data,error}=await client.rpc('admin_inspect_activity',{
-        p_view:'students',p_teacher_id:state.teacherId||null,p_assignment_id:state.assignmentId||null,
-        p_student_id:null,p_search:$('#activitySearch').value.trim(),p_page:page,p_size:batchSize
-      });
-      if(current!==serial)return;
-      if(error)throw error;
-      const next=Array.isArray(data?.items)?data.items:[];
-      if(!next.length)break;
-      items.push(...next);
-    }
-    items=[...new Map(items.map(s=>[s.student_id,s])).values()];
-  }
+
   if(current!==serial)return;
   $('#activityTable').innerHTML=renderRows(items);
   $('#activityTable').scrollTop=0;
   $('#activityPage').textContent=state.view==='students'
-    ? `${num(items.length)} / ${num(total)}人`
+    ? `${num(total ? state.page*batchSize+1 : 0)}–${num(state.page*batchSize+items.length)} / ${num(total)}人`
     : `${num(total)}件 · ${state.page+1} / ${Math.max(1,Math.ceil(total/size))}ページ`;
-  $('#activityPrevious').disabled=state.page===0; $('#activityNext').disabled=(state.page+1)*size>=total;
+  $('#activityPrevious').disabled=state.page===0; $('#activityNext').disabled=(state.page+1)*batchSize>=total;
 }
 async function refresh() {
   const current=++serial;

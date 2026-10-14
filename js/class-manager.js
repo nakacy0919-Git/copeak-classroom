@@ -1213,9 +1213,7 @@ function renderClassPicker() {
   }
 
 
-  const activeOwner =
-    activeClass.teacher_id ===
-    ctx.user.id;
+
 
 
   button.innerHTML = `
@@ -1225,9 +1223,7 @@ function renderClassPicker() {
         ${esc(activeClass.name)}
       </strong>
 
-      <small>
-        ${activeOwner ? 'Owner' : 'Shared'}
-      </small>
+
 
     </span>
 
@@ -1307,9 +1303,7 @@ function renderClassPicker() {
       .map(
         item => {
 
-          const owner =
-            item.teacher_id ===
-            ctx.user.id;
+
 
 
           const active =
@@ -1335,15 +1329,14 @@ function renderClassPicker() {
                 )}
               </span>
 
-              <span
-                class="
-                  class-grid-role
-                  ${owner ? 'owner' : 'shared'}
-                ">
-
-                ${owner ? 'Owner' : 'Shared'}
-
-              </span>
+              ${
+                visibleClasses.some(other =>
+                  other.id !== item.id &&
+                  classPickerLabel(other) === classPickerLabel(item)
+                )
+                  ? `<small class="class-grid-secondary">識別: ${esc(String(item.class_code || item.id).slice(-4))}</small>`
+                  : ''
+              }
 
             </button>
           `;
@@ -1489,6 +1482,7 @@ function buildClassManager() {
           ＋ New Class
 
         </button>
+
 
 
         <button
