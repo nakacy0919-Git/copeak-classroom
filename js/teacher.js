@@ -1,4 +1,5 @@
 import { reviewDeliveryUrl } from './launch-safety.js';
+import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import {
   requireUser,
   getClient,
@@ -8780,39 +8781,12 @@ students =
         })
       );
 
-    const {
-      data: submissionRows,
-      error: submissionError
-    } =
-      await sb
-        .from(
-          'submissions'
-        )
-        .select(
-          '*'
-        )
-        .in(
-          'assignment_id',
-          ids
-        );
-
-
-    if (
-      submissionError
-    ) {
-
-      throw submissionError;
-    }
-
-
     submissions =
-      (submissionRows || [])
-        .filter(
-          row =>
-            currentClassStudentIds.has(
-              row.student_id
-            )
-        );
+      await fetchGradebookSubmissions(
+        sb,
+        ids,
+        [...currentClassStudentIds]
+      );
 
   } else {
 
