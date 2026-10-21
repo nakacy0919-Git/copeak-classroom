@@ -1,4 +1,5 @@
 import { reportClassroomDiagnostic, flushClassroomDiagnostics } from './classroom-diagnostics.js';
+import './scoring-exclusions.js';
 import { reviewDeliveryUrl } from './launch-safety.js';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
 import {
@@ -4852,6 +4853,11 @@ async function openCopeak(
     'eng',
     lessonText
   );
+
+  const scoreExclusions = globalThis.CopeakScoreExclusions.safeList(assignment.score_exclusions);
+  if (scoreExclusions.length) {
+    url.searchParams.set('score_exclusions', JSON.stringify(scoreExclusions));
+  }
 
 
   url.searchParams.set(

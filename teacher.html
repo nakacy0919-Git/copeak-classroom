@@ -1897,6 +1897,14 @@
 
 </div>
 
+<div class="field" style="padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;margin:12px 0">
+  <label for="assignmentScoreExclusions">採点しない固有名詞（任意）</label>
+  <p class="tiny muted">1行に1語句。本文からは消さず、CopeakのAccuracyのみで除外します。</p>
+  <button type="button" class="btn btn-light" id="suggestAssignmentScoreExclusions">固有名詞の候補を表示</button>
+  <textarea id="assignmentScoreExclusions" class="input assignment-textarea" rows="3" placeholder="New York&#10;Mr. Tanaka"></textarea>
+  <p class="tiny muted">自動候補は不完全です。教師が確認・編集してください（最大20件）。</p>
+</div>
+
 <div
   id="assignmentTextEditor"
   class="field">

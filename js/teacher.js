@@ -1,4 +1,5 @@
 import { reviewDeliveryUrl } from './launch-safety.js';
+import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import {
   requireUser,
@@ -5396,6 +5397,8 @@ function previewAssignmentDelivery() {
 
   p.set('title', title);
   p.set('eng', english);
+  const previewExclusions = globalThis.CopeakScoreExclusions.safeList($('#assignmentScoreExclusions')?.value || '');
+  if (previewExclusions.length) p.set('score_exclusions', JSON.stringify(previewExclusions));
   p.set('jpn', japanese);
   p.set('lang', $('#assignmentLang')?.value || 'en-US');
 
@@ -5654,6 +5657,10 @@ function openAssignmentEditor(
   $('#assignmentText').value =
     assignment?.lesson_text ||
     '';
+  $('#assignmentScoreExclusions').value =
+    Array.isArray(assignment?.score_exclusions)
+      ? assignment.score_exclusions.join('\n')
+      : '';
 
 
   $('#assignmentTranslation').value =
@@ -6880,6 +6887,14 @@ const week =
           .value
           .trim();
 
+  let scoreExclusions;
+  try {
+    scoreExclusions = globalThis.CopeakScoreExclusions.validateList($('#assignmentScoreExclusions')?.value || '');
+  } catch (error) {
+    $('#assignmentMsg').textContent = error.message;
+    return;
+  }
+
   const translation =
     $('#assignmentTranslation')
       .value
@@ -7493,6 +7508,9 @@ let uploadedImage =
         : null,
     lesson_text:
       lessonText,
+
+    score_exclusions:
+      scoreExclusions,
 
     lesson_translation:
   translation ||
@@ -8108,6 +8126,9 @@ async function duplicateAssignment(
 
         lesson_text:
           assignment.lesson_text,
+
+        score_exclusions:
+          globalThis.CopeakScoreExclusions.safeList(assignment.score_exclusions),
 
         lesson_translation:
           assignment.lesson_translation,
@@ -10953,6 +10974,18 @@ $('#cancelAssignment').onclick =
 $('#publishAssignment').onclick =
   () =>
     saveAssignment();
+
+$('#suggestAssignmentScoreExclusions').onclick = () => {
+  const dialogue = $('#assignmentLessonType')?.value === 'dialogue';
+  const text = dialogue
+    ? getAssignmentDialogueFromForm().map(item => item.text || '').join(' ')
+    : ($('#assignmentText')?.value || '');
+  const field = $('#assignmentScoreExclusions');
+  const api = globalThis.CopeakScoreExclusions;
+  const items = api.parseList([...api.parseList(field.value), ...api.suggestNames(text)]);
+  field.value = items.join('\n');
+  $('#assignmentMsg').textContent = '候補を入力しました。内容を確認してください。';
+};
 
 $('#assignmentLessonType').onchange =
   () => {
