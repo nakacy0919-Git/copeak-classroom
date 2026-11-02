@@ -911,6 +911,7 @@ function bestComprehensionSubmissionMap(
   rows.forEach(
     row => {
 
+      if (row.score_version !== 'wcpm-v1') return;
       if (
         row.comprehension ===
           null ||
@@ -1171,7 +1172,7 @@ function ensureGradebookControls() {
   ) {
 
     hint.textContent =
-      'Accuracy / WPM / Reading Performance を切り替えて表示できます。各スコアをクリックすると先生が手動修正できます。マウスを置くと全指標を確認できます。';
+      'Accuracy / WPM / Reading Performance（100点満点）を切り替えて表示できます。旧Comprehensionの記録は保持し、Reading Performanceには合算しません。各スコアはクリックして手動修正できます。';
   }
 }
 
@@ -1181,7 +1182,7 @@ function metricManualValue(
   metric
 ) {
 
-  if (!manualRow) {
+  if (!manualRow || (metric === 'comprehension' && manualRow.score_version !== 'wcpm-v1')) {
     return null;
   }
 
@@ -3579,6 +3580,7 @@ async function saveManualMetric(
 
   row[field] =
     value;
+  if (metric === 'comprehension') row.score_version = 'wcpm-v1';
 
 
   if (
@@ -8828,7 +8830,7 @@ students =
           'manual_scores'
         )
         .select(
-          'assignment_id,student_id,score,wpm,comprehension,updated_at'
+          'assignment_id,student_id,score,wpm,comprehension,score_version,updated_at'
         )
         .in(
           'assignment_id',

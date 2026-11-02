@@ -12,7 +12,7 @@ export async function fetchGradebookSubmissions(sb, assignmentIds, studentIds) {
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const { data, error } = await sb
       .from('submissions')
-      .select('id,assignment_id,student_id,accuracy,wpm,comprehension,submitted_at')
+      .select('id,assignment_id,student_id,accuracy,wpm,comprehension,score_version,submitted_at')
       .in('assignment_id', assignmentIds)
       .in('student_id', studentIds)
       .order('submitted_at', { ascending: true })

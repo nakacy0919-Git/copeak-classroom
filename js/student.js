@@ -1079,6 +1079,9 @@ function bestStudentMetricMap(
   rows.forEach(
     row => {
 
+      // Previous Comprehension scores are not comparable with WCPM-v1.
+      if (metric === 'comprehension' && row.score_version !== 'wcpm-v1') return;
+
       const raw =
         row?.[metric];
 
@@ -1168,9 +1171,8 @@ function studentEffectiveMetric(
 
 
   const manualValue =
-    manualRow?.[
-      manualField
-    ];
+    metric === 'comprehension' && manualRow?.score_version !== 'wcpm-v1'
+      ? null : manualRow?.[manualField];
 
 
   if (
@@ -5459,6 +5461,8 @@ async function saveCopeakResult(
 
       comprehension,
 
+      score_version: data.scoreVersion === 'wcpm-v1' ? 'wcpm-v1' : 'legacy-comprehension',
+
       attempt_no:
         attemptNo,
 
@@ -6075,7 +6079,7 @@ async function loadLive() {
         'manual_scores'
       )
       .select(
-        'assignment_id,student_id,score,wpm,comprehension'
+        'assignment_id,student_id,score,wpm,comprehension,score_version'
       )
       .eq(
         'student_id',
