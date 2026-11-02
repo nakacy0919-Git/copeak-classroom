@@ -965,7 +965,7 @@ function gradebookMetricLabel(
     metric ===
     'comprehension'
   ) {
-    return 'Comprehension';
+    return 'Reading Performance';
   }
 
   if (metric === 'all') {
@@ -1063,7 +1063,7 @@ function ensureGradebookControls() {
             </option>
 
             <option value="comprehension">
-              Comprehension
+              Reading Performance
             </option>
 
             <option value="all">
@@ -1171,7 +1171,7 @@ function ensureGradebookControls() {
   ) {
 
     hint.textContent =
-      'Accuracy / WPM / Comprehension を切り替えて表示できます。各スコアをクリックすると先生が手動修正できます。マウスを置くと全指標を確認できます。';
+      'Accuracy / WPM / Reading Performance を切り替えて表示できます。各スコアをクリックすると先生が手動修正できます。マウスを置くと全指標を確認できます。';
   }
 }
 
@@ -1391,7 +1391,7 @@ function exportGradebookCsv() {
       headers.push(
         `#${assignment.week_no} Accuracy`,
         `#${assignment.week_no} WPM`,
-        `#${assignment.week_no} Comprehension`,
+        `#${assignment.week_no} Reading Performance`,
         `#${assignment.week_no} Reads`,
         `#${assignment.week_no} Pass`
       );
@@ -1833,10 +1833,10 @@ function renderTable() {
                       wpm === null
                         ? '—'
                         : wpm
-                    } / Comprehension ${
+                    } / Reading Performance ${
                       comprehension === null
                         ? '—'
-                        : `${comprehension}%`
+                        : `${comprehension}/100`
                     } / Reads ${reads}`;
 
 
@@ -1958,7 +1958,7 @@ function renderTable() {
 
                           ${metricButton(
                             'comprehension',
-                            'C',
+                            'RP',
                             comprehension
                           )}
 
@@ -7091,7 +7091,7 @@ let youtubeClip =
   ) {
 
     msg.textContent =
-      '合格基準を使用する場合は、Accuracy・WPM・Comprehensionのいずれかを設定してください。';
+      '合格基準を使用する場合は、Accuracy・WPM・Reading Performanceのいずれかを設定してください。';
 
     return;
   }
@@ -7137,7 +7137,7 @@ let youtubeClip =
   ) {
 
     msg.textContent =
-      'Comprehensionの合格基準は0〜100で入力してください。';
+      'Reading Performanceの合格基準は0〜100で入力してください。';
 
     return;
   }

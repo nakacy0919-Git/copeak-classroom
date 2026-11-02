@@ -201,7 +201,7 @@ const TEXT = {
       '正確率',
 
     comprehension:
-      '理解度',
+      '音読パフォーマンス',
 
     demoBanner:
       'デモモード：TEST Submitを押すと提出済みに変わります。',
@@ -358,7 +358,7 @@ const TEXT = {
       'Accuracy',
 
     comprehension:
-      'Comp.',
+      'Reading Performance',
 
     demoBanner:
       'Demo mode: press TEST Submit to mark an assignment as submitted.',
@@ -1702,7 +1702,7 @@ function studentPassPanelHtml(
       ? studentGaugeMetricHtml({
 
           label:
-            'Comprehension',
+            'Reading Performance',
 
           current:
             state.comprehension,
@@ -1711,7 +1711,7 @@ function studentPassPanelHtml(
             state.targets.comprehension,
 
           unit:
-            '%',
+            '/100',
 
           maximum:
             100
@@ -5579,9 +5579,9 @@ async function saveCopeakResult(
       `WPM ${Math.round(
         wpm
       )} / ` +
-      `Comp ${Math.round(
+      `Reading Performance ${Math.round(
         comprehension
-      )}%`
+      )}/100`
     );
   }
 
