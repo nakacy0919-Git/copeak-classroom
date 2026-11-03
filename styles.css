@@ -11496,3 +11496,55 @@ body.roster-projector-open {
     grid-template-columns: 1fr;
   }
 }
+/* Separate class gradebook and individual self-study records. */
+.gradebook-audience-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+.gradebook-audience-tab {
+  appearance: none;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 40px;
+  padding: 9px 17px;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+.gradebook-audience-tab.active,
+.gradebook-audience-tab[aria-selected="true"] {
+  color: #114b43;
+  background: #ecfdf5;
+  border-color: #34d399;
+  box-shadow: inset 0 0 0 1px #34d399;
+}
+.gradebook-audience-tab:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+}
+.gradebook-not-assigned {
+  color: #94a3b8;
+  text-align: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.teacher-assignment-week .assignment-study-label {
+  font-size: clamp(10px, 1vw, 13px);
+  white-space: nowrap;
+}
+.student-assignment-card .weekbox strong.is-self-study {
+  font-size: 12px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .gradebook-audience-tabs { gap: 6px; }
+  .gradebook-audience-tab { flex: 1 1 140px; min-height: 44px; padding: 9px; }
+}

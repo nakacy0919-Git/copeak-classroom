@@ -1,6 +1,7 @@
 import { reviewDeliveryUrl } from './launch-safety.js';
 import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
+import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
 import {
   requireUser,
   getClient,
@@ -70,8 +71,8 @@ let gradebookDefaultMetric =
   'accuracy';
 
 
-let gradebookMetricMode =
-  gradebookDefaultMetric;
+let gradebookMetricMode = gradebookDefaultMetric;
+let gradebookAudienceMode = 'class';
 
 let editingAssignmentId = null;
 
@@ -471,14 +472,12 @@ function manualScoreMap(
   return map;
 }
 
-function visibleAssignments() {
-
-  return assignments
-    .filter(
-      assignment =>
-        assignment.is_published !==
-        false
-    );
+function visibleAssignments(audience = 'class') {
+  return assignments.filter(a => a.is_published !== false &&
+    (audience === 'targeted' ? a.audience_type === 'targeted' : a.audience_type !== 'targeted'))
+    .sort((a, b) => audience === 'targeted'
+      ? Number(a.week_no) - Number(b.week_no)
+      : (assignmentNumber(a) || 0) - (assignmentNumber(b) || 0));
 }
 
 // ==========================================
@@ -595,13 +594,8 @@ function renderAssignmentManager() {
 
               <div class="teacher-assignment-week">
 
-                <span>
-  NO.
-</span>
-
-                <strong>
-                  ${assignment.week_no}
-                </strong>
+                <span>${assignment.audience_type === 'targeted' ? '個別' : 'NO.'}</span>
+<strong class="${assignment.audience_type === 'targeted' ? 'assignment-study-label' : ''}">${assignment.audience_type === 'targeted' ? '自習教材' : (assignmentNumber(assignment) || assignment.week_no)}</strong>
 
               </div>
 
@@ -1044,7 +1038,11 @@ function ensureGradebookControls() {
 
     controls.innerHTML =
       `
-        <div class="gradebook-view-control">
+        <div class="gradebook-audience-tabs" role="tablist" aria-label="成績表の種類">
+  <button type="button" class="gradebook-audience-tab" role="tab" id="gradebookClassTab">クラス課題</button>
+  <button type="button" class="gradebook-audience-tab" role="tab" id="gradebookIndividualTab">個別自習教材</button>
+</div>
+<div class="gradebook-view-control">
 
           <span class="tiny muted">
             表示
@@ -1106,8 +1104,13 @@ function ensureGradebookControls() {
     );
 
 
-    $('#gradebookMetricMode')
-      ?.addEventListener(
+    for (const [id, mode] of [['gradebookClassTab', 'class'], ['gradebookIndividualTab', 'targeted']]) {
+  document.getElementById(id)?.addEventListener('click', () => {
+    gradebookAudienceMode = mode;
+    renderTable();
+  });
+}
+$('#gradebookMetricMode')?.addEventListener(
         'change',
         event => {
 
@@ -1147,8 +1150,14 @@ function ensureGradebookControls() {
   }
 
 
-  const select =
-    $('#gradebookMetricMode');
+  for (const [id, mode] of [['gradebookClassTab', 'class'], ['gradebookIndividualTab', 'targeted']]) {
+  const button = document.getElementById(id);
+  if (button) {
+    button.classList.toggle('active', gradebookAudienceMode === mode);
+    button.setAttribute('aria-selected', String(gradebookAudienceMode === mode));
+  }
+}
+const select = $('#gradebookMetricMode');
 
 
   if (select) {
@@ -1171,7 +1180,9 @@ function ensureGradebookControls() {
   ) {
 
     hint.textContent =
-      'Accuracy / WPM / Comprehension を切り替えて表示できます。各スコアをクリックすると先生が手動修正できます。マウスを置くと全指標を確認できます。';
+      (gradebookAudienceMode === 'class'
+ ? 'クラス課題のみを集計します。個別自習教材は平均・提出率に含めません。'
+ : '個別自習教材の記録です。配布対象外の生徒は「対象外」と表示します。') + ' Accuracy / WPM / Comprehension の表示切替とスコアの手動修正ができます。';
   }
 }
 
@@ -1344,9 +1355,7 @@ function assignmentPassResult(
 }
 
 function exportGradebookCsv() {
-
-  const activeAssignments =
-    visibleAssignments();
+const activeAssignments = visibleAssignments(gradebookAudienceMode);
 
 
   const bestAccuracy =
@@ -1387,13 +1396,8 @@ function exportGradebookCsv() {
 
   activeAssignments.forEach(
     assignment => {
-
-      headers.push(
-        `#${assignment.week_no} Accuracy`,
-        `#${assignment.week_no} WPM`,
-        `#${assignment.week_no} Comprehension`,
-        `#${assignment.week_no} Reads`,
-        `#${assignment.week_no} Pass`
+const label = assignment.audience_type === 'targeted' ? `自習教材 ${assignment.title}` : `#${assignmentNumber(assignment) || assignment.week_no}`;
+headers.push(`${label} Accuracy`, `${label} WPM`, `${label} Comprehension`, `${label} Reads`, `${label} Pass`
       );
 
     }
@@ -1412,11 +1416,12 @@ function exportGradebookCsv() {
         ];
 
 
-        activeAssignments.forEach(
-          assignment => {
-
-            const key =
-              `${student.id}|${assignment.id}`;
+        activeAssignments.forEach(assignment => {
+if (gradebookAudienceMode === 'targeted' && !targetsStudent(assignment, student.id)) {
+  row.push('', '', '', '', '');
+  return;
+}
+const key = `${student.id}|${assignment.id}`;
 
 
             const manualRow =
@@ -1581,7 +1586,7 @@ function exportGradebookCsv() {
 
 
   link.download =
-    'copeak-gradebook.csv';
+    gradebookAudienceMode === 'targeted' ? 'copeak-individual-study.csv' : 'copeak-gradebook.csv';
 
 
   document.body.appendChild(
@@ -1600,12 +1605,8 @@ function exportGradebookCsv() {
 }
 
 function renderTable() {
-
-  ensureGradebookControls();
-
-
-  const activeAssignments =
-    visibleAssignments();
+ensureGradebookControls();
+const activeAssignments = visibleAssignments(gradebookAudienceMode);
 
 
   const bestAccuracy =
@@ -1669,7 +1670,7 @@ function renderTable() {
           activeAssignments
             .map(
               assignment =>
-                `<th>#${assignment.week_no}</th>`
+                `<th title="${esc(assignment.title)}">${assignment.audience_type === 'targeted' ? `自習教材：${esc(assignment.title)}` : `#${assignmentNumber(assignment) || assignment.week_no}`}</th>`
             )
             .join('')
         }
@@ -1700,13 +1701,11 @@ function renderTable() {
           let cCount = 0;
 
 
-          const cells =
-            activeAssignments
-              .map(
-                assignment => {
-
-                  const key =
-                    `${student.id}|${assignment.id}`;
+          const cells = activeAssignments.map(assignment => {
+if (gradebookAudienceMode === 'targeted' && !targetsStudent(assignment, student.id)) {
+  return '<td class="gradebook-not-assigned" title="この生徒には配布されていません">対象外</td>';
+}
+const key = `${student.id}|${assignment.id}`;
 
 
                   const manualRow =
@@ -2091,7 +2090,7 @@ function renderTable() {
 
               <td>
                 <strong>
-                  ${done}/${activeAssignments.length}
+                  ${done}/${gradebookAudienceMode === 'targeted' ? activeAssignments.filter(assignment => targetsStudent(assignment, student.id)).length : activeAssignments.length}
                 </strong>
               </td>
 
@@ -2739,9 +2738,7 @@ function renderClassLeaderboard() {
                 : ''
             }>
 
-            No.${esc(
-              assignment.week_no
-            )} — ${esc(
+            ${esc(assignmentLabel(assignment))} — ${esc(
               assignment.title
             )}
 
@@ -2756,9 +2753,7 @@ function renderClassLeaderboard() {
       .audience_type ===
       'targeted'
 
-      ? '個別配布'
-
-      : 'クラス配布';
+      ? '個別自習教材' : 'クラス課題';
 
 
   const metricToggle =
@@ -2950,9 +2945,7 @@ function renderClassLeaderboard() {
         <h2>
           ${
             isPresenting
-              ? `No.${esc(
-                  selectedAssignment.week_no
-                )} ${esc(
+              ? `${esc(assignmentLabel(selectedAssignment))} ${esc(
                   selectedAssignment.title
                 )}`
               : '課題別 Reading Ranking'
@@ -3116,9 +3109,7 @@ function renderClassLeaderboard() {
     <div class="teacher-rank-meta-bar">
 
       <strong>
-        No.${esc(
-          selectedAssignment.week_no
-        )}
+        ${esc(assignmentLabel(selectedAssignment))}
       </strong>
 
       <span class="teacher-rank-meta-title">
@@ -7484,10 +7475,9 @@ let uploadedImage =
 
     category,
 
-    week_no:
-      week,
-
-    release_at:
+    week_no: week,
+gradebook_no: audienceType === 'targeted' ? null : (existingAssignment?.audience_type !== 'targeted' && existingAssignment?.gradebook_no != null ? Number(existingAssignment.gradebook_no) : nextClassNumber(assignments, existingAssignment?.class_id || selectedClass.id)),
+release_at:
       release.toISOString(),
 
     due_at:
@@ -8091,10 +8081,9 @@ async function duplicateAssignment(
         category:
           assignment.category,
 
-        week_no:
-          newWeek,
-
-        release_at:
+        week_no: newWeek,
+gradebook_no: assignment.audience_type === 'targeted' ? null : nextClassNumber(assignments, selectedClass.id),
+release_at:
           release.toISOString(),
 
         due_at:

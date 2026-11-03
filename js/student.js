@@ -1,6 +1,7 @@
 import { reportClassroomDiagnostic, flushClassroomDiagnostics } from './classroom-diagnostics.js';
 import './scoring-exclusions.js';
 import { reviewDeliveryUrl } from './launch-safety.js';
+import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
 import {
   requireUser,
@@ -2624,9 +2625,7 @@ function renderReadingRankCard() {
                 : ''
             }>
 
-            No.${escapeHtml(
-              assignment.week_no
-            )} — ${escapeHtml(
+            ${escapeHtml(assignmentLabel(assignment, activeLanguage))} — ${escapeHtml(
               assignment.title
             )}
 
@@ -3245,23 +3244,7 @@ function renderNextAssignment(
     );
 
 
-  $('#weekLabel').textContent =
-    activeLanguage ===
-      'ja'
-
-      ? `課題 #${String(
-          target.week_no
-        ).padStart(
-          2,
-          '0'
-        )}`
-
-      : `ASSIGNMENT #${String(
-          target.week_no
-        ).padStart(
-          2,
-          '0'
-        )}`;
+  $('#weekLabel').textContent = assignmentLabel(target, activeLanguage);
 
 
   $('#weekTitle').textContent =
@@ -3667,28 +3650,9 @@ function renderAssignmentList(
               data-cso-wpm="${submission && Number.isFinite(Number(submission.wpm)) ? Number(submission.wpm) : ''}">
 
               <div class="weekbox">
-
-                <span>
-                  ${
-                    activeLanguage ===
-                      'ja'
-
-                      ? '課題'
-
-                      : 'NO.'
-                  }
-                </span>
-
-                <strong>
-                  ${String(
-                    assignment.week_no
-                  ).padStart(
-                    2,
-                    '0'
-                  )}
-                </strong>
-
-              </div>
+  <span>${assignment.audience_type === "targeted" ? (activeLanguage === "ja" ? "個別" : "SELF") : (activeLanguage === "ja" ? "課題" : "NO.")}</span>
+  <strong class="${assignment.audience_type === "targeted" ? "is-self-study" : ""}">${assignment.audience_type === "targeted" ? (activeLanguage === "ja" ? "自習教材" : "STUDY") : String(assignmentNumber(assignment) || assignment.week_no).padStart(2, "0")}</strong>
+</div>
 
 
               <div class="student-assignment-content">
@@ -4844,8 +4808,7 @@ async function openCopeak(
 
   url.searchParams.set(
     'title',
-    assignment.title ||
-    `#${assignment.week_no}`
+    assignment.title || assignmentLabel(assignment, activeLanguage)
   );
 
 
