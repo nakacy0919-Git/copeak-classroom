@@ -2,6 +2,7 @@ import { reportClassroomDiagnostic, flushClassroomDiagnostics } from './classroo
 import './scoring-exclusions.js';
 import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
+import { evaluatePassCriteria } from './pass-criteria.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
 import {
   requireUser,
@@ -1223,83 +1224,11 @@ function studentEffectiveMetric(
 }
 
 
-function studentPassState(
-  assignment,
-  maps
-) {
+function studentPassState(assignment, maps) {
+  const base = evaluatePassCriteria(assignment, null, null);
+  const targets = { ...base.targets, comprehension: null };
 
-  if (
-    assignment.pass_enabled !== true
-  ) {
-
-    return {
-      configured: false,
-      passed: false,
-      hasScore: false,
-      accuracy: null,
-      wpm: null,
-      comprehension: null,
-      targets: {
-        accuracy: null,
-        wpm: null,
-        comprehension: null
-      }
-    };
-  }
-
-
-  const normalize =
-    value => {
-
-      if (
-        value === null ||
-        value === undefined ||
-        value === ''
-      ) {
-        return null;
-      }
-
-
-      const number =
-        Number(value);
-
-
-      return Number.isFinite(
-        number
-      )
-        ? number
-        : null;
-    };
-
-
-  const targets = {
-
-    accuracy:
-      normalize(
-        assignment.pass_accuracy
-      ),
-
-    wpm:
-      normalize(
-        assignment.pass_wpm
-      ),
-
-    comprehension:
-      normalize(
-        assignment.pass_comprehension
-      )
-
-  };
-
-
-  const configured =
-    targets.accuracy !== null ||
-    targets.wpm !== null ||
-    targets.comprehension !== null;
-
-
-  if (!configured) {
-
+  if (!base.configured) {
     return {
       configured: false,
       passed: false,
@@ -1311,104 +1240,25 @@ function studentPassState(
     };
   }
 
-
-  const manualRow =
-    maps.manual.get(
-      assignment.id
-    );
-
-
-  const accuracy =
-    studentEffectiveMetric(
-      manualRow,
-      maps.accuracy.get(
-        assignment.id
-      ),
-      'accuracy'
-    );
-
-
-  const wpm =
-    studentEffectiveMetric(
-      manualRow,
-      maps.wpm.get(
-        assignment.id
-      ),
-      'wpm'
-    );
-
-
-  const comprehension =
-    studentEffectiveMetric(
-      manualRow,
-      maps.comprehension.get(
-        assignment.id
-      ),
-      'comprehension'
-    );
-
-
-  const checks =
-    [];
-
-
-  if (
-    targets.accuracy !== null
-  ) {
-
-    checks.push(
-      accuracy !== null &&
-      accuracy >=
-        targets.accuracy
-    );
-  }
-
-
-  if (
-    targets.wpm !== null
-  ) {
-
-    checks.push(
-      wpm !== null &&
-      wpm >=
-        targets.wpm
-    );
-  }
-
-
-  if (
-    targets.comprehension !== null
-  ) {
-
-    checks.push(
-      comprehension !== null &&
-      comprehension >=
-        targets.comprehension
-    );
-  }
-
+  const manualRow = maps.manual.get(assignment.id);
+  const accuracy = studentEffectiveMetric(
+    manualRow, maps.accuracy.get(assignment.id), 'accuracy'
+  );
+  const wpm = studentEffectiveMetric(
+    manualRow, maps.wpm.get(assignment.id), 'wpm'
+  );
+  const status = evaluatePassCriteria(assignment, accuracy, wpm);
 
   return {
-
-    configured:
-      true,
-
-    passed:
-      checks.length > 0 &&
-      checks.every(Boolean),
-
-    hasScore:
-      accuracy !== null ||
-      wpm !== null ||
-      comprehension !== null,
-
+    configured: status.configured,
+    passed: status.passed,
+    hasScore: accuracy !== null || wpm !== null,
     accuracy,
     wpm,
-    comprehension,
+    comprehension: null,
     targets
   };
 }
-
 
 function studentGaugeMetricHtml({
   label,
@@ -1699,30 +1549,6 @@ function studentPassPanelHtml(
       : '';
 
 
-  const comprehensionGauge =
-    state.targets.comprehension !== null
-
-      ? studentGaugeMetricHtml({
-
-          label:
-            'Reading Performance',
-
-          current:
-            state.comprehension,
-
-          target:
-            state.targets.comprehension,
-
-          unit:
-            '/100',
-
-          maximum:
-            100
-        })
-
-      : '';
-
-
   const wpmMaximum =
     state.targets.wpm !== null
 
@@ -1853,7 +1679,6 @@ function studentPassPanelHtml(
 
         ${wpmGauge}
 
-        ${comprehensionGauge}
 
       </div>
 

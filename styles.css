@@ -11548,3 +11548,14 @@ body.roster-projector-open {
   .gradebook-audience-tabs { gap: 6px; }
   .gradebook-audience-tab { flex: 1 1 140px; min-height: 44px; padding: 9px; }
 }
+
+/* Pass thresholds shown below each Gradebook assignment heading. */
+.gradebook-pass-threshold {
+  display: block;
+  margin-top: 5px;
+  color: #526b7c;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}

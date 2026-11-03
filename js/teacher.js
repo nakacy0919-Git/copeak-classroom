@@ -2,6 +2,7 @@ import { reviewDeliveryUrl } from './launch-safety.js';
 import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
+import { evaluatePassCriteria } from './pass-criteria.mjs';
 import {
   requireUser,
   getClient,
@@ -1241,118 +1242,8 @@ function csvEscape(
 }
 
 
-function assignmentPassResult(
-  assignment,
-  accuracy,
-  wpm,
-  comprehension
-) {
-
-  if (
-    assignment.pass_enabled !== true
-  ) {
-
-    return {
-      configured: false,
-      passed: false
-    };
-  }
-
-
-  const normalize =
-    value => {
-
-      if (
-        value === null ||
-        value === undefined ||
-        value === ''
-      ) {
-        return null;
-      }
-
-
-      const number =
-        Number(value);
-
-
-      return Number.isFinite(number)
-        ? number
-        : null;
-    };
-
-
-  const accuracyTarget =
-    normalize(
-      assignment.pass_accuracy
-    );
-
-
-  const wpmTarget =
-    normalize(
-      assignment.pass_wpm
-    );
-
-
-  const comprehensionTarget =
-    normalize(
-      assignment.pass_comprehension
-    );
-
-
-  const configured =
-    accuracyTarget !== null ||
-    wpmTarget !== null ||
-    comprehensionTarget !== null;
-
-
-  if (!configured) {
-
-    return {
-      configured: false,
-      passed: false
-    };
-  }
-
-
-  const checks = [];
-
-
-  if (accuracyTarget !== null) {
-
-    checks.push(
-      accuracy !== null &&
-      accuracy >= accuracyTarget
-    );
-  }
-
-
-  if (wpmTarget !== null) {
-
-    checks.push(
-      wpm !== null &&
-      wpm >= wpmTarget
-    );
-  }
-
-
-  if (
-    comprehensionTarget !== null
-  ) {
-
-    checks.push(
-      comprehension !== null &&
-      comprehension >=
-        comprehensionTarget
-    );
-  }
-
-
-  return {
-    configured: true,
-    passed:
-      checks.length > 0 &&
-      checks.every(Boolean)
-  };
+function assignmentPassResult(assignment, accuracy, wpm) {
+  return evaluatePassCriteria(assignment, accuracy, wpm);
 }
 
 function exportGradebookCsv() {
@@ -1508,12 +1399,7 @@ const key = `${student.id}|${assignment.id}`;
                 accuracy === ''
                   ? null
                   : accuracy,
-                wpm === ''
-                  ? null
-                  : wpm,
-                comprehension === ''
-                  ? null
-                  : comprehension
+                wpm === '' ? null : wpm
               );
 
 
@@ -1669,10 +1555,19 @@ const activeAssignments = visibleAssignments(gradebookAudienceMode);
 
         ${
           activeAssignments
-            .map(
-              assignment =>
-                `<th title="${esc(assignment.title)}">${assignment.audience_type === 'targeted' ? `自習教材：${esc(assignment.title)}` : `#${assignmentNumber(assignment) || assignment.week_no}`}</th>`
-            )
+            .map(assignment => {
+              const pass = evaluatePassCriteria(assignment, null, null);
+              const criteria = pass.configured
+                ? [
+                    pass.targets.accuracy === null ? null : `Accuracy ≥${pass.targets.accuracy}%`,
+                    pass.targets.wpm === null ? null : `WPM ≥${pass.targets.wpm}`
+                  ].filter(Boolean).join(' · ')
+                : '';
+              const heading = assignment.audience_type === 'targeted'
+                ? `自習教材：${esc(assignment.title)}`
+                : `#${assignmentNumber(assignment) || assignment.week_no}`;
+              return `<th title="${esc(assignment.title)}${criteria ? ' / ' + criteria : ''}">${heading}${criteria ? `<span class="gradebook-pass-threshold">合格基準：${criteria}</span>` : ''}</th>`;
+            })
             .join('')
         }
 
@@ -1844,8 +1739,7 @@ const key = `${student.id}|${assignment.id}`;
                     assignmentPassResult(
                       assignment,
                       accuracy,
-                      wpm,
-                      comprehension
+                      wpm
                     );
 
 
@@ -4972,8 +4866,7 @@ function updateAssignmentPassCriteriaState() {
 
   [
     '#assignmentPassAccuracy',
-    '#assignmentPassWpm',
-    '#assignmentPassComprehension'
+    '#assignmentPassWpm'
   ]
     .forEach(
       selector => {
@@ -5822,13 +5715,7 @@ $('#assignmentDue').value =
     assignment?.pass_wpm ??
     '';
 
-
-  $('#assignmentPassComprehension').value =
-    assignment?.pass_comprehension ??
-    '';
-
-
-  const passEnabledForEditor =
+const passEnabledForEditor =
     assignment
 
       ? (
@@ -5836,9 +5723,8 @@ $('#assignmentDue').value =
           (
             assignment.pass_enabled === undefined &&
             (
-              assignment.pass_accuracy !== null ||
-              assignment.pass_wpm !== null ||
-              assignment.pass_comprehension !== null
+              assignment.pass_accuracy != null ||
+              assignment.pass_wpm != null
             )
           )
         )
@@ -7063,14 +6949,7 @@ let youtubeClip =
       '#assignmentPassWpm'
     );
 
-
-  const passComprehension =
-    optionalNumber(
-      '#assignmentPassComprehension'
-    );
-
-
-  const passEnabled =
+const passEnabled =
     $('#assignmentPassEnabled')
       ?.checked ===
     true;
@@ -7079,12 +6958,11 @@ let youtubeClip =
   if (
     passEnabled &&
     passAccuracy === null &&
-    passWpm === null &&
-    passComprehension === null
+    passWpm === null
   ) {
 
     msg.textContent =
-      '合格基準を使用する場合は、Accuracy・WPM・Reading Performanceのいずれかを設定してください。';
+      '合格基準を使用する場合は、AccuracyまたはWPMを設定してください。';
 
     return;
   }
@@ -7119,23 +6997,7 @@ let youtubeClip =
     return;
   }
 
-
-  if (
-    passComprehension !== null &&
-    (
-      !Number.isFinite(passComprehension) ||
-      passComprehension < 0 ||
-      passComprehension > 100
-    )
-  ) {
-
-    msg.textContent =
-      'Reading Performanceの合格基準は0〜100で入力してください。';
-
-    return;
-  }
-
-  const audienceType =
+const audienceType =
     $('#assignmentAudienceTargeted')
       ?.checked === true
       ? 'targeted'
@@ -7517,8 +7379,7 @@ pass_accuracy:
 pass_wpm:
   passWpm,
 
-pass_comprehension:
-  passComprehension,
+// Preserve historical pass_comprehension in the database; exclude it from PASS.
 
 pass_enabled:
   passEnabled,
