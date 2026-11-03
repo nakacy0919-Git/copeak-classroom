@@ -1566,7 +1566,8 @@ const activeAssignments = visibleAssignments(gradebookAudienceMode);
               const heading = assignment.audience_type === 'targeted'
                 ? `自習教材：${esc(assignment.title)}`
                 : `#${assignmentNumber(assignment) || assignment.week_no}`;
-              return `<th title="${esc(assignment.title)}${criteria ? ' / ' + criteria : ''}">${heading}${criteria ? `<span class="gradebook-pass-threshold">合格基準：${criteria}</span>` : ''}</th>`;
+              const tooltip = `${assignment.title || '課題'}${criteria ? `\n合格基準：${criteria}` : '\n合格基準：未設定'}`;
+              return `<th title="${esc(tooltip)}">${heading}</th>`;
             })
             .join('')
         }
