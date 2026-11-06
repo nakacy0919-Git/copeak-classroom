@@ -12,6 +12,8 @@ const {
 );
 
 
+const { mayDownloadAssignmentMedia } = require('./assignment-media-access');
+
 const DOWNLOAD_URL_SECONDS =
   5 * 60;
 
@@ -328,7 +330,7 @@ module.exports =
         await supabaseGet(
           `/rest/v1/assignments?id=eq.${encodeURIComponent(
             assignmentId
-          )}&select=id,class_id,is_published,audio_object_key,audio_expires_at,audio_file_name,image_object_key,image_file_name,image_content_type`,
+          )}&select=id,class_id,is_published,audience_type,target_student_ids,audio_object_key,audio_expires_at,audio_file_name,image_object_key,image_file_name,image_content_type`,
           token
         );
 
@@ -354,20 +356,24 @@ module.exports =
       }
 
 
-      if (
-        !classIds.has(
-          assignment.class_id
-        )
-      ) {
-
-        return sendJson(
-          res,
-          403,
-          {
-            error:
-              'You do not have access to this assignment.'
-          }
+      // A teacher can share one assignment with several classes.
+      // The original class_id alone does not authorize those students.
+      let sharedClassIds = [];
+      if (!classIds.has(assignment.class_id)) {
+        const sharedResult = await supabaseGet(
+          `/rest/v1/assignment_classes?assignment_id=eq.${encodeURIComponent(assignmentId)}&select=class_id`,
+          token
         );
+        if (!sharedResult.ok || !Array.isArray(sharedResult.data)) {
+          return sendJson(res, 403, { error: 'Assignment sharing could not be verified.' });
+        }
+        sharedClassIds = sharedResult.data.map(row => row.class_id);
+      }
+
+      if (!mayDownloadAssignmentMedia(assignment, classIds, sharedClassIds, user.id)) {
+        return sendJson(res, 403, {
+          error: 'You do not have access to this assignment.'
+        });
       }
 
 
