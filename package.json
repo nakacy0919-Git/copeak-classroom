@@ -4,7 +4,7 @@
   "description": "Copeakのデザイン言語を継承した、音読課題・提出状況・成績管理プラットフォームのMVPです。",
   "main": "index.js",
   "scripts": {
-    "test": "node --test tests/pass-criteria.test.mjs tests/assignment-progress.test.mjs tests/assignment-media-access.test.mjs tests/assignment-order.test.mjs"
+    "test": "node --test tests/pass-criteria.test.mjs tests/assignment-progress.test.mjs tests/assignment-media-access.test.mjs tests/assignment-order.test.mjs tests/r2-download-route.test.mjs"
   },
   "repository": {
     "type": "git",
