@@ -5726,30 +5726,23 @@ async function loadLive() {
 // STUDENT CROSS-POSTING ASSIGNMENT LOAD
 // ========================================
 
-  const {
-    data: assignmentClassRows,
-    error: assignmentClassError
-  } =
+  // The display_order column is introduced in a separate migration.
+  // Continue loading existing lessons if a preview runs against the older schema.
+  let { data: assignmentClassRows, error: assignmentClassError } =
     await sb
-      .from(
-        'assignment_classes'
-      )
-      .select(
-        'assignment_id,display_order'
-      )
-      .eq(
-        'class_id',
-        currentClass.id
-      );
+      .from('assignment_classes')
+      .select('assignment_id,display_order')
+      .eq('class_id', currentClass.id);
 
-
-  if (
-    assignmentClassError
-  ) {
-
-    throw assignmentClassError;
+  if (assignmentClassError?.code === '42703' &&
+      String(assignmentClassError.message || '').includes('display_order')) {
+    ({ data: assignmentClassRows, error: assignmentClassError } =
+      await sb
+        .from('assignment_classes')
+        .select('assignment_id')
+        .eq('class_id', currentClass.id));
   }
-
+  if (assignmentClassError) throw assignmentClassError;
 
   const assignmentIds =
     [
