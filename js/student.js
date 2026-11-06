@@ -2995,38 +2995,35 @@ function renderNextAssignment(
   if (
     !target
   ) {
+    const hasIncomplete = assignments.some(assignment => !isComplete(assignment));
 
     $('#weekLabel').textContent =
-      activeLanguage ===
-        'ja'
-        ? '完了'
-        : 'COMPLETED';
+      hasIncomplete
+        ? (activeLanguage === 'ja' ? '未完了あり' : 'INCOMPLETE')
+        : (activeLanguage === 'ja' ? '完了' : 'COMPLETED');
 
 
-    $('#weekTitle').textContent =
-      t(
-        'allCompleted'
-      );
+    $('#weekTitle').textContent = hasIncomplete
+      ? (activeLanguage === 'ja' ? '未合格または期限終了の課題があります' : 'Some assignments are not completed')
+      : t('allCompleted');
 
 
-    $('#weekMeta').textContent =
-      t(
-        'greatWork'
-      );
+    $('#weekMeta').textContent = hasIncomplete
+      ? (activeLanguage === 'ja' ? '課題一覧で達成状況を確認してください' : 'Check the assignment list for progress')
+      : t('greatWork');
 
 
     if (
       weekStatus
     ) {
 
-      weekStatus.textContent =
-        t(
-          'statusDone'
-        );
+      weekStatus.textContent = hasIncomplete
+        ? (activeLanguage === 'ja' ? '未合格あり' : 'Not Yet Passed')
+        : t('statusDone');
 
-
-      weekStatus.className =
-        'student-status-badge done';
+      weekStatus.className = hasIncomplete
+        ? 'student-status-badge attempted'
+        : 'student-status-badge done';
     }
 
 
@@ -3041,10 +3038,9 @@ function renderNextAssignment(
       true;
 
 
-    button.textContent =
-      t(
-        'statusDone'
-      );
+    button.textContent = hasIncomplete
+      ? (activeLanguage === 'ja' ? '開始できる課題なし' : 'No open assignments')
+      : t('statusDone');
 
 
     return;
@@ -3055,11 +3051,13 @@ function renderNextAssignment(
   // TARGET INFO
   // ========================================
 
-  const status =
-    assignmentStatus(
-      target,
-      null
-    );
+  const targetPassState = studentPassState(target, passMaps);
+  const targetProgress = assignmentProgressStatus(
+    targetPassState, map.has(target.id)
+  );
+  const status = assignmentStatus(
+    target, map.get(target.id), targetProgress
+  );
 
 
   const deadline =
