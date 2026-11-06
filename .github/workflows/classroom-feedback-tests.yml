@@ -1,0 +1,33 @@
+name: Classroom feedback regression tests
+
+on:
+  push:
+    branches:
+      - feat/classroom-teacher-feedback-20261106
+  pull_request:
+    paths:
+      - "js/**"
+      - "api/**"
+      - "tests/**"
+      - "package.json"
+      - "supabase/migrations/**"
+      - ".github/workflows/classroom-feedback-tests.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/student.js
+          node --check js/teacher.js
+          node --check api/r2-download-url.js
+          node --check api/assignment-media-access.js
+      - name: Run regression tests
+        run: npm test
