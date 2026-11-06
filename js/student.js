@@ -5,6 +5,7 @@ import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
 import { assignmentProgressStatus } from './assignment-progress.mjs';
 import { sortClassAssignments } from './assignment-order.mjs';
+import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
 import {
   requireUser,
@@ -4810,21 +4811,36 @@ if (
   if (popup.closed) return;
 
 
+  let modelAudioNotice = null;
   if (assignment.audio_object_key && !audioUrl) {
-    // A failed warm-up must not trap an iPad in a cached silent lesson.
-    assignmentMediaUrlCache.delete(String(assignment.id));
-    const retry = await getAssignmentMediaUrls(assignment);
-    audioUrl = retry.audioUrl;
-    imageUrl ||= retry.imageUrl;
+    const audioState = getAssignmentAudioState(assignment);
+
+    // The server intentionally denies expired audio (410). There is no
+    // point retrying it, but losing MP3 must not block reading practice.
+    if (audioState.status !== 'expired') {
+      assignmentMediaUrlCache.delete(String(assignment.id));
+      try {
+        const retry = await getAssignmentMediaUrls(assignment);
+        audioUrl = retry.audioUrl;
+        imageUrl ||= retry.imageUrl;
+      } catch (error) {
+        console.warn('[Copeak Classroom] model audio retry failed:', error);
+      }
+    }
+
     if (!audioUrl) {
-      reportFailure(assignment.id, 'model_audio_unavailable');
-      popup.close();
-      alert(activeLanguage === 'ja'
-        ? 'モデル音声を取得できませんでした。通信状態を確認して再度開いてください。続く場合は先生に知らせてください。'
-        : 'The model audio could not be loaded. Check your connection, retry, or tell your teacher.');
-      return;
+      const expired = audioState.status === 'expired';
+      reportFailure(assignment.id, expired ? 'model_audio_expired' : 'model_audio_unavailable');
+      modelAudioNotice = activeLanguage === 'ja'
+        ? expired
+          ? 'モデル音声の利用期限（14日）が切れています。先生に再登録を依頼してください。教材は開きますので、利用可能なAI音声で練習できます。'
+          : 'モデル音声を取得できませんでした。先生に知らせてください。教材は開きますので、利用可能なAI音声で練習できます。'
+        : expired
+          ? 'The original recording has expired. Ask your teacher to re-upload it. You can continue with available AI voice practice.'
+          : 'The original recording could not be loaded. Tell your teacher. You can continue with available AI voice practice.';
     }
   }
+
 
   if (
     audioUrl
@@ -4871,6 +4887,7 @@ if (
   }
 
   popup.location.replace(url.toString());
+  if (modelAudioNotice) alert(modelAudioNotice);
 }
 
 
