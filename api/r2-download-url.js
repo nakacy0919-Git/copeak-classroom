@@ -330,7 +330,7 @@ module.exports =
         await supabaseGet(
           `/rest/v1/assignments?id=eq.${encodeURIComponent(
             assignmentId
-          )}&select=id,class_id,is_published,audience_type,target_student_ids,audio_object_key,audio_expires_at,audio_file_name,image_object_key,image_file_name,image_content_type`,
+          )}&select=id,class_id,is_published,audio_object_key,audio_expires_at,audio_file_name,image_object_key,image_file_name,image_content_type`,
           token
         );
 
@@ -370,7 +370,8 @@ module.exports =
         sharedClassIds = sharedResult.data.map(row => row.class_id);
       }
 
-      if (!mayDownloadAssignmentMedia(assignment, classIds, sharedClassIds, user.id)) {
+      // Student JWT + assignments RLS already ensures individual-target access.
+      if (!mayDownloadAssignmentMedia(assignment, classIds, sharedClassIds)) {
         return sendJson(res, 403, {
           error: 'You do not have access to this assignment.'
         });
