@@ -12,6 +12,8 @@ const {
 );
 
 
+const { mayDownloadAssignmentMedia } = require('./assignment-media-access');
+
 const DOWNLOAD_URL_SECONDS =
   5 * 60;
 
@@ -354,20 +356,25 @@ module.exports =
       }
 
 
-      if (
-        !classIds.has(
-          assignment.class_id
-        )
-      ) {
-
-        return sendJson(
-          res,
-          403,
-          {
-            error:
-              'You do not have access to this assignment.'
-          }
+      // A teacher can share one assignment with several classes.
+      // The original class_id alone does not authorize those students.
+      let sharedClassIds = [];
+      if (!classIds.has(assignment.class_id)) {
+        const sharedResult = await supabaseGet(
+          `/rest/v1/assignment_classes?assignment_id=eq.${encodeURIComponent(assignmentId)}&select=class_id`,
+          token
         );
+        if (!sharedResult.ok || !Array.isArray(sharedResult.data)) {
+          return sendJson(res, 403, { error: 'Assignment sharing could not be verified.' });
+        }
+        sharedClassIds = sharedResult.data.map(row => row.class_id);
+      }
+
+      // Student JWT + assignments RLS already ensures individual-target access.
+      if (!mayDownloadAssignmentMedia(assignment, classIds, sharedClassIds)) {
+        return sendJson(res, 403, {
+          error: 'You do not have access to this assignment.'
+        });
       }
 
 

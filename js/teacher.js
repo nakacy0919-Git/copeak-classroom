@@ -3,6 +3,8 @@ import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
+import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
+import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import {
   requireUser,
   getClient,
@@ -30,6 +32,7 @@ let ctx;
 let classes = [];
 
 let selectedClass = null;
+let classOrderSupported = true;
 
 let students = [];
 
@@ -544,19 +547,13 @@ function renderAssignmentManager() {
   }
 
 
-  const sorted =
-    [...assignments]
-      .sort(
-        (a, b) =>
-          Number(a.week_no) -
-          Number(b.week_no)
-      );
+  const sorted = sortClassAssignments(assignments);
 
 
   root.innerHTML =
     sorted
       .map(
-        assignment => {
+        (assignment, index) => {
 
           const submissionCount =
             submissions.filter(
@@ -569,6 +566,12 @@ function renderAssignmentManager() {
           const published =
             assignment.is_published !==
             false;
+          const modelAudioState = getAssignmentAudioState(assignment);
+          const modelAudioWarning = modelAudioState.status === 'expired'
+            ? '⚠ モデル音声の利用期限（登録後14日）が過ぎています。EditでMP3/WAVを再アップロードしてください。'
+            : modelAudioState.status === 'expiring'
+              ? '⚠ モデル音声の利用期限が3日以内です。継続する場合は再アップロードしてください。'
+              : '';
 
 
           const lessonText =
@@ -665,8 +668,18 @@ function renderAssignmentManager() {
                   ${esc(excerpt)}
                 </div>
 
+                ${modelAudioWarning ? `<p class="teacher-audio-expiry-warning" role="status">${esc(modelAudioWarning)}</p>` : ''}
+
 
                 <div class="teacher-assignment-actions">
+                  <button class="btn btn-sm btn-light"
+                    aria-label="課題を上へ移動" title="表示順を上へ"
+                    data-assignment-action="move-up" data-assignment-id="${assignment.id}"
+                    ${index === 0 || !classOrderSupported ? 'disabled' : ''}>↑ 上へ</button>
+                  <button class="btn btn-sm btn-light"
+                    aria-label="課題を下へ移動" title="表示順を下へ"
+                    data-assignment-action="move-down" data-assignment-id="${assignment.id}"
+                    ${index === sorted.length - 1 || !classOrderSupported ? 'disabled' : ''}>↓ 下へ</button>
 
                   <button
                     class="btn btn-sm btn-light"
@@ -721,6 +734,30 @@ function renderAssignmentManager() {
         }
       )
       .join('');
+}
+
+// Class-local display ordering. Assignment IDs and Gradebook numbers stay fixed.
+async function moveAssignmentDisplayOrder(assignmentId, direction) {
+  if (!selectedClass || !classOrderSupported) return;
+  const previous = sortClassAssignments(assignments);
+  const next = moveClassAssignment(previous, assignmentId, direction);
+  if (next.every((item, i) => item.id === previous[i]?.id)) return;
+
+  if (ctx.demo) {
+    assignments = next.map((assignment, i) => ({
+      ...assignment, class_display_order: i + 1
+    }));
+    render();
+    return;
+  }
+
+  const { error } = await getClient('teacher').rpc('reorder_class_assignments', {
+    p_class_id: selectedClass.id,
+    p_assignment_ids: next.map(item => item.id)
+  });
+  if (error) throw error;
+  await loadClass(selectedClass.id);
+  render();
 }
 
 // ==========================================
@@ -5575,16 +5612,16 @@ function openAssignmentEditor(
     );
 
   if (audioStatus) {
-
-    audioStatus.style.color =
-      hasRegisteredAudio
-        ? '#15803d'
-        : '';
-
-    audioStatus.textContent =
-      hasRegisteredAudio
-        ? `✓ 登録済み: ${assignment?.audio_file_name || 'Audio File'}`
-        : 'MP3 / WAV · Max 5 MB · Cloud copy expires after 14 days';
+    const modelAudioState = getAssignmentAudioState(assignment);
+    const expired = modelAudioState.status === 'expired';
+    audioStatus.style.color = expired ? '#b45309' : hasRegisteredAudio ? '#15803d' : '';
+    audioStatus.textContent = expired
+      ? `⚠ 利用期限切れ: ${assignment?.audio_file_name || 'Audio File'} — MP3/WAVを再アップロードしてください。`
+      : modelAudioState.status === 'expiring'
+        ? `⚠ 利用期限が近づいています: ${assignment?.audio_file_name || 'Audio File'}`
+        : hasRegisteredAudio
+          ? `✓ 登録済み: ${assignment?.audio_file_name || 'Audio File'}`
+          : 'MP3 / WAV · Max 5 MB · Cloud copy expires after 14 days';
   }
 
   if (removeAudioButton) {
@@ -8418,30 +8455,21 @@ students =
   // CROSS-POSTING ASSIGNMENT LOAD
   // ========================================
 
-  const {
-    data: currentClassLinks,
-    error: currentClassLinkError
-  } =
-    await sb
-      .from(
-        'assignment_classes'
-      )
-      .select(
-        'assignment_id'
-      )
-      .eq(
-        'class_id',
-        selectedClass.id
-      );
+  let { data: currentClassLinks, error: currentClassLinkError } =
+    await sb.from('assignment_classes')
+      .select('assignment_id,display_order')
+      .eq('class_id', selectedClass.id);
 
-
-  if (
-    currentClassLinkError
-  ) {
-
-    throw currentClassLinkError;
+  classOrderSupported = true;
+  if (currentClassLinkError?.code === '42703' &&
+      String(currentClassLinkError.message || '').includes('display_order')) {
+    classOrderSupported = false;
+    ({ data: currentClassLinks, error: currentClassLinkError } =
+      await sb.from('assignment_classes')
+        .select('assignment_id')
+        .eq('class_id', selectedClass.id));
   }
-
+  if (currentClassLinkError) throw currentClassLinkError;
 
   const linkedAssignmentIds =
     [
@@ -8454,6 +8482,9 @@ students =
           .filter(Boolean)
       )
     ];
+  const currentClassOrder = new Map(
+    (currentClassLinks || []).map(row => [row.assignment_id, row.display_order])
+  );
 
 
 
@@ -8559,6 +8590,7 @@ students =
         .map(
           assignment => ({
             ...assignment,
+            class_display_order: currentClassOrder.get(assignment.id) ?? null,
 
             class_ids:
               assignmentClassMap.get(
@@ -11091,6 +11123,12 @@ $('#assignmentRelease').onchange =
 
           editAssignment(
             assignment
+          );
+
+        } else if (action === 'move-up' || action === 'move-down') {
+          await moveAssignmentDisplayOrder(
+            assignment.id,
+            action === 'move-up' ? -1 : 1
           );
 
         } else if (

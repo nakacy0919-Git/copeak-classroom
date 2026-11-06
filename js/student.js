@@ -3,6 +3,9 @@ import './scoring-exclusions.js';
 import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
+import { assignmentProgressStatus } from './assignment-progress.mjs';
+import { sortClassAssignments } from './assignment-order.mjs';
+import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
 import {
   requireUser,
@@ -1605,8 +1608,8 @@ function studentPassPanelHtml(
 
     statusText =
       activeLanguage === 'ja'
-        ? 'あと少し'
-        : 'Not Yet';
+        ? '未合格・再挑戦'
+        : 'Not Passed';
   }
 
   else {
@@ -1688,7 +1691,8 @@ function studentPassPanelHtml(
 
 function assignmentStatus(
   assignment,
-  submission
+  submission,
+  progressState = null
 ) {
 
   const now =
@@ -1707,28 +1711,25 @@ function assignmentStatus(
     );
 
 
-  // ========================================
-  // COMPLETED
-  //
-  // 締切後でも提出済みなら完了
-  // ========================================
+  // A submission is not enough for PASS when targets are configured.
+  const progress = progressState ||
+    assignmentProgressStatus({ configured: false }, Boolean(submission));
 
-  if (
-    submission
-  ) {
-
+  if (progress.key === 'passed') {
+    return { key: 'done', label: activeLanguage === 'ja' ? '✓ 合格済み' : '✓ PASS' };
+  }
+  if (progress.key === 'submitted') {
     return {
-
-      key:
-        'done',
-
-      label:
-        t(
-          'statusDone'
-        )
+      key: 'done',
+      label: activeLanguage === 'ja' ? '提出済み（基準未設定）' : 'Submitted (no pass criteria)'
     };
   }
-
+  if (progress.key === 'attempted') {
+    return {
+      key: 'attempted',
+      label: activeLanguage === 'ja' ? '挑戦済み・未合格' : 'Attempted · Not Yet Passed'
+    };
+  }
 
   // ========================================
   // UPCOMING
@@ -1774,9 +1775,9 @@ function assignmentStatus(
         activeLanguage ===
           'ja'
 
-          ? '！未完了・締切終了'
+          ? '未実施・締切終了'
 
-          : 'Not Completed · Closed'
+          : 'Not Attempted · Closed'
     };
   }
 
@@ -1790,10 +1791,7 @@ function assignmentStatus(
     key:
       'due',
 
-    label:
-      t(
-        'statusTodo'
-      )
+    label: activeLanguage === 'ja' ? '未実施' : 'Not Attempted'
   };
 }
 
@@ -1815,7 +1813,9 @@ function assignmentMatchesFilter(
       statusKey ===
         'due' ||
       statusKey ===
-        'late'
+        'late' ||
+      statusKey ===
+        'attempted'
     );
   }
 
@@ -2798,15 +2798,11 @@ function render() {
     );
 
 
-  const done =
-    assignments
-      .filter(
-        assignment =>
-          map.has(
-            assignment.id
-          )
-      )
-      .length;
+  const passMaps = buildStudentPassMaps();
+  const done = assignments.filter(assignment => {
+    const passState = studentPassState(assignment, passMaps);
+    return assignmentProgressStatus(passState, map.has(assignment.id)).complete;
+  }).length;
 
 
   const progress =
@@ -2893,12 +2889,12 @@ function render() {
 
 
   renderNextAssignment(
-    map
+    map, passMaps
   );
 
 
   renderAssignmentList(
-    map
+    map, passMaps
   );
 
 
@@ -2913,8 +2909,14 @@ function render() {
 // ==========================================
 
 function renderNextAssignment(
-  map
+  map,
+  passMaps
 ) {
+  const isComplete = assignment =>
+    assignmentProgressStatus(
+      studentPassState(assignment, passMaps),
+      map.has(assignment.id)
+    ).complete;
 
   const now =
     Date.now();
@@ -2942,9 +2944,7 @@ function renderNextAssignment(
 
 
         return (
-          !map.has(
-            assignment.id
-          ) &&
+          !isComplete(assignment) &&
           release !==
             null &&
           due !==
@@ -2967,9 +2967,7 @@ function renderNextAssignment(
 
 
         return (
-          !map.has(
-            assignment.id
-          ) &&
+          !isComplete(assignment) &&
           release !==
             null &&
           now <
@@ -2998,38 +2996,35 @@ function renderNextAssignment(
   if (
     !target
   ) {
+    const hasIncomplete = assignments.some(assignment => !isComplete(assignment));
 
     $('#weekLabel').textContent =
-      activeLanguage ===
-        'ja'
-        ? '完了'
-        : 'COMPLETED';
+      hasIncomplete
+        ? (activeLanguage === 'ja' ? '未完了あり' : 'INCOMPLETE')
+        : (activeLanguage === 'ja' ? '完了' : 'COMPLETED');
 
 
-    $('#weekTitle').textContent =
-      t(
-        'allCompleted'
-      );
+    $('#weekTitle').textContent = hasIncomplete
+      ? (activeLanguage === 'ja' ? '未合格または期限終了の課題があります' : 'Some assignments are not completed')
+      : t('allCompleted');
 
 
-    $('#weekMeta').textContent =
-      t(
-        'greatWork'
-      );
+    $('#weekMeta').textContent = hasIncomplete
+      ? (activeLanguage === 'ja' ? '課題一覧で達成状況を確認してください' : 'Check the assignment list for progress')
+      : t('greatWork');
 
 
     if (
       weekStatus
     ) {
 
-      weekStatus.textContent =
-        t(
-          'statusDone'
-        );
+      weekStatus.textContent = hasIncomplete
+        ? (activeLanguage === 'ja' ? '未合格あり' : 'Not Yet Passed')
+        : t('statusDone');
 
-
-      weekStatus.className =
-        'student-status-badge done';
+      weekStatus.className = hasIncomplete
+        ? 'student-status-badge attempted'
+        : 'student-status-badge done';
     }
 
 
@@ -3044,10 +3039,9 @@ function renderNextAssignment(
       true;
 
 
-    button.textContent =
-      t(
-        'statusDone'
-      );
+    button.textContent = hasIncomplete
+      ? (activeLanguage === 'ja' ? '開始できる課題なし' : 'No open assignments')
+      : t('statusDone');
 
 
     return;
@@ -3058,11 +3052,13 @@ function renderNextAssignment(
   // TARGET INFO
   // ========================================
 
-  const status =
-    assignmentStatus(
-      target,
-      null
-    );
+  const targetPassState = studentPassState(target, passMaps);
+  const targetProgress = assignmentProgressStatus(
+    targetPassState, map.has(target.id)
+  );
+  const status = assignmentStatus(
+    target, map.get(target.id), targetProgress
+  );
 
 
   const deadline =
@@ -3216,36 +3212,19 @@ function renderNextAssignment(
 // ASSIGNMENT LIST
 // ==========================================
 
-function renderAssignmentList(
-  map
-) {
-
-  const passMaps = {
-
-    accuracy:
-      bestStudentMetricMap(
-        submissions,
-        'accuracy'
-      ),
-
-    wpm:
-      bestStudentMetricMap(
-        submissions,
-        'wpm'
-      ),
-
-    comprehension:
-      bestStudentMetricMap(
-        submissions,
-        'comprehension'
-      ),
-
-    manual:
-      studentManualScoreMap(
-        manualScores
-      )
+function buildStudentPassMaps() {
+  return {
+    accuracy: bestStudentMetricMap(submissions, 'accuracy'),
+    wpm: bestStudentMetricMap(submissions, 'wpm'),
+    comprehension: bestStudentMetricMap(submissions, 'comprehension'),
+    manual: studentManualScoreMap(manualScores)
   };
+}
 
+function renderAssignmentList(
+  map,
+  passMaps
+) {
 
   const visibleAssignments =
     assignments
@@ -3258,11 +3237,9 @@ function renderAssignmentList(
             );
 
 
-          const status =
-            assignmentStatus(
-              assignment,
-              submission
-            );
+          const passState = studentPassState(assignment, passMaps);
+          const progressState = assignmentProgressStatus(passState, Boolean(submission));
+          const status = assignmentStatus(assignment, submission, progressState);
 
 
           return assignmentMatchesFilter(
@@ -3335,11 +3312,9 @@ function renderAssignmentList(
             );
 
 
-          const status =
-            assignmentStatus(
-              assignment,
-              submission
-            );
+          const passState = studentPassState(assignment, passMaps);
+          const progressState = assignmentProgressStatus(passState, Boolean(submission));
+          const status = assignmentStatus(assignment, submission, progressState);
 
 
           const deadline =
@@ -3447,14 +3422,8 @@ function renderAssignmentList(
             status.key ===
               'upcoming' ||
             status.key ===
-              'late';
-
-
-          const passState =
-            studentPassState(
-              assignment,
-              passMaps
-            );
+              'late' ||
+            status.key === 'attempted';
 
 
           const passPanel =
@@ -4112,6 +4081,14 @@ function getAssignmentMediaUrls(
       promise
     }
   );
+
+  // Only successful media resolutions are cacheable: an absent MP3 URL
+  // must be re-requested after a transient authentication/network error.
+  void promise.then(media => {
+    if (assignment.audio_object_key && !media.audioUrl) {
+      assignmentMediaUrlCache.delete(key);
+    }
+  });
 
 
   return promise;
@@ -4834,6 +4811,37 @@ if (
   if (popup.closed) return;
 
 
+  let modelAudioNotice = null;
+  if (assignment.audio_object_key && !audioUrl) {
+    const audioState = getAssignmentAudioState(assignment);
+
+    // The server intentionally denies expired audio (410). There is no
+    // point retrying it, but losing MP3 must not block reading practice.
+    if (audioState.status !== 'expired') {
+      assignmentMediaUrlCache.delete(String(assignment.id));
+      try {
+        const retry = await getAssignmentMediaUrls(assignment);
+        audioUrl = retry.audioUrl;
+        imageUrl ||= retry.imageUrl;
+      } catch (error) {
+        console.warn('[Copeak Classroom] model audio retry failed:', error);
+      }
+    }
+
+    if (!audioUrl) {
+      const expired = audioState.status === 'expired';
+      reportFailure(assignment.id, expired ? 'model_audio_expired' : 'model_audio_unavailable');
+      modelAudioNotice = activeLanguage === 'ja'
+        ? expired
+          ? 'モデル音声の利用期限（14日）が切れています。先生に再登録を依頼してください。教材は開きますので、利用可能なAI音声で練習できます。'
+          : 'モデル音声を取得できませんでした。先生に知らせてください。教材は開きますので、利用可能なAI音声で練習できます。'
+        : expired
+          ? 'The original recording has expired. Ask your teacher to re-upload it. You can continue with available AI voice practice.'
+          : 'The original recording could not be loaded. Tell your teacher. You can continue with available AI voice practice.';
+    }
+  }
+
+
   if (
     audioUrl
   ) {
@@ -4879,6 +4887,7 @@ if (
   }
 
   popup.location.replace(url.toString());
+  if (modelAudioNotice) alert(modelAudioNotice);
 }
 
 
@@ -5734,30 +5743,23 @@ async function loadLive() {
 // STUDENT CROSS-POSTING ASSIGNMENT LOAD
 // ========================================
 
-  const {
-    data: assignmentClassRows,
-    error: assignmentClassError
-  } =
+  // The display_order column is introduced in a separate migration.
+  // Continue loading existing lessons if a preview runs against the older schema.
+  let { data: assignmentClassRows, error: assignmentClassError } =
     await sb
-      .from(
-        'assignment_classes'
-      )
-      .select(
-        'assignment_id'
-      )
-      .eq(
-        'class_id',
-        currentClass.id
-      );
+      .from('assignment_classes')
+      .select('assignment_id,display_order')
+      .eq('class_id', currentClass.id);
 
-
-  if (
-    assignmentClassError
-  ) {
-
-    throw assignmentClassError;
+  if (assignmentClassError?.code === '42703' &&
+      String(assignmentClassError.message || '').includes('display_order')) {
+    ({ data: assignmentClassRows, error: assignmentClassError } =
+      await sb
+        .from('assignment_classes')
+        .select('assignment_id')
+        .eq('class_id', currentClass.id));
   }
-
+  if (assignmentClassError) throw assignmentClassError;
 
   const assignmentIds =
     [
@@ -5812,14 +5814,18 @@ async function loadLive() {
     }
 
 
-    assignmentRows =
-      loadedAssignments ||
-      [];
+    const orderById = new Map(
+      (assignmentClassRows || []).map(row => [row.assignment_id, row.display_order])
+    );
+    assignmentRows = (loadedAssignments || []).map(assignment => ({
+      ...assignment,
+      class_display_order: orderById.get(assignment.id) ?? null
+    }));
   }
 
 
   assignments =
-    assignmentRows;
+    sortClassAssignments(assignmentRows);
 
 // ========================================
   // SUBMISSIONS
