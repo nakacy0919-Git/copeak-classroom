@@ -11606,3 +11606,33 @@ body.roster-projector-open {
     max-height: 82dvh;
   }
 }
+
+
+/* Three classroom reading progress states visible on the assignment list. */
+.student-status-badge.attempted {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+}
+.student-platform .student-assignment-card[data-status="attempted"] {
+  border-left: 4px solid #f59e0b;
+}
+.student-status-badge.due {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+.student-next-assignment .student-status-badge.attempted {
+  border-color: rgba(251,191,36,.35);
+  background: rgba(245,158,11,.14);
+  color: #fde68a;
+}
+.teacher-assignment-actions [data-assignment-action^="move-"] {
+  min-height: 36px;
+  min-width: 74px;
+  touch-action: manipulation;
+}
+.teacher-assignment-actions button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
