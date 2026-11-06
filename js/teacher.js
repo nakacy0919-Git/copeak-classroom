@@ -3,6 +3,7 @@ import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
+import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
 import {
   requireUser,
   getClient,
@@ -544,19 +545,13 @@ function renderAssignmentManager() {
   }
 
 
-  const sorted =
-    [...assignments]
-      .sort(
-        (a, b) =>
-          Number(a.week_no) -
-          Number(b.week_no)
-      );
+  const sorted = sortClassAssignments(assignments);
 
 
   root.innerHTML =
     sorted
       .map(
-        assignment => {
+        (assignment, index) => {
 
           const submissionCount =
             submissions.filter(
@@ -667,6 +662,14 @@ function renderAssignmentManager() {
 
 
                 <div class="teacher-assignment-actions">
+                  <button class="btn btn-sm btn-light"
+                    aria-label="課題を上へ移動" title="表示順を上へ"
+                    data-assignment-action="move-up" data-assignment-id="${assignment.id}"
+                    ${index === 0 ? 'disabled' : ''}>↑ 上へ</button>
+                  <button class="btn btn-sm btn-light"
+                    aria-label="課題を下へ移動" title="表示順を下へ"
+                    data-assignment-action="move-down" data-assignment-id="${assignment.id}"
+                    ${index === sorted.length - 1 ? 'disabled' : ''}>↓ 下へ</button>
 
                   <button
                     class="btn btn-sm btn-light"
@@ -721,6 +724,30 @@ function renderAssignmentManager() {
         }
       )
       .join('');
+}
+
+// Class-local display ordering. Assignment IDs and Gradebook numbers stay fixed.
+async function moveAssignmentDisplayOrder(assignmentId, direction) {
+  if (!selectedClass) return;
+  const previous = sortClassAssignments(assignments);
+  const next = moveClassAssignment(previous, assignmentId, direction);
+  if (next.every((item, i) => item.id === previous[i]?.id)) return;
+
+  if (ctx.demo) {
+    assignments = next.map((assignment, i) => ({
+      ...assignment, class_display_order: i + 1
+    }));
+    render();
+    return;
+  }
+
+  const { error } = await getClient('teacher').rpc('reorder_class_assignments', {
+    p_class_id: selectedClass.id,
+    p_assignment_ids: next.map(item => item.id)
+  });
+  if (error) throw error;
+  await loadClass(selectedClass.id);
+  render();
 }
 
 // ==========================================
@@ -8427,7 +8454,7 @@ students =
         'assignment_classes'
       )
       .select(
-        'assignment_id'
+        'assignment_id,display_order'
       )
       .eq(
         'class_id',
@@ -8454,6 +8481,9 @@ students =
           .filter(Boolean)
       )
     ];
+  const currentClassOrder = new Map(
+    (currentClassLinks || []).map(row => [row.assignment_id, row.display_order])
+  );
 
 
 
@@ -8559,6 +8589,7 @@ students =
         .map(
           assignment => ({
             ...assignment,
+            class_display_order: currentClassOrder.get(assignment.id) ?? null,
 
             class_ids:
               assignmentClassMap.get(
@@ -11091,6 +11122,12 @@ $('#assignmentRelease').onchange =
 
           editAssignment(
             assignment
+          );
+
+        } else if (action === 'move-up' || action === 'move-down') {
+          await moveAssignmentDisplayOrder(
+            assignment.id,
+            action === 'move-up' ? -1 : 1
           );
 
         } else if (
