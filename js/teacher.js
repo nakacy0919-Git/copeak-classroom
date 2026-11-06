@@ -31,6 +31,7 @@ let ctx;
 let classes = [];
 
 let selectedClass = null;
+let classOrderSupported = true;
 
 let students = [];
 
@@ -665,11 +666,11 @@ function renderAssignmentManager() {
                   <button class="btn btn-sm btn-light"
                     aria-label="課題を上へ移動" title="表示順を上へ"
                     data-assignment-action="move-up" data-assignment-id="${assignment.id}"
-                    ${index === 0 ? 'disabled' : ''}>↑ 上へ</button>
+                    ${index === 0 || !classOrderSupported ? 'disabled' : ''}>↑ 上へ</button>
                   <button class="btn btn-sm btn-light"
                     aria-label="課題を下へ移動" title="表示順を下へ"
                     data-assignment-action="move-down" data-assignment-id="${assignment.id}"
-                    ${index === sorted.length - 1 ? 'disabled' : ''}>↓ 下へ</button>
+                    ${index === sorted.length - 1 || !classOrderSupported ? 'disabled' : ''}>↓ 下へ</button>
 
                   <button
                     class="btn btn-sm btn-light"
@@ -728,7 +729,7 @@ function renderAssignmentManager() {
 
 // Class-local display ordering. Assignment IDs and Gradebook numbers stay fixed.
 async function moveAssignmentDisplayOrder(assignmentId, direction) {
-  if (!selectedClass) return;
+  if (!selectedClass || !classOrderSupported) return;
   const previous = sortClassAssignments(assignments);
   const next = moveClassAssignment(previous, assignmentId, direction);
   if (next.every((item, i) => item.id === previous[i]?.id)) return;
@@ -8445,30 +8446,21 @@ students =
   // CROSS-POSTING ASSIGNMENT LOAD
   // ========================================
 
-  const {
-    data: currentClassLinks,
-    error: currentClassLinkError
-  } =
-    await sb
-      .from(
-        'assignment_classes'
-      )
-      .select(
-        'assignment_id,display_order'
-      )
-      .eq(
-        'class_id',
-        selectedClass.id
-      );
+  let { data: currentClassLinks, error: currentClassLinkError } =
+    await sb.from('assignment_classes')
+      .select('assignment_id,display_order')
+      .eq('class_id', selectedClass.id);
 
-
-  if (
-    currentClassLinkError
-  ) {
-
-    throw currentClassLinkError;
+  classOrderSupported = true;
+  if (currentClassLinkError?.code === '42703' &&
+      String(currentClassLinkError.message || '').includes('display_order')) {
+    classOrderSupported = false;
+    ({ data: currentClassLinks, error: currentClassLinkError } =
+      await sb.from('assignment_classes')
+        .select('assignment_id')
+        .eq('class_id', selectedClass.id));
   }
-
+  if (currentClassLinkError) throw currentClassLinkError;
 
   const linkedAssignmentIds =
     [
