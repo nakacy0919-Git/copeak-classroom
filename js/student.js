@@ -4,6 +4,7 @@ import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
 import { assignmentProgressStatus } from './assignment-progress.mjs';
+import { sortClassAssignments } from './assignment-order.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
 import {
   requireUser,
@@ -5739,7 +5740,7 @@ async function loadLive() {
         'assignment_classes'
       )
       .select(
-        'assignment_id'
+        'assignment_id,display_order'
       )
       .eq(
         'class_id',
@@ -5808,14 +5809,18 @@ async function loadLive() {
     }
 
 
-    assignmentRows =
-      loadedAssignments ||
-      [];
+    const orderById = new Map(
+      (assignmentClassRows || []).map(row => [row.assignment_id, row.display_order])
+    );
+    assignmentRows = (loadedAssignments || []).map(assignment => ({
+      ...assignment,
+      class_display_order: orderById.get(assignment.id) ?? null
+    }));
   }
 
 
   assignments =
-    assignmentRows;
+    sortClassAssignments(assignmentRows);
 
 // ========================================
   // SUBMISSIONS
