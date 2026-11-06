@@ -3,6 +3,7 @@ import './scoring-exclusions.js';
 import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
+import { assignmentProgressStatus } from './assignment-progress.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
 import {
   requireUser,
@@ -1688,7 +1689,8 @@ function studentPassPanelHtml(
 
 function assignmentStatus(
   assignment,
-  submission
+  submission,
+  progressState = null
 ) {
 
   const now =
@@ -1707,28 +1709,25 @@ function assignmentStatus(
     );
 
 
-  // ========================================
-  // COMPLETED
-  //
-  // 締切後でも提出済みなら完了
-  // ========================================
+  // A submission is not enough for PASS when targets are configured.
+  const progress = progressState ||
+    assignmentProgressStatus({ configured: false }, Boolean(submission));
 
-  if (
-    submission
-  ) {
-
+  if (progress.key === 'passed') {
+    return { key: 'done', label: activeLanguage === 'ja' ? '✓ 合格済み' : '✓ PASS' };
+  }
+  if (progress.key === 'submitted') {
     return {
-
-      key:
-        'done',
-
-      label:
-        t(
-          'statusDone'
-        )
+      key: 'done',
+      label: activeLanguage === 'ja' ? '提出済み（基準未設定）' : 'Submitted (no pass criteria)'
     };
   }
-
+  if (progress.key === 'attempted') {
+    return {
+      key: 'attempted',
+      label: activeLanguage === 'ja' ? '挑戦済み・未合格' : 'Attempted · Not Yet Passed'
+    };
+  }
 
   // ========================================
   // UPCOMING
@@ -1815,7 +1814,9 @@ function assignmentMatchesFilter(
       statusKey ===
         'due' ||
       statusKey ===
-        'late'
+        'late' ||
+      statusKey ===
+        'attempted'
     );
   }
 
@@ -2798,15 +2799,11 @@ function render() {
     );
 
 
-  const done =
-    assignments
-      .filter(
-        assignment =>
-          map.has(
-            assignment.id
-          )
-      )
-      .length;
+  const passMaps = buildStudentPassMaps();
+  const done = assignments.filter(assignment => {
+    const passState = studentPassState(assignment, passMaps);
+    return assignmentProgressStatus(passState, map.has(assignment.id)).complete;
+  }).length;
 
 
   const progress =
@@ -2893,12 +2890,12 @@ function render() {
 
 
   renderNextAssignment(
-    map
+    map, passMaps
   );
 
 
   renderAssignmentList(
-    map
+    map, passMaps
   );
 
 
@@ -2913,8 +2910,14 @@ function render() {
 // ==========================================
 
 function renderNextAssignment(
-  map
+  map,
+  passMaps
 ) {
+  const isComplete = assignment =>
+    assignmentProgressStatus(
+      studentPassState(assignment, passMaps),
+      map.has(assignment.id)
+    ).complete;
 
   const now =
     Date.now();
@@ -2942,9 +2945,7 @@ function renderNextAssignment(
 
 
         return (
-          !map.has(
-            assignment.id
-          ) &&
+          !isComplete(assignment) &&
           release !==
             null &&
           due !==
@@ -2967,9 +2968,7 @@ function renderNextAssignment(
 
 
         return (
-          !map.has(
-            assignment.id
-          ) &&
+          !isComplete(assignment) &&
           release !==
             null &&
           now <
@@ -3216,36 +3215,19 @@ function renderNextAssignment(
 // ASSIGNMENT LIST
 // ==========================================
 
-function renderAssignmentList(
-  map
-) {
-
-  const passMaps = {
-
-    accuracy:
-      bestStudentMetricMap(
-        submissions,
-        'accuracy'
-      ),
-
-    wpm:
-      bestStudentMetricMap(
-        submissions,
-        'wpm'
-      ),
-
-    comprehension:
-      bestStudentMetricMap(
-        submissions,
-        'comprehension'
-      ),
-
-    manual:
-      studentManualScoreMap(
-        manualScores
-      )
+function buildStudentPassMaps() {
+  return {
+    accuracy: bestStudentMetricMap(submissions, 'accuracy'),
+    wpm: bestStudentMetricMap(submissions, 'wpm'),
+    comprehension: bestStudentMetricMap(submissions, 'comprehension'),
+    manual: studentManualScoreMap(manualScores)
   };
+}
 
+function renderAssignmentList(
+  map,
+  passMaps
+) {
 
   const visibleAssignments =
     assignments
@@ -3258,11 +3240,9 @@ function renderAssignmentList(
             );
 
 
-          const status =
-            assignmentStatus(
-              assignment,
-              submission
-            );
+          const passState = studentPassState(assignment, passMaps);
+          const progressState = assignmentProgressStatus(passState, Boolean(submission));
+          const status = assignmentStatus(assignment, submission, progressState);
 
 
           return assignmentMatchesFilter(
@@ -3335,11 +3315,9 @@ function renderAssignmentList(
             );
 
 
-          const status =
-            assignmentStatus(
-              assignment,
-              submission
-            );
+          const passState = studentPassState(assignment, passMaps);
+          const progressState = assignmentProgressStatus(passState, Boolean(submission));
+          const status = assignmentStatus(assignment, submission, progressState);
 
 
           const deadline =
@@ -3447,14 +3425,8 @@ function renderAssignmentList(
             status.key ===
               'upcoming' ||
             status.key ===
-              'late';
-
-
-          const passState =
-            studentPassState(
-              assignment,
-              passMaps
-            );
+              'late' ||
+            status.key === 'attempted';
 
 
           const passPanel =
@@ -4112,6 +4084,14 @@ function getAssignmentMediaUrls(
       promise
     }
   );
+
+  // Only successful media resolutions are cacheable: an absent MP3 URL
+  // must be re-requested after a transient authentication/network error.
+  void promise.then(media => {
+    if (assignment.audio_object_key && !media.audioUrl) {
+      assignmentMediaUrlCache.delete(key);
+    }
+  });
 
 
   return promise;
@@ -4833,6 +4813,22 @@ if (
   }
   if (popup.closed) return;
 
+
+  if (assignment.audio_object_key && !audioUrl) {
+    // A failed warm-up must not trap an iPad in a cached silent lesson.
+    assignmentMediaUrlCache.delete(String(assignment.id));
+    const retry = await getAssignmentMediaUrls(assignment);
+    audioUrl = retry.audioUrl;
+    imageUrl ||= retry.imageUrl;
+    if (!audioUrl) {
+      reportFailure(assignment.id, 'model_audio_unavailable');
+      popup.close();
+      alert(activeLanguage === 'ja'
+        ? 'モデル音声を取得できませんでした。通信状態を確認して再度開いてください。続く場合は先生に知らせてください。'
+        : 'The model audio could not be loaded. Check your connection, retry, or tell your teacher.');
+      return;
+    }
+  }
 
   if (
     audioUrl
