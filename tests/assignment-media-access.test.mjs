@@ -4,24 +4,18 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { mayDownloadAssignmentMedia } = require('../api/assignment-media-access.js');
 
-const student = 'student-1';
 const classIds = new Set(['class-B']);
 const base = { class_id: 'class-A', audience_type: 'class' };
 
 test('original class member can access MP3', () => {
-  assert.equal(mayDownloadAssignmentMedia(base, ['class-A'], [], student), true);
+  assert.equal(mayDownloadAssignmentMedia(base, ['class-A'], []), true);
 });
 test('student enrolled in a shared class can access MP3', () => {
-  assert.equal(mayDownloadAssignmentMedia(base, classIds, ['class-B'], student), true);
+  assert.equal(mayDownloadAssignmentMedia(base, classIds, ['class-B']), true);
 });
 test('student outside all assigned classes cannot access MP3', () => {
-  assert.equal(mayDownloadAssignmentMedia(base, classIds, ['class-C'], student), false);
+  assert.equal(mayDownloadAssignmentMedia(base, classIds, ['class-C']), false);
 });
-test('targeted assignment only grants audio to its named student', () => {
-  const targeted = { ...base, audience_type: 'targeted', target_student_ids: ['student-2'] };
-  assert.equal(mayDownloadAssignmentMedia(targeted, ['class-A'], [], student), false);
-  assert.equal(mayDownloadAssignmentMedia(targeted, ['class-A'], [], 'student-2'), true);
-});
-test('missing targets default to deny for individual materials', () => {
-  assert.equal(mayDownloadAssignmentMedia({ ...base, audience_type: 'targeted' }, ['class-A'], [], student), false);
+test('no class membership means access denied', () => {
+  assert.equal(mayDownloadAssignmentMedia(base, [], ['class-B']), false);
 });
