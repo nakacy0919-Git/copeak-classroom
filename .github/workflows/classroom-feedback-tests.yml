@@ -25,8 +25,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Check JavaScript syntax
         run: |
-          node --check js/student.js
-          node --check js/teacher.js
+          node --input-type=module --check < js/student.js
+          node --input-type=module --check < js/teacher.js
           node --check api/r2-download-url.js
           node --check api/assignment-media-access.js
       - name: Run regression tests
