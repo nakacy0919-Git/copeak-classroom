@@ -4,6 +4,7 @@ import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
+import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import {
   requireUser,
   getClient,
@@ -565,6 +566,12 @@ function renderAssignmentManager() {
           const published =
             assignment.is_published !==
             false;
+          const modelAudioState = getAssignmentAudioState(assignment);
+          const modelAudioWarning = modelAudioState.status === 'expired'
+            ? '⚠ モデル音声の利用期限（登録後14日）が過ぎています。EditでMP3/WAVを再アップロードしてください。'
+            : modelAudioState.status === 'expiring'
+              ? '⚠ モデル音声の利用期限が3日以内です。継続する場合は再アップロードしてください。'
+              : '';
 
 
           const lessonText =
@@ -660,6 +667,8 @@ function renderAssignmentManager() {
                 <div class="teacher-assignment-excerpt">
                   ${esc(excerpt)}
                 </div>
+
+                ${modelAudioWarning ? `<p class="teacher-audio-expiry-warning" role="status">${esc(modelAudioWarning)}</p>` : ''}
 
 
                 <div class="teacher-assignment-actions">
@@ -5603,16 +5612,16 @@ function openAssignmentEditor(
     );
 
   if (audioStatus) {
-
-    audioStatus.style.color =
-      hasRegisteredAudio
-        ? '#15803d'
-        : '';
-
-    audioStatus.textContent =
-      hasRegisteredAudio
-        ? `✓ 登録済み: ${assignment?.audio_file_name || 'Audio File'}`
-        : 'MP3 / WAV · Max 5 MB · Cloud copy expires after 14 days';
+    const modelAudioState = getAssignmentAudioState(assignment);
+    const expired = modelAudioState.status === 'expired';
+    audioStatus.style.color = expired ? '#b45309' : hasRegisteredAudio ? '#15803d' : '';
+    audioStatus.textContent = expired
+      ? `⚠ 利用期限切れ: ${assignment?.audio_file_name || 'Audio File'} — MP3/WAVを再アップロードしてください。`
+      : modelAudioState.status === 'expiring'
+        ? `⚠ 利用期限が近づいています: ${assignment?.audio_file_name || 'Audio File'}`
+        : hasRegisteredAudio
+          ? `✓ 登録済み: ${assignment?.audio_file_name || 'Audio File'}`
+          : 'MP3 / WAV · Max 5 MB · Cloud copy expires after 14 days';
   }
 
   if (removeAudioButton) {
