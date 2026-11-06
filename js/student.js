@@ -1607,8 +1607,8 @@ function studentPassPanelHtml(
 
     statusText =
       activeLanguage === 'ja'
-        ? 'あと少し'
-        : 'Not Yet';
+        ? '未合格・再挑戦'
+        : 'Not Passed';
   }
 
   else {
@@ -1774,9 +1774,9 @@ function assignmentStatus(
         activeLanguage ===
           'ja'
 
-          ? '！未完了・締切終了'
+          ? '未実施・締切終了'
 
-          : 'Not Completed · Closed'
+          : 'Not Attempted · Closed'
     };
   }
 
@@ -1790,10 +1790,7 @@ function assignmentStatus(
     key:
       'due',
 
-    label:
-      t(
-        'statusTodo'
-      )
+    label: activeLanguage === 'ja' ? '未実施' : 'Not Attempted'
   };
 }
 
