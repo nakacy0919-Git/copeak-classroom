@@ -1,4 +1,5 @@
 import { reviewDeliveryUrl } from './launch-safety.js';
+import { buildTeacherPracticeUrl } from './teacher-reading-practice.mjs';
 import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
@@ -680,6 +681,16 @@ function renderAssignmentManager() {
                     aria-label="課題を下へ移動" title="表示順を下へ"
                     data-assignment-action="move-down" data-assignment-id="${assignment.id}"
                     ${index === sorted.length - 1 || !classOrderSupported ? 'disabled' : ''}>↓ 下へ</button>
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-primary"
+                    data-assignment-action="practice"
+                    data-assignment-id="${assignment.id}"
+                    title="先生自身がCopeakで音読・録音・採点します（生徒の成績には送信されません）"
+                    ${!lessonText ? 'disabled' : ''}>
+                    🎙 自分で音読
+                  </button>
 
                   <button
                     class="btn btn-sm btn-light"
@@ -7826,6 +7837,92 @@ if (imageFile) {
 }
 
 // ==========================================
+// TEACHER / ADMIN READING PRACTICE
+// Same Copeak reader and scoring, without a student login or submission.
+// ==========================================
+
+async function fetchTeacherReadingMedia(assignment, mediaType, accessToken) {
+  const key = mediaType === 'image'
+    ? assignment.image_object_key
+    : assignment.audio_object_key;
+  if (!key || !accessToken) return null;
+
+  try {
+    const response = await fetch('/api/r2-download-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Supabase-Access-Token': accessToken
+      },
+      body: JSON.stringify({ assignmentId: assignment.id, mediaType })
+    });
+    if (!response.ok) {
+      console.warn('[Teacher Reading] model media unavailable', mediaType, response.status);
+      return null;
+    }
+    const data = await response.json();
+    return data.downloadUrl || null;
+  } catch (error) {
+    console.warn('[Teacher Reading] model media request failed', mediaType, error);
+    return null;
+  }
+}
+
+async function openTeacherReadingPractice(assignment) {
+  if (!String(assignment.lesson_text || '').trim()) {
+    throw new Error('音読する英文が登録されていません。');
+  }
+
+  // Opening synchronously keeps iPad Safari from blocking the new tab.
+  const popup = window.open('about:blank', '_blank');
+  if (!popup) throw new Error('新しいタブを開けませんでした。ポップアップを許可してください。');
+
+  try {
+    // A teacher preview must not receive a Classroom result via window.opener.
+    popup.opener = null;
+    popup.document.open();
+    popup.document.write('<!doctype html><html lang="ja"><meta charset="utf-8"><title>Copeak</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#faf8f5;color:#14532d;font-family:system-ui,sans-serif"><div style="text-align:center"><div style="font-size:32px;font-weight:800">Copeak</div><p>音読教材を準備しています…</p></div></body></html>');
+    popup.document.close();
+  } catch (error) {
+    console.warn('[Teacher Reading] loading indicator unavailable', error);
+  }
+
+  try {
+    let token = null;
+    if (!ctx?.demo && (assignment.audio_object_key || assignment.image_object_key)) {
+      const { data, error } = await getClient('teacher').auth.getSession();
+      if (error || !data?.session?.access_token) {
+        throw new Error('先生アカウントのログイン情報を確認できません。');
+      }
+      token = data.session.access_token;
+    }
+
+    const [audioUrl, imageUrl] = await Promise.all([
+      fetchTeacherReadingMedia(assignment, 'audio', token),
+      fetchTeacherReadingMedia(assignment, 'image', token)
+    ]);
+
+    const exclusions = globalThis.CopeakScoreExclusions.safeList(assignment.score_exclusions);
+    const url = buildTeacherPracticeUrl(
+      assignment,
+      window.COPEAK_CONFIG.copeakBaseUrl,
+      { audioUrl, imageUrl },
+      exclusions
+    );
+
+    if (reviewDeliveryUrl(url).omitJapanese) url.searchParams.delete('jpn');
+    if (reviewDeliveryUrl(url).tooLong) {
+      throw new Error('教材が長すぎて開けません。英文を複数の教材に分けてください。');
+    }
+
+    if (!popup.closed) popup.location.replace(url.toString());
+  } catch (error) {
+    if (!popup.closed) popup.close();
+    throw error;
+  }
+}
+
+// ==========================================
 // EDIT
 // ==========================================
 
@@ -11116,7 +11213,10 @@ $('#assignmentRelease').onchange =
 
       try {
 
-        if (
+        if (action === 'practice') {
+          await openTeacherReadingPractice(assignment);
+
+        } else if (
           action ===
           'edit'
         ) {
