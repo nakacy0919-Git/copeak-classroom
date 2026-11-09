@@ -19,7 +19,8 @@ export function buildTeacherPracticeUrl(assignment, copeakBaseUrl, media = {}, s
   const params = url.searchParams;
   params.set('source', 'copeak-classroom');
   params.set('teacher_preview', '1');
-  params.set('title', assignment.title || 'Reading Assignment');
+  // Keep teacher previews separate from student-imported lessons in IndexedDB.
+  params.set('title', `先生用音読｜${assignment.title || 'Reading Assignment'}`);
   params.set('eng', text);
   params.set('jpn', assignment.lesson_translation || '');
   params.set('lang', assignment.lesson_lang || 'en-US');
