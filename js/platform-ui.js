@@ -9,8 +9,10 @@ const navButtons =
   );
 
 
+const requestedPage = new URLSearchParams(window.location.search).get('page');
+
 let currentPage =
-  sessionStorage.getItem(
+  requestedPage || sessionStorage.getItem(
     'copeak-classroom-platform-page'
   ) || 'overview';
 

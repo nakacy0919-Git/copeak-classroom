@@ -261,69 +261,38 @@ module.exports =
       }
 
 
-      // Student profile
-      const profileResult =
-        await supabaseGet(
-          `/rest/v1/profiles?id=eq.${encodeURIComponent(
-            user.id
-          )}&select=role`,
-          token
-        );
+      // Check the authenticated role. Teacher preview is allowed only for
+      // approved teachers and only for their own / linked classes.
+      const profileResult = await supabaseGet(
+        `/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=role,teacher_status`,
+        token
+      );
+      const profile = profileResult.ok ? profileResult.data?.[0] : null;
+      const isStudent = profile?.role === 'student';
+      const isTeacher = profile?.role === 'teacher' &&
+        profile?.teacher_status === 'approved';
 
-
-      if (
-        !profileResult.ok ||
-        profileResult.data?.[0]?.role !==
-          'student'
-      ) {
-
-        return sendJson(
-          res,
-          403,
-          {
-            error:
-              'Student access required.'
-          }
-        );
+      if (!isStudent && !isTeacher) {
+        return sendJson(res, 403, { error: 'Approved teacher or student access required.' });
       }
 
-
-      // Student class memberships
-      const memberResult =
-        await supabaseGet(
-          `/rest/v1/class_members?student_id=eq.${encodeURIComponent(
-            user.id
-          )}&select=class_id`,
-          token
-        );
-
-
-      if (
-        !memberResult.ok ||
-        !Array.isArray(
-          memberResult.data
-        )
-      ) {
-
-        return sendJson(
-          res,
-          403,
-          {
-            error:
-              'Class membership could not be verified.'
-          }
-        );
-      }
-
-
-      const classIds =
-        new Set(
-          memberResult.data.map(
-            row =>
-              row.class_id
+      const classResult = isTeacher
+        ? await supabaseGet(
+            `/rest/v1/classes?teacher_id=eq.${encodeURIComponent(user.id)}&select=id`,
+            token
           )
-        );
+        : await supabaseGet(
+            `/rest/v1/class_members?student_id=eq.${encodeURIComponent(user.id)}&select=class_id`,
+            token
+          );
 
+      if (!classResult.ok || !Array.isArray(classResult.data)) {
+        return sendJson(res, 403, { error: 'Class access could not be verified.' });
+      }
+
+      const classIds = new Set(
+        classResult.data.map(row => isTeacher ? row.id : row.class_id).filter(Boolean)
+      );
 
       // Assignment
       const assignmentResult =
@@ -370,7 +339,8 @@ module.exports =
         sharedClassIds = sharedResult.data.map(row => row.class_id);
       }
 
-      // Student JWT + assignments RLS already ensures individual-target access.
+      // Assignment RLS prevents students from seeing non-targeted materials.
+      // Teachers must additionally own the original or a linked class.
       if (!mayDownloadAssignmentMedia(assignment, classIds, sharedClassIds)) {
         return sendJson(res, 403, {
           error: 'You do not have access to this assignment.'
@@ -378,7 +348,10 @@ module.exports =
       }
 
 
+      // Teachers may listen to draft materials before publishing them.
+      // Keep the published-only restriction for students.
       if (
+        isStudent &&
         assignment.is_published ===
         false
       ) {
