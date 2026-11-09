@@ -17,6 +17,7 @@ const assignment = {
 test('teacher opens the same reading exercise without a student session or submission token', () => {
   const url = buildTeacherPracticeUrl(assignment, base, {}, ['Tokyo']);
   assert.equal(url.searchParams.get('eng'), assignment.lesson_text);
+  assert.equal(url.searchParams.get('title'), '先生用音読｜Sample reading');
   assert.equal(url.searchParams.get('jpn'), assignment.lesson_translation);
   assert.equal(url.searchParams.get('practice_mode'), 'reading');
   assert.equal(url.searchParams.get('mode_locked'), '1');
