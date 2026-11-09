@@ -5,6 +5,7 @@ import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
+import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import {
   requireUser,
@@ -690,6 +691,15 @@ function renderAssignmentManager() {
                     title="先生自身がCopeakで音読・録音・採点します（生徒の成績には送信されません）"
                     ${!lessonText ? 'disabled' : ''}>
                     🎙 自分で音読
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-light deadline-action-button"
+                    data-assignment-action="deadline"
+                    data-assignment-id="${assignment.id}"
+                    title="締切のお知らせカードを表示">
+                    📅 Deadline
                   </button>
 
                   <button
@@ -11215,6 +11225,15 @@ $('#assignmentRelease').onchange =
 
         if (action === 'practice') {
           await openTeacherReadingPractice(assignment);
+
+        } else if (action === 'deadline') {
+          openDeadlineNotice({
+            assignment,
+            className: selectedClass?.name || '',
+            number: assignment.audience_type === 'targeted'
+              ? '自習教材'
+              : ('No. ' + (assignmentNumber(assignment) || assignment.week_no || ''))
+          });
 
         } else if (
           action ===

@@ -1,0 +1,141 @@
+/* Teacher Mode: high-quality screenshot-ready deadline notice */
+.teacher-assignment-actions .deadline-action-button {
+  color: #0c6475; border: 1px solid #9ad7dc;
+  background: linear-gradient(155deg, #f5ffff, #dbf5f4); font-weight: 750;
+}
+.teacher-assignment-actions .deadline-action-button:hover { background: #cef1ef; border-color: #64bcc7; }
+.deadline-notice-overlay {
+  position: fixed; inset: 0; z-index: 100000;
+  display: flex; justify-content: center; align-items: center;
+  padding: 22px; overflow-y: auto; background: rgba(12,23,37,.80);
+  backdrop-filter: blur(9px);
+}
+.deadline-notice-shell {
+  width: min(960px, 100%); margin: auto; display: grid; gap: 10px;
+  font-family: "Noto Sans JP", system-ui, sans-serif;
+}
+.deadline-notice-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px; color: #f4fbfd; font-size: 12px; line-height: 1.5;
+}
+.deadline-notice-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.deadline-notice-tools button {
+  cursor: pointer; border: 1px solid rgba(255,255,255,.55); border-radius: 12px;
+  background: rgba(255,255,255,.12); color: white; font: inherit; font-weight: 700;
+  padding: 10px 15px;
+}
+.deadline-notice-tools button:hover, .deadline-notice-tools button:focus-visible {
+  background: rgba(255,255,255,.25); outline: 2px solid #c3f6f0; outline-offset: 2px;
+}
+.deadline-notice-card {
+  position: relative; isolation: isolate; overflow: hidden; box-sizing: border-box;
+  width: 100%; aspect-ratio: 16 / 9; min-height: 500px;
+  border-radius: 24px; background: #fff; color: #153345;
+  box-shadow: 0 26px 75px rgba(0,0,0,.28);
+  display: flex; flex-direction: column; padding: 31px 43px 23px;
+}
+.deadline-notice-wash {
+  position: absolute; z-index: -1; inset: 0;
+  background: radial-gradient(ellipse at 100% 0%, rgba(76,207,196,.23), transparent 45%),
+              radial-gradient(ellipse at 2% 100%, rgba(101,143,224,.12), transparent 46%),
+              linear-gradient(135deg, #fff, #f7fbfc);
+}
+.deadline-notice-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 7px;
+  background: linear-gradient(90deg, #1e667a, #32c3af, #78d5ed);
+}
+.deadline-notice-head, .deadline-notice-footer {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.deadline-notice-brand {
+  display: flex; align-items: center; gap: 10px; font-size: 18px;
+  letter-spacing: -.035em; font-weight: 800;
+}
+.deadline-notice-brand strong { color: #087f89; }
+.deadline-notice-brand-mark {
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border-radius: 11px; background: linear-gradient(140deg,#12526a,#26bdaf);
+  color: #fff; box-shadow: 0 4px 12px #1c88903a; font-weight: 900;
+}
+.deadline-notice-tag {
+  font-size: 11px; letter-spacing: .2em; color: #47747a;
+  font-weight: 800; white-space: nowrap;
+}
+.deadline-notice-content {
+  margin-top: 34px; flex: 1; display: flex; flex-direction: column; min-width: 0;
+}
+.deadline-notice-eyebrow {
+  color: #198995; font-size: 11px; letter-spacing: .18em; font-weight: 800;
+  display: flex; align-items: center; gap: 14px;
+}
+.deadline-notice-eyebrow-line { width: 35px; height: 1px; background: #7abcc3; }
+.deadline-notice-content h2 {
+  margin: 7px 0 12px; color: #132e40; font-size: clamp(23px,3.2vw,35px);
+  font-weight: 850; line-height: 1.35;
+}
+.deadline-notice-class {
+  color: #1a707d; font-size: 14px; font-weight: 800; overflow-wrap: anywhere;
+}
+.deadline-notice-class span { color: #567e89; }
+.deadline-notice-assignment {
+  margin-top: 6px; margin-bottom: 20px; color: #253f4e;
+  font-size: clamp(17px,2.25vw,24px); font-weight: 800;
+  line-height: 1.4; overflow-wrap: anywhere;
+}
+.deadline-notice-due {
+  margin: auto 0 15px; border: 1px solid #b8dbe0; border-radius: 17px;
+  background: linear-gradient(120deg,rgba(231,248,248,.94),rgba(247,252,254,.98));
+  padding: 18px 25px 12px; text-align: center;
+}
+.deadline-notice-due-label { color: #176a79; font-size: 16px; font-weight: 800; }
+.deadline-notice-dot {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  background: #16abac; margin-right: 6px; vertical-align: middle;
+}
+.deadline-notice-date {
+  margin-top: 6px; color: #142f44; font-size: clamp(24px,3.8vw,42px);
+  font-weight: 900; line-height: 1.24; letter-spacing: -.04em;
+}
+.deadline-notice-date span { font-size: .62em; }
+.deadline-notice-time {
+  color: #087a85; font-size: clamp(43px,6vw,68px);
+  line-height: 1.08; font-weight: 900; font-variant-numeric: tabular-nums;
+}
+.deadline-notice-time span { font-size: .30em; }
+.deadline-notice-zone {
+  margin-top: 2px; color: #427581; font-size: 12px; font-weight: 650;
+}
+.deadline-notice-missing {
+  margin: 12px 0; font-size: 24px; color: #ac5526; font-weight: 800;
+}
+.deadline-notice-unpublished {
+  color: #9b4420; background: #fff3e6; border-radius: 9px;
+  padding: 6px 12px; font-size: 12px; font-weight: 700;
+}
+.deadline-notice-footer {
+  border-top: 1px solid #dce9eb; padding-top: 13px;
+  font-size: 12px; color: #3a6170; font-weight: 600;
+}
+.deadline-notice-footer strong { color: #168c91; letter-spacing: .04em; }
+.deadline-notice-status {
+  color: #efffff; min-height: 18px; font-size: 12px; text-align: right;
+}
+@media (max-width: 620px) {
+  .deadline-notice-overlay { padding: 12px; align-items: flex-start; }
+  .deadline-notice-toolbar { order: 2; }
+  .deadline-notice-card {
+    aspect-ratio: auto; min-height: 510px; padding: 24px 20px 17px;
+    border-radius: 17px;
+  }
+  .deadline-notice-content { margin-top: 28px; }
+  .deadline-notice-tag { font-size: 8px; letter-spacing: .12em; }
+  .deadline-notice-brand { font-size: 15px; }
+  .deadline-notice-assignment { margin-bottom: 16px; }
+  .deadline-notice-due { padding: 19px 7px 13px; }
+  .deadline-notice-footer { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deadline-notice-card, .deadline-notice-overlay {
+    transition: none !important; animation: none !important;
+  }
+}
