@@ -3,6 +3,7 @@ name: Classroom feedback regression tests
 on:
   push:
     branches:
+      - main
       - feat/classroom-teacher-feedback-20261106
   pull_request:
     paths:
