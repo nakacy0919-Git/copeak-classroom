@@ -2,6 +2,7 @@ import { reviewDeliveryUrl } from './launch-safety.js';
 import { buildTeacherPracticeUrl } from './teacher-reading-practice.mjs';
 import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
+import { manualMetricOverride } from './manual-score-precedence.mjs';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
@@ -1247,38 +1248,8 @@ const select = $('#gradebookMetricMode');
 }
 
 
-function metricManualValue(
-  manualRow,
-  metric
-) {
-
-  if (!manualRow || (metric === 'comprehension' && manualRow.score_version !== 'wcpm-v1')) {
-    return null;
-  }
-
-
-  const field =
-    metric === 'accuracy'
-      ? 'score'
-      : metric;
-
-
-  const value =
-    manualRow[field];
-
-
-  if (
-    value === null ||
-    value === undefined
-  ) {
-
-    return null;
-  }
-
-
-  return Math.round(
-    Number(value)
-  );
+function metricManualValue(manualRow, metric, automaticRow = null) {
+  return manualMetricOverride(manualRow, automaticRow, metric);
 }
 
 
@@ -1389,24 +1360,15 @@ const key = `${student.id}|${assignment.id}`;
 
 
             const manualAccuracy =
-              metricManualValue(
-                manualRow,
-                'accuracy'
-              );
+              metricManualValue(manualRow, 'accuracy', accuracyResult);
 
 
             const manualWpm =
-              metricManualValue(
-                manualRow,
-                'wpm'
-              );
+              metricManualValue(manualRow, 'wpm', wpmResult);
 
 
             const manualComp =
-              metricManualValue(
-                manualRow,
-                'comprehension'
-              );
+              metricManualValue(manualRow, 'comprehension', compResult);
 
 
             const accuracy =
@@ -1678,24 +1640,15 @@ const key = `${student.id}|${assignment.id}`;
 
 
                   const manualA =
-                    metricManualValue(
-                      manualRow,
-                      'accuracy'
-                    );
+                    metricManualValue(manualRow, 'accuracy', aResult);
 
 
                   const manualW =
-                    metricManualValue(
-                      manualRow,
-                      'wpm'
-                    );
+                    metricManualValue(manualRow, 'wpm', wResult);
 
 
                   const manualC =
-                    metricManualValue(
-                      manualRow,
-                      'comprehension'
-                    );
+                    metricManualValue(manualRow, 'comprehension', cResult);
 
 
                   const accuracy =
@@ -3524,6 +3477,7 @@ async function saveManualMetric(
 
   row[field] =
     value;
+  row.updated_at = new Date().toISOString();
   if (metric === 'comprehension') row.score_version = 'wcpm-v1';
 
 

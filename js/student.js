@@ -4,6 +4,7 @@ import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
 import { evaluatePassCriteria } from './pass-criteria.mjs';
 import { assignmentProgressStatus } from './assignment-progress.mjs';
+import { manualMetricOverride } from './manual-score-precedence.mjs';
 import { sortClassAssignments } from './assignment-order.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
@@ -1163,41 +1164,9 @@ function studentManualScoreMap(
 }
 
 
-function studentEffectiveMetric(
-  manualRow,
-  automaticRow,
-  metric
-) {
-
-  const manualField =
-    metric === 'accuracy'
-      ? 'score'
-      : metric;
-
-
-  const manualValue =
-    metric === 'comprehension' && manualRow?.score_version !== 'wcpm-v1'
-      ? null : manualRow?.[manualField];
-
-
-  if (
-    manualValue !== null &&
-    manualValue !== undefined
-  ) {
-
-    const number =
-      Number(
-        manualValue
-      );
-
-
-    return Number.isFinite(
-      number
-    )
-      ? Math.round(number)
-      : null;
-  }
-
+function studentEffectiveMetric(manualRow, automaticRow, metric) {
+  const manualValue = manualMetricOverride(manualRow, automaticRow, metric);
+  if (manualValue !== null) return manualValue;
 
   const automaticValue =
     automaticRow?.[
@@ -5873,7 +5842,7 @@ async function loadLive() {
         'manual_scores'
       )
       .select(
-        'assignment_id,student_id,score,wpm,comprehension,score_version'
+        'assignment_id,student_id,score,wpm,comprehension,score_version,updated_at'
       )
       .eq(
         'student_id',
