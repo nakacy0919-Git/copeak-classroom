@@ -1,8 +1,9 @@
-// Stable teacher-facing class number, independent of internal week_no.
-// Individual study assignments deliberately have no displayed assignment number.
+// Stable number per receiving class; cross-posted lessons can have a different
+// No. in each class. Keep gradebook_no/week_no as legacy fallbacks only.
+// Individual self-study assignments are never numbered.
 export function assignmentNumber(assignment) {
   if (!assignment || assignment.audience_type === 'targeted') return null;
-  const value = Number(assignment.gradebook_no ?? assignment.week_no);
+  const value = Number(assignment.class_assignment_no ?? assignment.gradebook_no ?? assignment.week_no);
   return Number.isInteger(value) && value > 0 ? value : null;
 }
 
