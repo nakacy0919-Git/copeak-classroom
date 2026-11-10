@@ -5717,9 +5717,16 @@ async function loadLive() {
   let { data: assignmentClassRows, error: assignmentClassError } =
     await sb
       .from('assignment_classes')
-      .select('assignment_id,display_order')
+      .select('assignment_id,display_order,class_assignment_no')
       .eq('class_id', currentClass.id);
 
+  if (assignmentClassError?.code === '42703' &&
+      String(assignmentClassError.message || '').includes('class_assignment_no')) {
+    ({ data: assignmentClassRows, error: assignmentClassError } =
+      await sb.from('assignment_classes')
+        .select('assignment_id,display_order')
+        .eq('class_id', currentClass.id));
+  }
   if (assignmentClassError?.code === '42703' &&
       String(assignmentClassError.message || '').includes('display_order')) {
     ({ data: assignmentClassRows, error: assignmentClassError } =
@@ -5786,9 +5793,13 @@ async function loadLive() {
     const orderById = new Map(
       (assignmentClassRows || []).map(row => [row.assignment_id, row.display_order])
     );
+    const classNumberById = new Map(
+      (assignmentClassRows || []).map(row => [row.assignment_id, row.class_assignment_no])
+    );
     assignmentRows = (loadedAssignments || []).map(assignment => ({
       ...assignment,
-      class_display_order: orderById.get(assignment.id) ?? null
+      class_display_order: orderById.get(assignment.id) ?? null,
+      class_assignment_no: classNumberById.get(assignment.id) ?? null
     }));
   }
 
