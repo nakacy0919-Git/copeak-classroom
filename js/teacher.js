@@ -8229,9 +8229,10 @@ release_at:
     selectedClass.id
   );
 
-
   render();
 
+  const duplicateDisplayNumber =
+    assignmentNumber(assignments.find(item => item.id === duplicatedAssignment.id)) || newWeek;
 
   await showInfoModal({
 
@@ -8245,7 +8246,7 @@ release_at:
     '課題を複製しました',
 
   message:
-    `No. ${newWeek} としてDraftに複製しました。
+    `No. ${duplicateDisplayNumber} としてDraftに複製しました。
 
 公開する前に内容と日付を確認してください。`
 
@@ -8518,10 +8519,18 @@ students =
 
   let { data: currentClassLinks, error: currentClassLinkError } =
     await sb.from('assignment_classes')
-      .select('assignment_id,display_order')
+      .select('assignment_id,display_order,class_assignment_no')
       .eq('class_id', selectedClass.id);
 
   classOrderSupported = true;
+  // Older preview databases may not yet have the class-local number column.
+  if (currentClassLinkError?.code === '42703' &&
+      String(currentClassLinkError.message || '').includes('class_assignment_no')) {
+    ({ data: currentClassLinks, error: currentClassLinkError } =
+      await sb.from('assignment_classes')
+        .select('assignment_id,display_order')
+        .eq('class_id', selectedClass.id));
+  }
   if (currentClassLinkError?.code === '42703' &&
       String(currentClassLinkError.message || '').includes('display_order')) {
     classOrderSupported = false;
@@ -8545,6 +8554,9 @@ students =
     ];
   const currentClassOrder = new Map(
     (currentClassLinks || []).map(row => [row.assignment_id, row.display_order])
+  );
+  const currentClassNumbers = new Map(
+    (currentClassLinks || []).map(row => [row.assignment_id, row.class_assignment_no])
   );
 
 
@@ -8652,6 +8664,7 @@ students =
           assignment => ({
             ...assignment,
             class_display_order: currentClassOrder.get(assignment.id) ?? null,
+            class_assignment_no: currentClassNumbers.get(assignment.id) ?? null,
 
             class_ids:
               assignmentClassMap.get(
