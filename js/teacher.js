@@ -4,7 +4,7 @@ import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { manualMetricOverride } from './manual-score-precedence.mjs';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
-import { evaluatePassCriteria } from './pass-criteria.mjs';
+import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
 import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
@@ -1271,12 +1271,14 @@ function csvEscape(
 }
 
 
-function assignmentPassResult(assignment, accuracy, wpm) {
-  return evaluatePassCriteria(assignment, accuracy, wpm);
+function assignmentPassResult(assignment, passingAttempts, key) {
+  const base = evaluatePassCriteria(assignment, null, null);
+  return { ...base, passed: base.configured && passingAttempts.has(key) };
 }
 
 function exportGradebookCsv() {
 const activeAssignments = visibleAssignments(gradebookAudienceMode);
+const passingAttempts = buildPassingAttemptMap(activeAssignments, submissions);
 
 
   const bestAccuracy =
@@ -1414,13 +1416,7 @@ const key = `${student.id}|${assignment.id}`;
 
 
             const passResultCsv =
-              assignmentPassResult(
-                assignment,
-                accuracy === ''
-                  ? null
-                  : accuracy,
-                wpm === '' ? null : wpm
-              );
+              assignmentPassResult(assignment, passingAttempts, key);
 
 
             row.push(
@@ -1514,6 +1510,7 @@ const key = `${student.id}|${assignment.id}`;
 function renderTable() {
 ensureGradebookControls();
 const activeAssignments = visibleAssignments(gradebookAudienceMode);
+const passingAttempts = buildPassingAttemptMap(activeAssignments, submissions);
 
 
   const bestAccuracy =
@@ -1702,11 +1699,9 @@ const key = `${student.id}|${assignment.id}`;
                     reads;
 
 
-                  if (
-                    accuracy !== null ||
-                    wpm !== null ||
-                    comprehension !== null
-                  ) {
+                  const passResult = assignmentPassResult(assignment, passingAttempts, key);
+                  if (passResult.configured ? passResult.passed :
+                      (accuracy !== null || wpm !== null || comprehension !== null)) {
                     done++;
                   }
 
@@ -1747,21 +1742,13 @@ const key = `${student.id}|${assignment.id}`;
                     } / Reads ${reads}`;
 
 
-                  const passResult =
-                    assignmentPassResult(
-                      assignment,
-                      accuracy,
-                      wpm
-                    );
-
-
                   const passHtml =
                     passResult.passed
 
                       ? `
                           <div
                             class="grade-pass-badge"
-                            title="設定された合格基準をすべてクリア">
+                            title="1回の音読でAccuracyとWPMの設定基準を同時にクリア">
 
                             ✓ PASS
 
