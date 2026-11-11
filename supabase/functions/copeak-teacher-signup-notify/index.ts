@@ -41,6 +41,20 @@ Deno.serve(async(req)=>{
    'copeak-provider-test-'+new Date().toISOString().slice(0,10));
   return json(ok?200:502,{provider_test:ok?'accepted':'failed'});
  }
+ if(body?.event==='admin_test'){
+  if(!Array.isArray(body.admins)||body.admins.length<1||body.admins.length>10)
+   return json(400,{error:'invalid_test_recipients'});
+  let accepted=0,failed=0;
+  for(const admin of body.admins){
+   if(!validUUID(admin?.id)||!validEmail(admin?.email)){failed++;continue}
+   const ok=await send(key,'Copeak Classroom <'+fromAddress+'>',admin.email,
+    '【Copeak Classroom】管理者メール通知の動作確認',
+    'Copeak Classroomの新規先生登録通知の送信テストです。\n\nこのメールは動作確認用で、新しい先生の登録申請ではありません。\n\n管理者画面: '+APPROVAL_URL,
+    'copeak-admin-test-'+new Date().toISOString().slice(0,10)+'-'+admin.id);
+   if(ok)accepted++;else failed++;
+  }
+  return json(failed?502:200,{accepted,failed,test:true});
+ }
  if(body?.event!=='teacher_registered'||!validUUID(body.teacher_id)||!Array.isArray(body.admins)||body.admins.length>10)
   return json(400,{error:'invalid_event'});
  const teacher=body.teacher||{};
