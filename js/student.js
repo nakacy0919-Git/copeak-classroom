@@ -2,7 +2,7 @@ import { reportClassroomDiagnostic, flushClassroomDiagnostics } from './classroo
 import './scoring-exclusions.js';
 import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
-import { evaluatePassCriteria } from './pass-criteria.mjs';
+import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
 import { assignmentProgressStatus } from './assignment-progress.mjs';
 import { manualMetricOverride } from './manual-score-precedence.mjs';
 import { sortClassAssignments } from './assignment-order.mjs';
@@ -1219,11 +1219,13 @@ function studentPassState(assignment, maps) {
   const wpm = studentEffectiveMetric(
     manualRow, maps.wpm.get(assignment.id), 'wpm'
   );
-  const status = evaluatePassCriteria(assignment, accuracy, wpm);
+  // A PASS is earned by ONE submission meeting the targets simultaneously.
+  // Personal bests above are retained for progress display only.
+  const passed = maps.passingAttempts.has(`${ctx.user.id}|${assignment.id}`);
 
   return {
-    configured: status.configured,
-    passed: status.passed,
+    configured: base.configured,
+    passed,
     hasScore: accuracy !== null || wpm !== null,
     accuracy,
     wpm,
@@ -1617,9 +1619,13 @@ function studentPassPanelHtml(
             ${
               activeLanguage === 'ja'
 
-                ? '赤いラインが合格ラインです'
+                ? (state.targets.accuracy !== null && state.targets.wpm !== null
+                    ? '表示値はそれぞれの最高記録です。合格には1回の音読でAccuracyとWPMを同時に達成してください。'
+                    : '表示値は最高記録です。1回の音読で設定基準を達成すると合格です。')
 
-                : 'The red marker shows the goal'
+                : (state.targets.accuracy !== null && state.targets.wpm !== null
+                    ? 'Values are separate personal bests. Meet BOTH targets in one reading to PASS.'
+                    : 'Values show personal bests. Meet the target in one reading to PASS.')
             }
 
           </div>
@@ -3186,7 +3192,8 @@ function buildStudentPassMaps() {
     accuracy: bestStudentMetricMap(submissions, 'accuracy'),
     wpm: bestStudentMetricMap(submissions, 'wpm'),
     comprehension: bestStudentMetricMap(submissions, 'comprehension'),
-    manual: studentManualScoreMap(manualScores)
+    manual: studentManualScoreMap(manualScores),
+    passingAttempts: buildPassingAttemptMap(assignments, submissions)
   };
 }
 
@@ -5811,34 +5818,24 @@ async function loadLive() {
   // SUBMISSIONS
   // ========================================
 
-  const {
-    data: submissionRows,
-    error: submissionError
-  } =
-    await sb
-      .from(
-        'submissions'
-      )
-      .select(
-        '*'
-      )
-      .eq(
-        'student_id',
-        ctx.user.id
-      );
+  // Fetch ALL attempts: Supabase defaults to a 1,000-row response limit.
+  // Losing older qualifying readings would incorrectly revoke a PASS.
+  const submissionRows = [];
+  const submissionPageSize = 1000;
+  for (let offset = 0; ; offset += submissionPageSize) {
+    const { data: page, error: submissionError } = await sb
+      .from('submissions')
+      .select('*')
+      .eq('student_id', ctx.user.id)
+      .order('submitted_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(offset, offset + submissionPageSize - 1);
 
-
-  if (
-    submissionError
-  ) {
-
-    throw submissionError;
+    if (submissionError) throw submissionError;
+    submissionRows.push(...(page || []));
+    if (!page || page.length < submissionPageSize) break;
   }
-
-
-  submissions =
-    submissionRows ||
-    [];
+  submissions = submissionRows;
 
   // ========================================
   // TEACHER MANUAL SCORE OVERRIDES
