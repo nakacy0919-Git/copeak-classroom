@@ -4,7 +4,7 @@ import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { manualMetricOverride } from './manual-score-precedence.mjs';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
-import { evaluatePassCriteria } from './pass-criteria.mjs';
+import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
 import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
@@ -1243,7 +1243,7 @@ const select = $('#gradebookMetricMode');
     hint.textContent =
       (gradebookAudienceMode === 'class'
  ? 'クラス課題のみを集計します。個別自習教材は平均・提出率に含めません。'
- : '個別自習教材の記録です。配布対象外の生徒は「対象外」と表示します。') + ' Accuracy / WPM / Reading Performance（100点満点）の表示切替とスコアの手動修正ができます。旧Comprehensionの記録は保持し、Reading Performanceに合算しません。';
+ : '個別自習教材の記録です。配布対象外の生徒は「対象外」と表示します。') + ' Accuracy/WPMは各項目の最高記録です。PASSには1回の音読で設定された基準を同時達成する必要があります。手動修正はPASS判定には使いません。Reading Performanceは別指標です。';
   }
 }
 
@@ -1271,12 +1271,14 @@ function csvEscape(
 }
 
 
-function assignmentPassResult(assignment, accuracy, wpm) {
-  return evaluatePassCriteria(assignment, accuracy, wpm);
+function assignmentPassResult(assignment, passingAttempts, key) {
+  const base = evaluatePassCriteria(assignment, null, null);
+  return { ...base, passed: base.configured && passingAttempts.has(key) };
 }
 
 function exportGradebookCsv() {
 const activeAssignments = visibleAssignments(gradebookAudienceMode);
+const passingAttempts = buildPassingAttemptMap(activeAssignments, submissions);
 
 
   const bestAccuracy =
@@ -1414,13 +1416,7 @@ const key = `${student.id}|${assignment.id}`;
 
 
             const passResultCsv =
-              assignmentPassResult(
-                assignment,
-                accuracy === ''
-                  ? null
-                  : accuracy,
-                wpm === '' ? null : wpm
-              );
+              assignmentPassResult(assignment, passingAttempts, key);
 
 
             row.push(
@@ -1514,6 +1510,7 @@ const key = `${student.id}|${assignment.id}`;
 function renderTable() {
 ensureGradebookControls();
 const activeAssignments = visibleAssignments(gradebookAudienceMode);
+const passingAttempts = buildPassingAttemptMap(activeAssignments, submissions);
 
 
   const bestAccuracy =
@@ -1702,11 +1699,9 @@ const key = `${student.id}|${assignment.id}`;
                     reads;
 
 
-                  if (
-                    accuracy !== null ||
-                    wpm !== null ||
-                    comprehension !== null
-                  ) {
+                  const passResult = assignmentPassResult(assignment, passingAttempts, key);
+                  if (passResult.configured ? passResult.passed :
+                      (accuracy !== null || wpm !== null || comprehension !== null)) {
                     done++;
                   }
 
@@ -1747,21 +1742,13 @@ const key = `${student.id}|${assignment.id}`;
                     } / Reads ${reads}`;
 
 
-                  const passResult =
-                    assignmentPassResult(
-                      assignment,
-                      accuracy,
-                      wpm
-                    );
-
-
                   const passHtml =
                     passResult.passed
 
                       ? `
                           <div
                             class="grade-pass-badge"
-                            title="設定された合格基準をすべてクリア">
+                            title="1回の音読でAccuracyとWPMの設定基準を同時にクリア">
 
                             ✓ PASS
 

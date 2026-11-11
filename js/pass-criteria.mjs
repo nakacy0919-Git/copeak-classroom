@@ -29,3 +29,23 @@ export function evaluatePassCriteria(assignment, accuracy, wpm) {
 
   return { configured, passed, targets };
 }
+
+// A PASS must be backed by one actual reading attempt meeting every enabled
+// threshold at once. The separately displayed personal-best metrics are NOT
+// evidence of a qualifying attempt and must never be combined here.
+export function buildPassingAttemptMap(assignments, submissions) {
+  const byAssignment = new Map(
+    (assignments || []).map(assignment => [assignment.id, assignment])
+  );
+  const passingAttempts = new Map();
+
+  for (const attempt of submissions || []) {
+    const assignment = byAssignment.get(attempt?.assignment_id);
+    if (!assignment || !attempt?.student_id) continue;
+    if (!evaluatePassCriteria(assignment, attempt.accuracy, attempt.wpm).passed) continue;
+    const key = `${attempt.student_id}|${attempt.assignment_id}`;
+    if (!passingAttempts.has(key)) passingAttempts.set(key, attempt);
+  }
+
+  return passingAttempts;
+}
