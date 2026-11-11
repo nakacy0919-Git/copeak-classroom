@@ -1243,7 +1243,7 @@ const select = $('#gradebookMetricMode');
     hint.textContent =
       (gradebookAudienceMode === 'class'
  ? 'クラス課題のみを集計します。個別自習教材は平均・提出率に含めません。'
- : '個別自習教材の記録です。配布対象外の生徒は「対象外」と表示します。') + ' Accuracy / WPM / Reading Performance（100点満点）の表示切替とスコアの手動修正ができます。旧Comprehensionの記録は保持し、Reading Performanceに合算しません。';
+ : '個別自習教材の記録です。配布対象外の生徒は「対象外」と表示します。') + ' Accuracy/WPMは各項目の最高記録です。PASSには1回の音読で設定された基準を同時達成する必要があります。手動修正はPASS判定には使いません。Reading Performanceは別指標です。';
   }
 }
 
