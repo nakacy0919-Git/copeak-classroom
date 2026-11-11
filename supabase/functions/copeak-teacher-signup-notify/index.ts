@@ -55,6 +55,44 @@ Deno.serve(async(req)=>{
   }
   return json(failed?502:200,{accepted,failed,test:true});
  }
+ const approvedEmailText=(name,test=false)=>{
+  const safeName=String(name||'').replace(/[\r\n]+/g,' ').slice(0,120)||'先生';
+  const prefix=test?'【送信テスト：実際の登録承認ではありません】\n\n':'';
+  return prefix+safeName+' 先生\n\n'+
+   'Copeak Classroomへの先生アカウント登録が承認され、登録が完了しました。\n'+
+   'これからCopeak Classroomをご利用いただけます。\n\n'+
+   '■ Copeak Classroom（ログイン・ご利用はこちら）\n'+
+   'https://cc.pic-speak-story.com/\n\n'+
+   '■ ご利用方法のご質問・サポート\n'+
+   '操作方法などのご質問は、以下のLINEからお願いいたします。\n'+
+   'https://line.me/ti/p/KXn-mCnjFa\n\n'+
+   '今後ともよろしくお願いいたします。\nCopeak Classroom 運営';
+ };
+ if(body?.event==='teacher_approval_test'){
+  if(!Array.isArray(body.admins)||body.admins.length<1||body.admins.length>10)
+   return json(400,{error:'invalid_test_recipients'});
+  let accepted=0,failed=0;
+  for(const admin of body.admins){
+   if(!validUUID(admin?.id)||!validEmail(admin?.email)){failed++;continue}
+   const ok=await send(key,'Copeak Classroom <'+fromAddress+'>',admin.email,
+    '【テスト】Copeak Classroom 承認完了メールの動作確認',
+    approvedEmailText('動作確認',true),
+    'copeak-approved-test-'+new Date().toISOString().slice(0,10)+'-'+admin.id);
+   if(ok)accepted++;else failed++;
+  }
+  return json(failed?502:200,{accepted,failed,test:true});
+ }
+ if(body?.event==='teacher_approved'){
+  if(!validUUID(body.teacher_id)||!validEmail(body.email)||
+      !/^\d{20}$/.test(body.approval_id||'')||
+      typeof body.teacher_name!=='string'||body.teacher_name.length>200)
+   return json(400,{error:'invalid_approval_event'});
+  const ok=await send(key,'Copeak Classroom <'+fromAddress+'>',body.email,
+   '【Copeak Classroom】先生アカウントの登録が完了しました',
+   approvedEmailText(body.teacher_name||'先生'),
+   'copeak-approved-'+body.teacher_id.toLowerCase()+'-'+body.approval_id);
+  return json(ok?200:502,{accepted:ok?1:0,failed:ok?0:1});
+ }
  if(body?.event!=='teacher_registered'||!validUUID(body.teacher_id)||!Array.isArray(body.admins)||body.admins.length>10)
   return json(400,{error:'invalid_event'});
  const teacher=body.teacher||{};
