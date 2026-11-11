@@ -10,3 +10,16 @@ A new pending teacher signup triggers a database webhook. The recipient is taken
 - Only new `teacher_details` inserts trigger notifications; previous teacher accounts are not backfilled.
 
 When redeploying or changing environments, create the Vault secret and rotate the worker hash before enabling the trigger. Test the mail provider with a `provider_test` event sent to the fixed Resend synthetic test sink.
+
+
+## Teacher approval confirmation to teachers (2026-11-11)
+
+When an existing platform admin invokes `public.admin_set_teacher_status` and the teacher state **transitions** into `approved`, the Copeak database posts a signed `teacher_approved` event to the same sender.
+
+- Recipient: the approved teacher's current `auth.users.email`, never a hardcoded address.
+- Subject: `【Copeak Classroom】先生アカウントの登録が完了しました`.
+- Message includes the login URL `https://cc.pic-speak-story.com/` and the administrator-provided LINE support link `https://line.me/ti/p/KXn-mCnjFa`.
+- No email is sent on unrelated status updates or repeat approval of an already-approved account.
+- A generated approval marker provides an idempotency key if the mail sender retries an HTTP request.
+- Mail errors are nonblocking: approval remains successful even if the provider is temporarily unavailable.
+- To test without contacting a real teacher, send `teacher_approval_test` with an admin recipient list and the private bearer token. The test email is clearly marked as synthetic.
