@@ -23,7 +23,11 @@ let page = 0;
 const pageSize = 6;
 
 let statusFilter =
-  'all';
+  ['pending', 'approved', 'suspended', 'rejected'].includes(
+    new URLSearchParams(location.search).get('status')
+  )
+    ? new URLSearchParams(location.search).get('status')
+    : 'all';
 
 let searchQuery =
   '';
@@ -792,6 +796,9 @@ $('#adminSignOut')
 
 
 (async () => {
+
+  const statusSelect = $('#adminStatusFilter');
+  if (statusSelect) statusSelect.value = statusFilter;
 
   const allowed =
     await verifyAdmin();
