@@ -2162,6 +2162,81 @@ function csvValue(value) {
 // PRINT LOGIN CARDS
 // ==========================================
 
+
+const CLASSROOM_LOGIN_CARD_URL =
+  'https://cc.pic-speak-story.com/';
+
+let loginCardQrLibraryPromise = null;
+
+// Generate one QR image locally and reuse it on every printed student card.
+// PIN, student number and class code are NEVER encoded in this QR.
+async function getLoginCardQrDataUrl() {
+  if (typeof window.QRCode !== 'function') {
+    if (!loginCardQrLibraryPromise) {
+      loginCardQrLibraryPromise = (async () => {
+        const cdns = [
+          'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
+          'https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js'
+        ];
+        for (const url of cdns) {
+          try {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = url;
+              script.async = true;
+              script.onload = () => {
+                if (typeof window.QRCode === 'function') resolve();
+                else { script.remove(); reject(new Error('QR library missing')); }
+              };
+              script.onerror = () => {
+                script.remove();
+                reject(new Error('QR library download failed'));
+              };
+              document.head.appendChild(script);
+            });
+            return;
+          } catch (_) {
+            // Try the fallback CDN before reporting a printable-card error.
+          }
+        }
+        throw new Error('QRコードライブラリを読み込めませんでした。通信環境をご確認ください。');
+      })().catch(error => {
+        loginCardQrLibraryPromise = null;
+        throw error;
+      });
+    }
+    await loginCardQrLibraryPromise;
+  }
+
+  const holder = document.createElement('div');
+  holder.setAttribute('aria-hidden', 'true');
+  holder.style.cssText =
+    'position:fixed;left:-10000px;top:-10000px;visibility:hidden;';
+  document.body.appendChild(holder);
+  try {
+    new window.QRCode(holder, {
+      text: CLASSROOM_LOGIN_CARD_URL,
+      width: 256,
+      height: 256,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: window.QRCode.CorrectLevel.M
+    });
+    const canvas = holder.querySelector('canvas');
+    const image = holder.querySelector('img');
+    const dataUrl =
+      canvas?.toDataURL('image/png') ||
+      image?.src ||
+      '';
+    if (!dataUrl.startsWith('data:image/png;base64,')) {
+      throw new Error('QRコード画像を作成できませんでした。');
+    }
+    return dataUrl;
+  } finally {
+    holder.remove();
+  }
+}
+
 async function printLoginCards() {
 
   if (!roster.length) {
@@ -2191,6 +2266,37 @@ async function printLoginCards() {
       roster
     );
 
+  // Open immediately during the click event so iPad Safari does not
+  // mistake the print window for an asynchronously opened popup.
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    await showInfoModal({
+      badge: 'Print',
+      badgeType: 'danger',
+      title: '印刷画面を開けませんでした',
+      message: 'ブラウザのポップアップを許可してから、もう一度Print Login Cardsを押してください。'
+    });
+    return;
+  }
+
+  printWindow.document.write('<!doctype html><html lang="ja"><meta charset="utf-8"><title>Login Cards</title><body><p>QRコード付きログインカードを準備しています…</p></body></html>');
+  printWindow.document.close();
+
+  let qrDataUrl;
+  try {
+    qrDataUrl = await getLoginCardQrDataUrl();
+  } catch (error) {
+    printWindow.document.open();
+    printWindow.document.write('<!doctype html><html lang="ja"><meta charset="utf-8"><title>QR Error</title><body><p>QRコードを作成できませんでした。通信環境を確認してから再度お試しください。</p></body></html>');
+    printWindow.document.close();
+    await showInfoModal({
+      badge: 'Print',
+      badgeType: 'danger',
+      title: 'QRコードを作成できませんでした',
+      message: error.message || String(error)
+    });
+    return;
+  }
 
   const cards =
     students
@@ -2198,16 +2304,26 @@ async function printLoginCards() {
         student => `
           <div class="login-card">
 
-            <div class="brand">
-              Copeak Classroom
-            </div>
+            <div class="card-header">
+              <div class="card-heading">
+                <div class="brand">
+                  Copeak Classroom
+                </div>
 
-            <div class="class-name">
+                <div class="class-name">
               ${esc(activeClass.name || '')}
             </div>
 
-            <div class="student-name">
-              ${esc(student.display_name)}
+                <div class="student-name">
+                  ${esc(student.display_name)}
+                </div>
+              </div>
+
+              <div class="qr-box">
+                <img src="${qrDataUrl}"
+                  alt="Copeak ClassroomログインQRコード"
+                  width="256" height="256">
+              </div>
             </div>
 
             <div class="login-row">
@@ -2233,6 +2349,7 @@ async function printLoginCards() {
 
             <div class="url">
               cc.pic-speak-story.com
+              <span>・QRを読み取ってログイン</span>
             </div>
 
           </div>
@@ -2241,35 +2358,7 @@ async function printLoginCards() {
       .join('');
 
 
-  const printWindow =
-    window.open(
-      '',
-      '_blank'
-    );
-
-
-  if (!printWindow) {
-
-    await showInfoModal({
-
-  badge:
-    'Print',
-
-  badgeType:
-    'danger',
-
-  title:
-    '印刷画面を開けませんでした',
-
-  message:
-    'ブラウザのポップアップを許可してから、もう一度Print Login Cardsを押してください。'
-
-});
-
-    return;
-  }
-
-
+  printWindow.document.open();
   printWindow.document.write(`
 <!DOCTYPE html>
 
@@ -2288,7 +2377,7 @@ async function printLoginCards() {
 
 @page {
   size: A4 portrait;
-  margin: 10mm;
+  margin: 8mm;
 }
 
 * {
@@ -2307,36 +2396,74 @@ body {
 .page {
   display: grid;
   grid-template-columns:
-    repeat(2, 1fr);
-  gap: 8mm;
+    repeat(2, minmax(0, 1fr));
+  gap: 4mm;
 }
 
 .login-card {
   min-height: 60mm;
-  border: 2px solid #d1d5db;
-  border-radius: 14px;
-  padding: 8mm;
+  border: 1px solid #b8c0cc;
+  border-radius: 8px;
+  padding: 5mm;
   break-inside: avoid;
+  page-break-inside: avoid;
   position: relative;
+}
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 3mm;
+  min-height: 24mm;
+}
+.card-heading {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.qr-box {
+  flex: 0 0 23mm;
+  width: 23mm;
+  height: 23mm;
+  background: white;
+  padding: 1.2mm;
+  border: 1px solid #d1d5db;
+}
+.qr-box img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+.print-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.print-actions button {
+  font-size: 14px;
+  padding: 8px 14px;
+  cursor: pointer;
 }
 
 .brand {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
-  color: #2563eb;
-  margin-bottom: 4px;
+  color: #1d4ed8;
+  margin-bottom: 2px;
 }
 
 .class-name {
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 8px;
+  font-size: 12px;
+  color: #4b5563;
+  margin-bottom: 3px;
 }
 
 .student-name {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
-  margin-bottom: 10px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .login-row {
@@ -2344,33 +2471,36 @@ body {
   justify-content: space-between;
   align-items: center;
   border-top: 1px solid #e5e7eb;
-  padding: 5px 0;
-  font-size: 13px;
+  padding: 3px 0;
+  font-size: 12px;
+  gap: 6px;
 }
 
 .login-row strong {
-  font-size: 18px;
-  letter-spacing: 1px;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .pin-row strong {
-  font-size: 24px;
-  letter-spacing: 3px;
+  font-size: 20px;
+  letter-spacing: 2px;
 }
 
 .url {
-  margin-top: 8px;
+  margin-top: 4px;
   text-align: center;
-  font-size: 11px;
-  color: #6b7280;
+  font-size: 10px;
+  color: #4b5563;
+}
+.url span {
+  display: inline-block;
+  margin-left: 4px;
 }
 
 @media print {
-
-  .page {
-    gap: 6mm;
-  }
-
+  .print-actions { display: none !important; }
+  .page { gap: 4mm; }
 }
 
 </style>
@@ -2378,6 +2508,11 @@ body {
 </head>
 
 <body>
+
+<div class="print-actions">
+  <button type="button" onclick="window.print()">印刷する / Print</button>
+  <span>各カードのQRコードからCopeak Classroomのログイン画面にアクセスできます。</span>
+</div>
 
 <div class="page">
 
@@ -2387,11 +2522,18 @@ body {
 
 <script>
 
-window.onload = () => {
-
-  window.print();
-
-};
+window.addEventListener('load', () => {
+  // Embedded PNGs are ready before opening the print dialog.
+  const ready = Array.from(document.images).map(img => {
+    if (img.decode) return img.decode().catch(() => undefined);
+    if (img.complete) return Promise.resolve();
+    return new Promise(resolve => {
+      img.onload = resolve;
+      img.onerror = resolve;
+    });
+  });
+  Promise.all(ready).then(() => setTimeout(() => window.print(), 150));
+});
 
 <\/script>
 
