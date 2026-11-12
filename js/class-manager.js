@@ -346,7 +346,12 @@ function requestedClassId() {
 }
 
 
-function moveToClass(classId) {
+function moveToClass(classId, page = null) {
+
+  // Never navigate to a class outside the signed-in teacher's accessible list.
+  if (!classes.some(item => item.id === classId)) {
+    return;
+  }
 
   localStorage.setItem(
     'copeak_teacher_class_id',
@@ -360,6 +365,10 @@ function moveToClass(classId) {
     'class',
     classId
   );
+
+  if (page) {
+    url.searchParams.set('page', page);
+  }
 
   location.href =
     url.toString();
@@ -1222,8 +1231,10 @@ function renderClassPicker() {
       <strong>
         ${esc(activeClass.name)}
       </strong>
-
-
+      <small class="class-grid-secondary">
+        ${activeClass.teacher_id === ctx.user.id ? '主担当' : '共同担当（Co-teacher）'}
+        · ${esc(activeClass.class_code)}
+      </small>
 
     </span>
 
@@ -1329,6 +1340,11 @@ function renderClassPicker() {
                 )}
               </span>
 
+              <small class="class-grid-secondary">
+                ${item.teacher_id === ctx.user.id ? '主担当' : '共同担当'}
+                · ${esc(item.class_code)}
+              </small>
+
               ${
                 visibleClasses.some(other =>
                   other.id !== item.id &&
@@ -1423,9 +1439,8 @@ function buildClassManager() {
     'paper class-manager';
 
 
-  section.dataset.platformPage =
-    'overview';
-
+  // Keep class selection visible on Student Management and Gradebook too.
+  // Shared classes remain accessible regardless of the active workspace tab.
 
   section.innerHTML = `
 
@@ -1474,6 +1489,14 @@ function buildClassManager() {
 
 
       <div class="class-manager-actions">
+
+        <button
+          id="openClassRosterButton"
+          type="button"
+          class="btn btn-light"
+          title="選択中のクラスの生徒番号・氏名・6桁PINを表示">
+          生徒ID・PIN
+        </button>
 
         <button
           id="newClassButton"
@@ -1662,6 +1685,10 @@ function buildClassManager() {
       }
     }
   );
+
+
+  $('#openClassRosterButton')
+    .onclick = () => moveToClass(activeClass.id, 'students');
 
 
   $('#newClassButton')
