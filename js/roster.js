@@ -2413,19 +2413,20 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 3mm;
-  min-height: 24mm;
+  min-height: 27mm;
 }
 .card-heading {
   min-width: 0;
   flex: 1 1 auto;
 }
 .qr-box {
-  flex: 0 0 23mm;
-  width: 23mm;
-  height: 23mm;
-  background: white;
-  padding: 1.2mm;
-  border: 1px solid #d1d5db;
+  /* Around four QR modules of white quiet zone on each edge. */
+  flex: 0 0 27mm;
+  width: 27mm;
+  height: 27mm;
+  background: #ffffff;
+  padding: 3mm;
+  border: 0;
 }
 .qr-box img {
   display: block;
