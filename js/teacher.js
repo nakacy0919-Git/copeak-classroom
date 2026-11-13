@@ -1277,7 +1277,8 @@ function assignmentPassResult(assignment, passingAttempts, key) {
   const record = passingAttempts.get(key);
   return {
     ...base,
-    passed: base.configured && Boolean(record),
+    configured: base.configured || Boolean(record?.legacy_pass),
+    passed: Boolean(record?.legacy_pass) || (base.configured && Boolean(record)),
     legacyPassed: Boolean(record?.legacy_pass)
   };
 }
