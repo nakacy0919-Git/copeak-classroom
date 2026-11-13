@@ -44,6 +44,7 @@ let assignments = [];
 let submissions = [];
 
 let manualScores = [];
+let preservedPasses = [];
 
 let readingRankings = [];
 
@@ -1243,7 +1244,7 @@ const select = $('#gradebookMetricMode');
     hint.textContent =
       (gradebookAudienceMode === 'class'
  ? 'クラス課題のみを集計します。個別自習教材は平均・提出率に含めません。'
- : '個別自習教材の記録です。配布対象外の生徒は「対象外」と表示します。') + ' Accuracy/WPMは各項目の最高記録です。PASSには1回の音読で設定された基準を同時達成する必要があります。手動修正はPASS判定には使いません。Reading Performanceは別指標です。';
+ : '個別自習教材の記録です。配布対象外の生徒は「対象外」と表示します。') + ' Accuracy/WPMは各項目の最高記録です。PASSには1回の音読で設定された基準を同時達成する必要があります。旧ルールでの合格は保護し、完了扱いにします。今後の新規合格は1回の音読で基準を同時達成する方式です。Reading Performanceは別指標です。';
   }
 }
 
@@ -1273,12 +1274,17 @@ function csvEscape(
 
 function assignmentPassResult(assignment, passingAttempts, key) {
   const base = evaluatePassCriteria(assignment, null, null);
-  return { ...base, passed: base.configured && passingAttempts.has(key) };
+  const record = passingAttempts.get(key);
+  return {
+    ...base,
+    passed: base.configured && Boolean(record),
+    legacyPassed: Boolean(record?.legacy_pass)
+  };
 }
 
 function exportGradebookCsv() {
 const activeAssignments = visibleAssignments(gradebookAudienceMode);
-const passingAttempts = buildPassingAttemptMap(activeAssignments, submissions);
+const passingAttempts = buildPassingAttemptMap(activeAssignments, submissions, preservedPasses);
 
 
   const bestAccuracy =
@@ -1428,7 +1434,7 @@ const key = `${student.id}|${assignment.id}`;
               passResultCsv.configured
                 ? (
                     passResultCsv.passed
-                      ? 'PASS'
+                      ? (passResultCsv.legacyPassed ? 'PASS (previous rule)' : 'PASS')
                       : 'NOT YET'
                   )
                 : ''
@@ -1510,7 +1516,7 @@ const key = `${student.id}|${assignment.id}`;
 function renderTable() {
 ensureGradebookControls();
 const activeAssignments = visibleAssignments(gradebookAudienceMode);
-const passingAttempts = buildPassingAttemptMap(activeAssignments, submissions);
+const passingAttempts = buildPassingAttemptMap(activeAssignments, submissions, preservedPasses);
 
 
   const bestAccuracy =
@@ -1748,7 +1754,7 @@ const key = `${student.id}|${assignment.id}`;
                       ? `
                           <div
                             class="grade-pass-badge"
-                            title="1回の音読でAccuracyとWPMの設定基準を同時にクリア">
+                            title="${passResult.legacyPassed ? '旧基準で取得済みの合格を保護しています' : '1回の音読でAccuracyとWPMの設定基準を同時にクリア'}">
 
                             ✓ PASS
 
@@ -8807,6 +8813,28 @@ students =
       [];
   }
 
+
+  // Preserve the frozen set of PASS records earned before the stricter rule.
+  // Fetch across pages to avoid the default PostgREST row limit.
+  preservedPasses = [];
+  if (assignments.length && currentClassStudentIds.size) {
+    const assignmentIds = assignments.map(item => item.id);
+    const studentIds = [...currentClassStudentIds];
+    const pageSize = 500;
+    for (let offset = 0; ; offset += pageSize) {
+      const { data: rows, error: preserveError } = await sb
+        .from('assignment_preserved_passes')
+        .select('assignment_id,student_id')
+        .in('assignment_id', assignmentIds)
+        .in('student_id', studentIds)
+        .order('assignment_id', { ascending: true })
+        .order('student_id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (preserveError) throw preserveError;
+      preservedPasses.push(...(rows || []));
+      if (!rows || rows.length < pageSize) break;
+    }
+  }
 
   // ========================================
   // CLASS READING RANKINGS
