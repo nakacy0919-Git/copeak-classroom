@@ -26,6 +26,7 @@ let ctx;
 let assignments = [];
 let submissions = [];
 let manualScores = [];
+let preservedPasses = [];
 let currentClass = null;
 
 let assignmentReadingRankings = [];
@@ -1204,6 +1205,7 @@ function studentPassState(assignment, maps) {
     return {
       configured: false,
       passed: false,
+      legacyPassed: false,
       hasScore: false,
       accuracy: null,
       wpm: null,
@@ -1221,11 +1223,13 @@ function studentPassState(assignment, maps) {
   );
   // A PASS is earned by ONE submission meeting the targets simultaneously.
   // Personal bests above are retained for progress display only.
-  const passed = maps.passingAttempts.has(`${ctx.user.id}|${assignment.id}`);
+  const passRecord = maps.passingAttempts.get(`${ctx.user.id}|${assignment.id}`);
+  const passed = Boolean(passRecord);
 
   return {
     configured: base.configured,
     passed,
+    legacyPassed: Boolean(passRecord?.legacy_pass),
     hasScore: accuracy !== null || wpm !== null,
     accuracy,
     wpm,
@@ -1570,9 +1574,9 @@ function studentPassPanelHtml(
   if (state.passed) {
 
     statusText =
-      activeLanguage === 'ja'
-        ? '✓ 合格'
-        : '✓ PASS';
+      state.legacyPassed
+        ? (activeLanguage === 'ja' ? '✓ 合格（旧基準・完了）' : '✓ PASS (previous rule)')
+        : (activeLanguage === 'ja' ? '✓ 合格' : '✓ PASS');
   }
 
   else if (state.hasScore) {
@@ -1619,11 +1623,15 @@ function studentPassPanelHtml(
             ${
               activeLanguage === 'ja'
 
-                ? (state.targets.accuracy !== null && state.targets.wpm !== null
+                ? (state.legacyPassed
+                    ? '以前の合格は保護されています。この課題は完了済みです。'
+                    : state.targets.accuracy !== null && state.targets.wpm !== null
                     ? '表示値はそれぞれの最高記録です。合格には1回の音読でAccuracyとWPMを同時に達成してください。'
                     : '表示値は最高記録です。1回の音読で設定基準を達成すると合格です。')
 
-                : (state.targets.accuracy !== null && state.targets.wpm !== null
+                : (state.legacyPassed
+                    ? 'Your previous PASS is preserved. This assignment is complete.'
+                    : state.targets.accuracy !== null && state.targets.wpm !== null
                     ? 'Values are separate personal bests. Meet BOTH targets in one reading to PASS.'
                     : 'Values show personal bests. Meet the target in one reading to PASS.')
             }
@@ -1667,7 +1675,8 @@ function studentPassPanelHtml(
 function assignmentStatus(
   assignment,
   submission,
-  progressState = null
+  progressState = null,
+  passState = null
 ) {
 
   const now =
@@ -1691,7 +1700,9 @@ function assignmentStatus(
     assignmentProgressStatus({ configured: false }, Boolean(submission));
 
   if (progress.key === 'passed') {
-    return { key: 'done', label: activeLanguage === 'ja' ? '✓ 合格済み' : '✓ PASS' };
+    return { key: 'done', label: passState?.legacyPassed
+      ? (activeLanguage === 'ja' ? '✓ 合格済み（旧基準）' : '✓ PASS (previous rule)')
+      : (activeLanguage === 'ja' ? '✓ 合格済み' : '✓ PASS') };
   }
   if (progress.key === 'submitted') {
     return {
@@ -3032,7 +3043,7 @@ function renderNextAssignment(
     targetPassState, map.has(target.id)
   );
   const status = assignmentStatus(
-    target, map.get(target.id), targetProgress
+    target, map.get(target.id), targetProgress, targetPassState
   );
 
 
@@ -3193,7 +3204,7 @@ function buildStudentPassMaps() {
     wpm: bestStudentMetricMap(submissions, 'wpm'),
     comprehension: bestStudentMetricMap(submissions, 'comprehension'),
     manual: studentManualScoreMap(manualScores),
-    passingAttempts: buildPassingAttemptMap(assignments, submissions)
+    passingAttempts: buildPassingAttemptMap(assignments, submissions, preservedPasses)
   };
 }
 
@@ -3215,7 +3226,7 @@ function renderAssignmentList(
 
           const passState = studentPassState(assignment, passMaps);
           const progressState = assignmentProgressStatus(passState, Boolean(submission));
-          const status = assignmentStatus(assignment, submission, progressState);
+          const status = assignmentStatus(assignment, submission, progressState, passState);
 
 
           return assignmentMatchesFilter(
@@ -3290,7 +3301,7 @@ function renderAssignmentList(
 
           const passState = studentPassState(assignment, passMaps);
           const progressState = assignmentProgressStatus(passState, Boolean(submission));
-          const status = assignmentStatus(assignment, submission, progressState);
+          const status = assignmentStatus(assignment, submission, progressState, passState);
 
 
           const deadline =
@@ -5869,6 +5880,14 @@ async function loadLive() {
     manualRows ||
     [];
 
+  // Old PASS records were frozen when the one-reading rule was introduced.
+  // They remain completed, regardless of later readings or target changes.
+  const { data: previousPassRows, error: previousPassError } = await sb
+    .from('assignment_preserved_passes')
+    .select('assignment_id,student_id')
+    .eq('student_id', ctx.user.id);
+  if (previousPassError) throw previousPassError;
+  preservedPasses = previousPassRows || [];
 
   await loadReadingRank();
 }
