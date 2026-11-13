@@ -1201,11 +1201,14 @@ function studentPassState(assignment, maps) {
   const base = evaluatePassCriteria(assignment, null, null);
   const targets = { ...base.targets, comprehension: null };
 
+  const preservedRecord = maps.passingAttempts.get(`${ctx.user.id}|${assignment.id}`);
+  const priorPass = Boolean(preservedRecord?.legacy_pass);
+
   if (!base.configured) {
     return {
-      configured: false,
-      passed: false,
-      legacyPassed: false,
+      configured: priorPass,
+      passed: priorPass,
+      legacyPassed: priorPass,
       hasScore: false,
       accuracy: null,
       wpm: null,
