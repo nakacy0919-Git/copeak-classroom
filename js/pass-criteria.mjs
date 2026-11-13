@@ -33,7 +33,7 @@ export function evaluatePassCriteria(assignment, accuracy, wpm) {
 // A PASS must be backed by one actual reading attempt meeting every enabled
 // threshold at once. The separately displayed personal-best metrics are NOT
 // evidence of a qualifying attempt and must never be combined here.
-export function buildPassingAttemptMap(assignments, submissions) {
+export function buildPassingAttemptMap(assignments, submissions, preservedPasses = []) {
   const byAssignment = new Map(
     (assignments || []).map(assignment => [assignment.id, assignment])
   );
@@ -45,6 +45,17 @@ export function buildPassingAttemptMap(assignments, submissions) {
     if (!evaluatePassCriteria(assignment, attempt.accuracy, attempt.wpm).passed) continue;
     const key = `${attempt.student_id}|${attempt.assignment_id}`;
     if (!passingAttempts.has(key)) passingAttempts.set(key, attempt);
+  }
+
+  // Historical PASS records were frozen at the moment the stricter rule began.
+  // They never grant new independent-best passes after the cutover.
+  for (const record of preservedPasses || []) {
+    if (!record?.student_id || !record?.assignment_id) continue;
+    if (!byAssignment.has(record.assignment_id)) continue;
+    const key = `${record.student_id}|${record.assignment_id}`;
+    if (!passingAttempts.has(key)) {
+      passingAttempts.set(key, { ...record, legacy_pass: true });
+    }
   }
 
   return passingAttempts;
