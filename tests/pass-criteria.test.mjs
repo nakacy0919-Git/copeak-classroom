@@ -95,3 +95,44 @@ test('unrounded scores must meet the threshold and empty results never PASS', ()
   ];
   assert.equal(buildPassingAttemptMap(assignments, submissions).size, 0);
 });
+
+test('previously earned PASS remains complete despite independent old best readings', () => {
+  const assignments = [{ id: 'a1', pass_enabled: true, pass_accuracy: 90, pass_wpm: 120 }];
+  const submissions = [
+    { student_id: 's1', assignment_id: 'a1', accuracy: 96, wpm: 100 },
+    { student_id: 's1', assignment_id: 'a1', accuracy: 85, wpm: 140 }
+  ];
+  const preservedPasses = [{ student_id: 's1', assignment_id: 'a1' }];
+  const results = buildPassingAttemptMap(assignments, submissions, preservedPasses);
+  assert.equal(results.get('s1|a1')?.legacy_pass, true);
+  assert.equal(results.has('s2|a1'), false);
+});
+
+test('the preserved-pass snapshot does not give new independent-best attempts a PASS', () => {
+  const assignments = [{ id: 'a1', pass_enabled: true, pass_accuracy: 90, pass_wpm: 120 }];
+  const submissions = [
+    { student_id: 'new', assignment_id: 'a1', accuracy: 95, wpm: 110 },
+    { student_id: 'new', assignment_id: 'a1', accuracy: 80, wpm: 145 }
+  ];
+  const results = buildPassingAttemptMap(assignments, submissions, []);
+  assert.equal(results.has('new|a1'), false);
+});
+
+test('a genuine qualifying reading has precedence over a historical pass record', () => {
+  const assignments = [{ id: 'a1', pass_enabled: true, pass_accuracy: 90, pass_wpm: 120 }];
+  const qualified = { student_id: 's1', assignment_id: 'a1', accuracy: 93, wpm: 135 };
+  const results = buildPassingAttemptMap(
+    assignments, [qualified], [{ student_id: 's1', assignment_id: 'a1' }]
+  );
+  assert.deepEqual(results.get('s1|a1'), qualified);
+});
+
+test('historical passes cannot bleed into other assignments', () => {
+  const assignments = [{ id: 'a1', pass_enabled: true, pass_accuracy: 90, pass_wpm: 120 }];
+  const previous = [
+    { student_id: 's1', assignment_id: 'a2' },
+    { student_id: 's2', assignment_id: 'a1' }
+  ];
+  const results = buildPassingAttemptMap(assignments, [], previous);
+  assert.deepEqual([...results.keys()], ['s2|a1']);
+});
