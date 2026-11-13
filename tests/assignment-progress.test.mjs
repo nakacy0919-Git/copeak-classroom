@@ -4,6 +4,7 @@ import { assignmentProgressStatus } from '../js/assignment-progress.mjs';
 
 const table = [
   ['pass reached', { configured: true, passed: true, hasScore: true }, true, 'passed', true],
+  ['previously earned pass remains complete without a new attempt', { configured: true, passed: true, legacyPassed: true, hasScore: false }, false, 'passed', true],
   ['tried but below threshold', { configured: true, passed: false, hasScore: true }, true, 'attempted', false],
   ['submission without parseable score', { configured: true, passed: false, hasScore: false }, true, 'attempted', false],
   ['not attempted', { configured: true, passed: false, hasScore: false }, false, 'unattempted', false],
