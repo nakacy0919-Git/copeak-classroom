@@ -1,5 +1,5 @@
 import { reviewDeliveryUrl } from './launch-safety.js';
-import { buildTeacherPracticeUrl } from './teacher-reading-practice.mjs';
+import { buildTeacherPracticeUrl } from './teacher-reading-practice.mjs?v=20261117-focus';
 import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { manualMetricOverride } from './manual-score-precedence.mjs';
@@ -5290,6 +5290,9 @@ function previewAssignmentDelivery() {
 
   p.set('title', title);
   p.set('eng', english);
+  p.delete('focus');
+  const previewFocus = dialogueMode ? [] : window.CopeakFocus.get('assignmentText', english);
+  if (previewFocus.length) p.set('focus', JSON.stringify(previewFocus));
   const previewExclusions = globalThis.CopeakScoreExclusions.safeList($('#assignmentScoreExclusions')?.value || '');
   if (previewExclusions.length) p.set('score_exclusions', JSON.stringify(previewExclusions));
   p.set('jpn', japanese);
@@ -5550,6 +5553,7 @@ function openAssignmentEditor(
   $('#assignmentText').value =
     assignment?.lesson_text ||
     '';
+  window.CopeakFocus.restore('assignmentText', editorIsDialogue ? [] : window.CopeakFocus.fromUrl(assignment?.copeak_url || '', ($('#assignmentText')?.value || '').trim()));
   $('#assignmentScoreExclusions').value =
     Array.isArray(assignment?.score_exclusions)
       ? assignment.score_exclusions.join('\n')
@@ -7369,6 +7373,7 @@ release_at:
         : null,
     lesson_text:
       lessonText,
+    copeak_url: window.CopeakFocus.withUrl(existingAssignment?.copeak_url, window.COPEAK_CONFIG.copeakBaseUrl, lessonType === 'text' ? window.CopeakFocus.get('assignmentText', lessonText) : [], lessonText),
 
     score_exclusions:
       scoreExclusions,
@@ -7612,10 +7617,7 @@ if (imageFile) {
             ...row,
 
             class_id:
-              selectedClass.id,
-
-            copeak_url:
-              null
+              selectedClass.id
           })
           .select(
             'id'
@@ -9540,6 +9542,7 @@ function useAssignmentOcrAsText() {
 
   $('#assignmentText').value =
     cleanedText;
+  window.CopeakFocus.restore('assignmentText', []);
 
 
   $('#assignmentOcrStatus').style.color =

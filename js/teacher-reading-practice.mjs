@@ -13,6 +13,7 @@ export function buildTeacherPracticeUrl(assignment, copeakBaseUrl, media = {}, s
     throw new Error('Copeakの起動先URLが正しくありません。');
   }
 
+  const assignmentFocus = url.searchParams.get('focus');
   // Never inherit a student session, assignment submission or existing query.
   url.search = '';
   url.hash = '';
@@ -22,6 +23,7 @@ export function buildTeacherPracticeUrl(assignment, copeakBaseUrl, media = {}, s
   // Keep teacher previews separate from student-imported lessons in IndexedDB.
   params.set('title', `先生用音読｜${assignment.title || 'Reading Assignment'}`);
   params.set('eng', text);
+  if (assignmentFocus && assignment.lesson_type !== 'dialogue') params.set('focus', assignmentFocus);
   params.set('jpn', assignment.lesson_translation || '');
   params.set('lang', assignment.lesson_lang || 'en-US');
 
