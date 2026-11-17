@@ -1,0 +1,43 @@
+/* Teacher assignment management only: match the approved four-action design. */
+#assignmentManagementList{gap:14px}
+#assignmentManagementList .ta-redesign{display:grid;grid-template-columns:clamp(68px,9vw,104px) minmax(0,1fr);gap:20px;padding:18px 20px;border:1px solid #d7e6df;border-radius:16px;background:#fff;box-shadow:0 3px 12px #1a493509;overflow:visible;position:relative;transition:border-color .15s,box-shadow .15s}
+#assignmentManagementList .ta-redesign:hover{transform:none;border-color:#bad7ca;box-shadow:0 5px 18px #1a49350b}
+#assignmentManagementList .ta-redesign:has(.ta-more[open]){z-index:5}
+#assignmentManagementList .ta-redesign .teacher-assignment-week{background:linear-gradient(145deg,#eaf6f0,#dff0e9);border:0;border-radius:13px;gap:5px;min-height:112px;align-self:stretch}
+#assignmentManagementList .ta-redesign .teacher-assignment-week span{font-size:13px;letter-spacing:0;font-weight:600;color:#344940}
+#assignmentManagementList .ta-redesign .teacher-assignment-week strong{font-size:clamp(28px,3vw,42px);font-weight:850;line-height:1.1;color:#07613e;font-family:inherit;font-variant-numeric:tabular-nums}
+#assignmentManagementList .ta-redesign .teacher-assignment-week .assignment-study-label{font-size:12px}
+#assignmentManagementList .ta-redesign .teacher-assignment-main{min-width:0;border-left:1px solid #e1ece6;padding-left:17px}
+#assignmentManagementList .ta-redesign .teacher-assignment-heading{display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:12px}
+#assignmentManagementList .ta-heading-copy{min-width:0;flex:1}
+#assignmentManagementList .ta-redesign .teacher-assignment-title{font-size:clamp(16px,1.6vw,22px);font-weight:800;color:#17241f;line-height:1.35;overflow-wrap:anywhere}
+#assignmentManagementList .ta-redesign .teacher-assignment-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;margin-top:6px;font-size:12px;color:#53655d;line-height:1.5}
+#assignmentManagementList .teacher-assignment-meta>span{display:inline-flex;align-items:center;gap:5px;min-width:0}
+#assignmentManagementList .teacher-assignment-meta>span:not(:first-child):not(.assignment-publish-badge){border-left:1px solid #d6e4dd;padding-left:10px}
+#assignmentManagementList .ta-icon{display:inline-block;flex:none;vertical-align:middle}
+#assignmentManagementList .teacher-assignment-meta .ta-icon{width:15px;height:15px;color:#497166}
+#assignmentManagementList .ta-reorder{display:flex;align-items:center;gap:7px;flex:none}
+#assignmentManagementList .ta-redesign .ta-arrow{display:inline-flex;align-items:center;justify-content:center;width:41px;height:41px;min-width:0;padding:0;color:#30453b;background:#fff;border:1px solid #d5dfda;border-radius:10px;box-shadow:none}
+#assignmentManagementList .ta-arrow:disabled{opacity:.35;cursor:not-allowed}
+#assignmentManagementList .ta-redesign .teacher-assignment-excerpt{border:0;border-radius:9px;background:linear-gradient(100deg,#f1f6f3,#edf4f0);padding:10px 12px;margin-top:11px;font-size:13px;color:#43544c;line-height:1.55;overflow-wrap:anywhere}
+#assignmentManagementList .ta-redesign .teacher-assignment-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:13px}
+#assignmentManagementList .ta-redesign .teacher-assignment-actions>.btn,#assignmentManagementList .ta-more-trigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;box-sizing:border-box;padding:8px 18px;font-size:14px;font-weight:750;border-radius:10px;white-space:nowrap;line-height:1.3;cursor:pointer}
+#assignmentManagementList .ta-redesign .ta-practice{min-width:148px;color:#fff;background:linear-gradient(155deg,#23966b,#057047 75%);border:1px solid #0d774d;box-shadow:0 3px 6px #00633b24}
+#assignmentManagementList .ta-redesign .ta-practice .ta-icon{color:#fff}
+#assignmentManagementList .ta-redesign .ta-secondary{color:#184b3b;border:1px solid #b6cec4;background:#fff;box-shadow:0 2px 4px #1a49350a}
+#assignmentManagementList .ta-redesign .ta-secondary .ta-icon{color:#08754f}
+#assignmentManagementList .ta-more{position:relative;flex:none}
+#assignmentManagementList .ta-more-trigger{list-style:none;border:1px solid #d2dfd9;background:#f7faf8;color:#30463b;user-select:none}
+#assignmentManagementList .ta-more-trigger::-webkit-details-marker{display:none}
+#assignmentManagementList .ta-more-trigger::marker{content:''}
+#assignmentManagementList .ta-more[open] .ta-more-trigger{background:#e8f2ed;border-color:#aac8ba}
+#assignmentManagementList .ta-more-panel{position:absolute;z-index:30;top:calc(100% + 6px);right:0;min-width:204px;max-width:calc(100vw - 24px);padding:5px;border:1px solid #d2e2da;border-radius:11px;background:white;box-shadow:0 10px 28px #16382a26}
+#assignmentManagementList .ta-more:not([open]) .ta-more-panel{display:none}
+#assignmentManagementList .ta-more-panel>button{display:flex;align-items:center;gap:9px;text-align:left;width:100%;background:#fff;color:#30463b;border:0;border-radius:7px;min-height:42px;padding:8px 10px;font-size:13px;font-weight:650;cursor:pointer}
+#assignmentManagementList .ta-more-panel>button:hover,#assignmentManagementList .ta-more-panel>button:focus-visible{background:#eef6f0}
+#assignmentManagementList .ta-more-panel>.ta-delete{color:#b4232a;border-top:1px solid #f2e6e6;border-radius:0 0 7px 7px}
+#assignmentManagementList .ta-more-panel>.ta-delete:hover{background:#fff0f0}
+#assignmentManagementList .ta-redesign button:focus-visible,#assignmentManagementList .ta-more-trigger:focus-visible{outline:2px solid #087b51;outline-offset:3px}
+@media(max-width:760px){#assignmentManagementList .ta-redesign{gap:12px;padding:13px;grid-template-columns:62px minmax(0,1fr)}#assignmentManagementList .ta-redesign .teacher-assignment-main{padding-left:10px}#assignmentManagementList .ta-redesign .teacher-assignment-meta{font-size:11px}#assignmentManagementList .ta-redesign .teacher-assignment-actions>.btn,#assignmentManagementList .ta-more-trigger{padding:7px 10px;font-size:12px;min-height:40px}#assignmentManagementList .ta-redesign .ta-practice{min-width:0}#assignmentManagementList .ta-redesign .ta-arrow{width:36px;height:40px}}
+@media(max-width:480px){#assignmentManagementList .ta-redesign{grid-template-columns:49px minmax(0,1fr);gap:9px;padding:10px}#assignmentManagementList .ta-redesign .teacher-assignment-main{padding-left:8px}#assignmentManagementList .ta-redesign .teacher-assignment-heading{flex-wrap:wrap;gap:5px}#assignmentManagementList .ta-redesign .ta-heading-copy{flex-basis:100%}#assignmentManagementList .ta-reorder{margin-left:auto}#assignmentManagementList .ta-redesign .teacher-assignment-week strong{font-size:24px}#assignmentManagementList .ta-more-panel{position:static;margin-top:5px;min-width:0;width:100%}#assignmentManagementList .ta-more[open]{flex-basis:100%}#assignmentManagementList .ta-redesign .teacher-assignment-meta>span:not(:first-child){border-left:0;padding-left:0}}
+@media(prefers-reduced-motion:reduce){#assignmentManagementList .ta-redesign{transition:none}}

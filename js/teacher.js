@@ -597,161 +597,62 @@ function renderAssignmentManager() {
               : '本文未登録';
 
 
+          const actionIcon = (name) => {
+            const icons = {
+              book:'<path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1zm0 0v14"/>',
+              calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/>',
+              users:'<path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2m19 0v-2a4 4 0 0 0-3-4"/><circle cx="9.5" cy="7" r="4"/><path d="M16 3a4 4 0 0 1 0 8"/>',
+              up:'<path d="M12 20V4m-7 7 7-7 7 7"/>',
+              down:'<path d="M12 4v16m-7-7 7 7 7-7"/>',
+              mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-3 0h6"/>',
+              edit:'<path d="m16 3 5 5-12 12-6 1 1-6L16 3zm-2 2 5 5"/>',
+              more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+              chevron:'<path d="m6 9 6 6 6-6"/>',
+              eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+              copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+              trash:'<path d="M3 6h18M9 6V3h6v3m4 0-1 15H6L5 6m5 4v7m4-7v7"/>'
+            };
+            return '<svg class="ta-icon" aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+icons[name]+'</svg>';
+          };
+          const aid = esc(assignment.id);
           return `
-            <article class="teacher-assignment-card">
-
+            <article class="teacher-assignment-card ta-redesign">
               <div class="teacher-assignment-week">
-
-                <span>${assignment.audience_type === 'targeted' ? '個別' : 'NO.'}</span>
-<strong class="${assignment.audience_type === 'targeted' ? 'assignment-study-label' : ''}">${assignment.audience_type === 'targeted' ? '自習教材' : (assignmentNumber(assignment) || assignment.week_no)}</strong>
-
+                <span>${assignment.audience_type === 'targeted' ? '個別' : 'No.'}</span>
+                <strong class="${assignment.audience_type === 'targeted' ? 'assignment-study-label' : ''}">${assignment.audience_type === 'targeted' ? '自習教材' : (assignmentNumber(assignment) || assignment.week_no)}</strong>
               </div>
-
-
               <div class="teacher-assignment-main">
-
                 <div class="teacher-assignment-heading">
-
-                  <div>
-
-                    <div class="teacher-assignment-title">
-                      ${esc(assignment.title)}
-                    </div>
-
+                  <div class="ta-heading-copy">
+                    <div class="teacher-assignment-title">${esc(assignment.title)}</div>
                     <div class="teacher-assignment-meta">
-
-                      ${esc(
-                        assignment.category ||
-                        'Reading'
-                      )}
-
-                      ・
-
-                      ${assignmentDateTimeLabel(
-                        assignment.release_at
-                      )}
-
-                      →
-
-                      ${assignmentDateTimeLabel(
-                        assignment.due_at
-                      )}
-
-                      ・
-
-                      ${submissionCount}
-                      submission${submissionCount === 1 ? '' : 's'}
-
+                      <span>${actionIcon('book')}${esc(assignment.category || 'Reading')}</span>
+                      <span>${actionIcon('calendar')}${assignmentDateTimeLabel(assignment.release_at)} ～ ${assignmentDateTimeLabel(assignment.due_at)}</span>
+                      <span>${actionIcon('users')}${submissionCount} 件の提出</span>
+                      <span class="assignment-publish-badge ${published ? 'published' : 'draft'}">${published ? '公開中' : '非公開'}</span>
                     </div>
-
                   </div>
-
-
-                  <span
-                    class="
-                      assignment-publish-badge
-                      ${
-                        published
-                          ? 'published'
-                          : 'draft'
-                      }
-                    ">
-
-                    ${
-                      published
-                        ? 'Published'
-                        : 'Draft'
-                    }
-
-                  </span>
-
+                  <div class="ta-reorder" role="group" aria-label="課題の表示順">
+                    <button type="button" class="btn btn-sm btn-light ta-arrow" aria-label="課題を上へ移動" title="表示順を上へ" data-assignment-action="move-up" data-assignment-id="${aid}" ${index===0||!classOrderSupported?'disabled':''}>${actionIcon('up')}</button>
+                    <button type="button" class="btn btn-sm btn-light ta-arrow" aria-label="課題を下へ移動" title="表示順を下へ" data-assignment-action="move-down" data-assignment-id="${aid}" ${index===sorted.length-1||!classOrderSupported?'disabled':''}>${actionIcon('down')}</button>
+                  </div>
                 </div>
-
-
-                <div class="teacher-assignment-excerpt">
-                  ${esc(excerpt)}
-                </div>
-
+                <div class="teacher-assignment-excerpt">${esc(excerpt)}</div>
                 ${modelAudioWarning ? `<p class="teacher-audio-expiry-warning" role="status">${esc(modelAudioWarning)}</p>` : ''}
-
-
                 <div class="teacher-assignment-actions">
-                  <button class="btn btn-sm btn-light"
-                    aria-label="課題を上へ移動" title="表示順を上へ"
-                    data-assignment-action="move-up" data-assignment-id="${assignment.id}"
-                    ${index === 0 || !classOrderSupported ? 'disabled' : ''}>↑ 上へ</button>
-                  <button class="btn btn-sm btn-light"
-                    aria-label="課題を下へ移動" title="表示順を下へ"
-                    data-assignment-action="move-down" data-assignment-id="${assignment.id}"
-                    ${index === sorted.length - 1 || !classOrderSupported ? 'disabled' : ''}>↓ 下へ</button>
-
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-primary"
-                    data-assignment-action="practice"
-                    data-assignment-id="${assignment.id}"
-                    title="先生自身がCopeakで音読・録音・採点します（生徒の成績には送信されません）"
-                    ${!lessonText ? 'disabled' : ''}>
-                    🎙 自分で音読
-                  </button>
-
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-light deadline-action-button"
-                    data-assignment-action="deadline"
-                    data-assignment-id="${assignment.id}"
-                    title="締切のお知らせカードを表示">
-                    📅 Deadline
-                  </button>
-
-                  <button
-                    class="btn btn-sm btn-light"
-                    data-assignment-action="edit"
-                    data-assignment-id="${assignment.id}">
-
-                    Edit
-
-                  </button>
-
-
-                  <button
-                    class="btn btn-sm btn-light"
-                    data-assignment-action="toggle"
-                    data-assignment-id="${assignment.id}">
-
-                    ${
-                      published
-                        ? 'Unpublish'
-                        : 'Publish'
-                    }
-
-                  </button>
-
-
-                  <button
-                    class="btn btn-sm btn-light"
-                    data-assignment-action="duplicate"
-                    data-assignment-id="${assignment.id}">
-
-                    Duplicate
-
-                  </button>
-
-
-                  <button
-  class="btn btn-sm btn-danger"
-  data-assignment-action="delete"
-  data-assignment-id="${assignment.id}"
-  title="課題と提出記録を完全削除">
-
-  完全削除
-
-</button>
-
+                  <button type="button" class="btn btn-sm btn-primary ta-practice" data-assignment-action="practice" data-assignment-id="${aid}" title="先生自身がCopeakで音読・録音・採点します（生徒の成績には送信されません）" ${!lessonText?'disabled':''}>${actionIcon('mic')} 自分で音読</button>
+                  <button type="button" class="btn btn-sm btn-light deadline-action-button ta-secondary" data-assignment-action="deadline" data-assignment-id="${aid}" title="締切のお知らせカードを表示">${actionIcon('calendar')} Deadline</button>
+                  <button type="button" class="btn btn-sm btn-light ta-secondary" data-assignment-action="edit" data-assignment-id="${aid}">${actionIcon('edit')} Edit</button>
+                  <details class="ta-more">
+                    <summary class="ta-more-trigger">${actionIcon('more')} その他 ${actionIcon('chevron')}</summary>
+                    <div class="ta-more-panel" role="group" aria-label="その他の課題操作">
+                      <button type="button" data-assignment-action="toggle" data-assignment-id="${aid}">${actionIcon('eye')} ${published?'Unpublish（非公開）':'Publish（公開）'}</button>
+                      <button type="button" data-assignment-action="duplicate" data-assignment-id="${aid}">${actionIcon('copy')} Duplicate（複製）</button>
+                      <button type="button" class="ta-delete" data-assignment-action="delete" data-assignment-id="${aid}" title="課題と提出記録を完全削除">${actionIcon('trash')} 完全削除</button>
+                    </div>
+                  </details>
                 </div>
-
               </div>
-
             </article>
           `;
         }
@@ -11174,6 +11075,25 @@ $('#assignmentRelease').onchange =
   updateDueDate;
 
 
+// Native details supports keyboard and touch; only one overflow menu stays open.
+const assignmentManagerRoot = $('#assignmentManagementList');
+function closeAssignmentMenus(except = null) {
+  assignmentManagerRoot?.querySelectorAll('.ta-more[open]').forEach(menu => {
+    if (menu !== except) menu.open = false;
+  });
+}
+assignmentManagerRoot?.addEventListener('toggle', event => {
+  if (event.target.matches?.('.ta-more') && event.target.open) closeAssignmentMenus(event.target);
+}, true);
+document.addEventListener('click', event => {
+  if (!event.target.closest?.('.ta-more')) closeAssignmentMenus();
+});
+assignmentManagerRoot?.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  const menu = event.target.closest?.('.ta-more[open]');
+  if (menu) { menu.open = false; menu.querySelector('summary')?.focus(); event.stopPropagation(); }
+});
+
   $('#assignmentManagementList')
   ?.addEventListener(
     'click',
@@ -11205,6 +11125,8 @@ $('#assignmentRelease').onchange =
 
       const action =
         button.dataset.assignmentAction;
+      const overflow = button.closest('.ta-more');
+      if (overflow) { overflow.open = false; overflow.querySelector('summary')?.focus(); }
 
 
       try {
