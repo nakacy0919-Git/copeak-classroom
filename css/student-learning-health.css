@@ -1,0 +1,43 @@
+/* Student overview only. No assignment tile/card, ranking, or modal styles. */
+#csoBoard .cso-health-signal{--signal-bg:#f0f4f5;--signal-ink:#344e58;display:flex;gap:14px;align-items:center;max-width:62%;min-width:250px;padding:13px 19px;border-radius:20px;color:var(--signal-ink);background:var(--signal-bg);border:1px solid color-mix(in srgb,var(--signal-ink) 15%,transparent);box-shadow:0 6px 20px #123b3310}
+#csoBoard .cso-health-signal[data-level=normal]{--signal-bg:#dff8eb;--signal-ink:#09653f}
+#csoBoard .cso-health-signal[data-level=warning]{--signal-bg:#ffefb7;--signal-ink:#754203}
+#csoBoard .cso-health-signal[data-level=danger]{--signal-bg:#bc2028;--signal-ink:#fff}
+#csoBoard .cso-health-light{display:grid;place-items:center;width:58px;height:58px;flex:none;border-radius:50%;background:color-mix(in srgb,var(--signal-ink) 13%,transparent);border:2px solid currentColor}
+#csoBoard .cso-health-signal-text{display:grid;gap:3px;min-width:0}
+#csoBoard .cso-health-signal-text small{font-size:11px;font-weight:800}
+#csoBoard .cso-health-signal-text strong{font-size:clamp(26px,3.6vw,39px);line-height:1.1;letter-spacing:.04em;font-weight:900}
+#csoBoard .cso-health-signal-text span{font-size:12px;font-weight:700;line-height:1.45;overflow-wrap:anywhere}
+#csoBoard .cso-health-panel{display:grid;grid-template-columns:minmax(155px,22%) minmax(0,1fr);gap:15px;padding:16px;border:1px solid #e1ece7;border-radius:22px;background:#fff;box-shadow:0 9px 24px #14352c0c;margin:0 0 12px}
+#csoBoard .cso-health-ringcard{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-width:0;background:#f4faf8;border-radius:17px;padding:12px}
+#csoBoard .cso-health-ring{width:min(100%,192px);aspect-ratio:1;display:grid;place-items:center;background:conic-gradient(#12aa72 0%,#087d57 var(--health-pct),#dce8e6 var(--health-pct) 100%);border-radius:50%;padding:12px}
+#csoBoard .cso-health-ringcenter{width:100%;height:100%;border-radius:50%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;color:#183c34}
+#csoBoard .cso-health-ringcenter span{font-size:clamp(11px,1.4vw,15px);font-weight:800}
+#csoBoard .cso-health-ringcenter strong{font-size:clamp(30px,4.1vw,49px);font-weight:900;line-height:1.1;letter-spacing:-.07em;font-variant-numeric:tabular-nums}
+#csoBoard .cso-health-ringcenter small,#csoBoard .cso-health-scope{font-size:11px;color:#506a61;font-weight:650}
+#csoBoard .cso-health-right{min-width:0;display:flex;flex-direction:column;gap:11px;justify-content:center}
+#csoBoard .cso-health-counts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#csoBoard .cso-health-count{--count-ink:#245d9a;--count-bg:#ecf5ff;display:flex;flex-direction:column;gap:9px;min-width:0;padding:13px 11px;border:1px solid color-mix(in srgb,var(--count-ink) 24%,transparent);border-radius:15px;color:var(--count-ink);background:var(--count-bg)}
+#csoBoard .cso-health-count[data-kind=pass]{--count-ink:#076846;--count-bg:#e7f8ef}
+#csoBoard .cso-health-count[data-kind=incomplete]{--count-ink:#785006;--count-bg:#fff6de}
+#csoBoard .cso-health-count[data-kind=missing]{--count-ink:#a21d36;--count-bg:#fff0f2}
+#csoBoard .cso-health-count-label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:850;overflow-wrap:anywhere}
+#csoBoard .cso-health-count-value{display:flex;align-items:baseline;gap:4px;white-space:nowrap}
+#csoBoard .cso-health-count-value strong{font-size:clamp(26px,3.35vw,40px);font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums}
+#csoBoard .cso-health-count-value span,#csoBoard .cso-health-count small{font-size:11px;font-weight:650}
+#csoBoard .cso-health-count small{line-height:1.4;overflow-wrap:anywhere}
+#csoBoard .cso-health-notice{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;padding:12px 14px;border-radius:13px;background:#edf7f2;color:#175d43}
+#csoBoard .cso-health-notice[data-level=danger]{background:#fff0f0;color:#a21926}
+#csoBoard .cso-health-notice[data-level=warning]{background:#fff4db;color:#754203}
+#csoBoard .cso-health-notice[data-level=neutral]{background:#f2f5f6;color:#405761}
+#csoBoard .cso-health-notice-copy{flex:1;min-width:100px;display:flex;flex-direction:column;gap:2px}
+#csoBoard .cso-health-notice-copy strong{font-size:15px;line-height:1.45;font-weight:850}
+#csoBoard .cso-health-notice-copy small{font-size:12px;line-height:1.5}
+#csoBoard .cso-health-action{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:43px;border:0;border-radius:10px;padding:9px 12px;background:#087a52;color:#fff;font-size:12px;font-weight:800;white-space:nowrap}
+#csoBoard .cso-health-notice[data-level=danger] .cso-health-action{background:#b91d28}
+#csoBoard .cso-health-notice[data-level=warning] .cso-health-action{background:#815009}
+#csoBoard .cso-health-foot{margin:0;font-size:11px;line-height:1.45;color:#526b62}
+#csoBoard .cso-health-loading{grid-column:1/-1;padding:14px;color:#526b62}
+#csoBoard .cso-health-scorestrip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 16px}
+@media(max-width:1050px){#csoBoard .cso-health-counts{grid-template-columns:repeat(2,minmax(0,1fr))}#csoBoard .cso-health-ring{max-width:172px}#csoBoard .cso-health-panel{grid-template-columns:minmax(145px,25%) minmax(0,1fr)}}
+@media(max-width:650px){#csoBoard .cso-health-signal{max-width:none;width:100%;min-width:0;padding:12px}#csoBoard .cso-health-light{width:48px;height:48px}#csoBoard .cso-health-panel{grid-template-columns:minmax(0,1fr);padding:11px;gap:10px}#csoBoard .cso-health-ringcard{flex-direction:row;gap:15px}#csoBoard .cso-health-ring{max-width:138px;padding:9px}#csoBoard .cso-health-count{padding:10px;gap:5px}#csoBoard .cso-health-notice{padding:10px}#csoBoard .cso-health-action{width:100%}}

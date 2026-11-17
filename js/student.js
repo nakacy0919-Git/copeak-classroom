@@ -4,6 +4,7 @@ import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
 import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
 import { assignmentProgressStatus } from './assignment-progress.mjs';
+import { summarizeLearningHealth } from './student-learning-health.mjs?v=20261117';
 import { bestMetricMap, effectiveMetric, countAttempts, summarizeScores } from './shared-gradebook.mjs?v=20261117';
 import { sortClassAssignments } from './assignment-order.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
@@ -2733,6 +2734,23 @@ function render() {
   renderAssignmentList(
     map, passMaps
   );
+
+  const healthRows = assignments.map(assignment => {
+    const state = studentPassState(assignment, passMaps);
+    const attempted = map.has(assignment.id) || state.hasScore;
+    return {
+      releaseMs: validTime(assignment.release_at),
+      dueMs: validTime(assignment.due_at),
+      complete: assignmentProgressStatus(state, map.has(assignment.id)).complete,
+      passed: state.passed,
+      attempted
+    };
+  });
+  const overview = JSON.stringify(summarizeLearningHealth(healthRows));
+  const overviewTarget = $('#assignmentList');
+  if (overviewTarget && overviewTarget.dataset.csoLearningHealth !== overview) {
+    overviewTarget.dataset.csoLearningHealth = overview;
+  }
 
 
   // 次に開く可能性が高い教材を

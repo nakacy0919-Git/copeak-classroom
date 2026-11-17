@@ -41,7 +41,7 @@
   const label=(row)=>row.type==='copeak'?'Copeak · 音読':'PicSpeak · '+(NAMES[row.mode?.replace(/\s/g,'')]||row.mode||'画像描写');
   const glyph=(row)=>row.type==='copeak'?'book':({SNAPSHOT:'photo',MOSAIC:'tiles',DETECTIVE:'search',ORALQUEST:'microphone',STORY:'film',PICFLASH:'bolt'})[row.mode?.replace(/\s/g,'')]||'photo';
   const main={status:'todo',source:'all',page:0,selected:null,items:[],modal:false,activeTrigger:null,prevOverflow:'',focusKey:null};
-  let root,grid,nav,mini,stats,footer,dialog,dialogContent,dialogTitle,dialogType,dialogClose,dialogCTA,dialogNote,rankingTarget,readingList,picList,rankObserver;
+  let root,grid,nav,mini,stats,healthPanel,healthStatus,footer,dialog,dialogContent,dialogTitle,dialogType,dialogClose,dialogCTA,dialogNote,rankingTarget,readingList,picList,rankObserver;
   let observer,pending=false;
   const readingId=(card)=>card.querySelector('.start-btn')?.dataset.id;
   const identities=new WeakMap();let identityCounter=0;
@@ -78,9 +78,10 @@
     root=make('section','cso-dashboard');root.id='csoBoard';root.setAttribute('aria-label','Copeak Classroom 学習ダッシュボード');
     const heading=make('header','cso-pagehead');
     const identity=make('div','cso-identity');identity.append(make('span','cso-overline','COPEAK CLASSROOM'),make('h1','','My Learning'));
-    const overview=make('div','cso-headerprogress');overview.append(make('span','','学習の進捗'));const gauge=make('div','cso-hprogress');const bar=make('span');bar.id='csoHeaderBar';gauge.append(bar);overview.append(gauge,make('strong',''));overview.querySelector('strong').id='csoHeaderRatio';
-    heading.append(identity,overview);root.append(heading);
-    stats=make('div','cso-stats');root.append(stats);
+    healthStatus=make('div','cso-health-signal');healthStatus.setAttribute('role','status');healthStatus.setAttribute('aria-live','polite');
+    heading.append(identity,healthStatus);root.append(heading);
+    healthPanel=make('section','cso-health-panel');healthPanel.setAttribute('aria-label','Copeakの課題達成状況');root.append(healthPanel);
+    stats=make('div','cso-stats cso-health-scorestrip');root.append(stats);
     mini=make('div','cso-rankmini');root.append(mini);
     const taskTop=make('div','cso-task-head');const title=make('div');title.append(make('span','cso-overline','YOUR ASSIGNMENTS'),make('h2','','課題一覧'));const controls=make('div','cso-controls');nav=make('div','cso-tabs');nav.setAttribute('role','group');nav.setAttribute('aria-label','課題の絞り込み');
     for(const [id,text] of [['todo','未完了'],['done','完了'],['all','すべて']]){const b=make('button','cso-tab',text);b.type='button';b.dataset.status=id;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{main.status=id;main.page=0;render();});nav.append(b);}
@@ -119,6 +120,57 @@
   }
   function metricBox(glyphName,caption,value,sub){
     const el=make('div','cso-metric');const circle=make('span','cso-metric-icon');circle.append(icon(glyphName,22));const copy=make('div','cso-metric-text');copy.append(make('span','cso-metric-caption',caption),make('strong','cso-metric-value',value));if(sub)copy.append(make('span','cso-metric-sub',sub));el.append(circle,copy);return el;
+  }
+  function renderHealth(){
+    let data=null;
+    try{const raw=readingList.dataset.csoLearningHealth;if(raw)data=JSON.parse(raw);}catch{}
+    const sig=JSON.stringify(data);
+    if(healthPanel.dataset.healthSignature===sig)return;
+    healthPanel.dataset.healthSignature=sig;
+    healthStatus.replaceChildren();healthPanel.replaceChildren();
+    if(!data){healthStatus.dataset.level='neutral';healthStatus.append(make('strong','','状況を確認中'));healthPanel.append(make('p','cso-health-loading','課題の状況を読み込んでいます。'));return;}
+    const level=data.level;
+    healthStatus.dataset.level=level;
+    const light=make('span','cso-health-light');light.append(icon(level==='normal'?'check':level==='neutral'?'layers':'alert',30));
+    const statusText=make('div','cso-health-signal-text');statusText.append(make('small','','現在の学習状況'),make('strong','',data.title),make('span','',data.message));
+    healthStatus.append(light,statusText);
+    const left=make('div','cso-health-ringcard');
+    const ring=make('div','cso-health-ring');
+    const percent=data.percent;
+    ring.style.setProperty('--health-pct',(percent??0)+'%');
+    ring.setAttribute('role','img');ring.setAttribute('aria-label',percent===null?'課題の達成率：対象なし':'課題の達成率 '+percent+'パーセント');
+    const center=make('div','cso-health-ringcenter');
+    center.append(make('span','','課題の達成率'),make('strong','',percent===null?'—':percent+'%'),make('small','',data.complete+' / '+data.total+' 課題'));
+    ring.append(center);left.append(ring,make('span','cso-health-scope','Copeak・公開開始済み'));
+    const right=make('div','cso-health-right');
+    const counts=make('div','cso-health-counts');
+    const items=[
+      ['total','layers','配信課題数',data.total,'公開開始済み'],
+      ['pass','check','合格・完了',data.complete,'合格 '+data.passed+' / 基準なし完了 '+data.submittedComplete],
+      ['incomplete','clock','未完了',data.incomplete,'挑戦済み・未合格'],
+      ['missing','x','未提出',data.unsubmitted,'未着手']
+    ];
+    for(const [kind,glyph,label,value,note] of items){
+      const cell=make('div','cso-health-count');cell.dataset.kind=kind;
+      const labelRow=make('div','cso-health-count-label');labelRow.append(icon(glyph,19),make('span','',label));
+      const valueRow=make('div','cso-health-count-value');valueRow.append(make('strong','',value),make('span','','件'));
+      cell.append(labelRow,valueRow,make('small','',note));counts.append(cell);
+    }
+    right.append(counts);
+    const notice=make('div','cso-health-notice');notice.dataset.level=level;
+    const desc=make('div','cso-health-notice-copy');
+    const message=data.overdue>0?'締切超過 '+data.overdue+'件（未提出 '+data.overdueUnsubmitted+'件）':data.near>0?'48時間以内の未完了 '+data.near+'件':data.total-data.complete>0?'残り '+(data.total-data.complete)+'件。':'次の課題もこの調子で！';
+    desc.append(make('strong','',message));
+    desc.append(make('small','',data.overdue>0?'締切後の対応は先生に相談し、取り組める課題から始めましょう。':data.total===0?'公開予定の課題は一覧で確認できます。':'期限の近い課題から優先しましょう。'));
+    notice.append(icon(level==='normal'?'check':level==='neutral'?'layers':'alert',24),desc);
+    if(data.total>data.complete){
+      const action=make('button','cso-health-action','未完了の課題を確認');action.type='button';action.append(icon('arrow',16));
+      action.addEventListener('click',()=>{main.status='todo';main.source='copeak';main.page=0;const sourceSelect=root.querySelector('#csoSourceSelect');if(sourceSelect)sourceSelect.value='copeak';render();root.querySelector('.cso-task-head')?.scrollIntoView({block:'start',behavior:'auto'});});
+      notice.append(action);
+    }
+    right.append(notice);
+    const foot=make('p','cso-health-foot','公開前 '+data.future+'件は達成率・警告の対象外。PicSpeakはこの集計に含みません。');
+    right.append(foot);healthPanel.append(left,right);
   }
   function chip(name,txt){const c=make('span','cso-chip');c.append(icon(name,15),make('span','',txt));return c;}
   function renderRank(rows){
@@ -210,10 +262,9 @@
       ? `CLASS ${classMatch[1]}-${classMatch[2]}`
       : (className && className !== 'My Class' ? className : 'COPEAK CLASSROOM');
     const all=main.items,pending=all.filter(r=>!r.done),done=all.filter(r=>r.done),todo=pending.filter(r=>!r.overdue&&!r.upcoming);
-    const pct=all.length?Math.round(100*done.length/all.length):0;
-    root.querySelector('#csoHeaderBar').style.width=pct+'%';root.querySelector('#csoHeaderRatio').textContent=`${done.length}/${all.length} · ${pct}%`;
+    renderHealth();
     renderRank(all);
-    stats.replaceChildren(metricBox('layers','残っている課題',String(pending.length)+' 件','公開前・期限切れを含む'),metricBox('check','完了した課題',`${done.length} / ${all.length}`,'Copeak提出・PicSpeak合格'),metricBox('target','Copeak 平均Accuracy',clean(document.querySelector('#avgAccuracy')?.textContent)||'—','クラス課題の最高記録・教員修正反映'),metricBox('bolt','Copeak 最高WPM',clean(document.querySelector('#bestWpm')?.textContent)||'—','クラス課題の最高記録・教員修正反映'));
+    stats.replaceChildren(metricBox('target','Copeak 平均Accuracy',clean(document.querySelector('#avgAccuracy')?.textContent)||'—','クラス課題の最高記録・教員修正反映'),metricBox('bolt','Copeak 最高WPM',clean(document.querySelector('#bestWpm')?.textContent)||'—','クラス課題の最高記録・教員修正反映'));
     for(const b of nav.querySelectorAll('button')){b.setAttribute('aria-pressed',String(b.dataset.status===main.status));b.textContent=(b.dataset.status==='todo'?'未完了':b.dataset.status==='done'?'完了':'すべて')+'  '+(b.dataset.status==='todo'?pending.length:b.dataset.status==='done'?done.length:all.length);}
     const filtered=all.filter(r=>(main.status==='all'||(main.status==='done'?r.done:!r.done))&&(main.source==='all'||r.type===main.source));
     // sourceRows reads the server-backed, class-ordered reading list. Preserve
@@ -284,7 +335,7 @@
   function mount(){
     if(!build())return;
     picList=document.getElementById('pslStudentList');observer=new MutationObserver(update);
-    observer.observe(readingList,{childList:true});if(picList)observer.observe(picList,{childList:true});
+    observer.observe(readingList,{childList:true,attributes:true,attributeFilter:['data-cso-learning-health']});if(picList)observer.observe(picList,{childList:true});
     if(!picList){const waiting=new MutationObserver(()=>{const el=document.getElementById('pslStudentList');if(el){picList=el;observer.observe(picList,{childList:true});waiting.disconnect();update();}});waiting.observe(document.body,{childList:true,subtree:true});window.setTimeout(()=>waiting.disconnect(),30000);}
     for(const id of ['avgAccuracy','bestWpm','progressPct']){const el=document.getElementById(id);if(el)observer.observe(el,{childList:true,characterData:true,subtree:true});}
     render();
