@@ -3439,6 +3439,9 @@ function renderAssignmentList(
               data-status="${status.key}"
               data-assignment-label="${escapeHtml(assignmentLabel(assignment, activeLanguage))}"
               data-assignment-number="${assignmentNumber(assignment) ?? ''}"
+              data-due-ms="${assignment.due_at && dueTime !== null ? dueTime : ''}"
+              data-release-ms="${assignment.release_at && releaseTime !== null ? releaseTime : ''}"
+              data-deadline-date="${escapeHtml(assignment.due_at ? formatDateTime(assignment.due_at) : '—')}"
               data-cso-accuracy="${submission && Number.isFinite(Number(submission.accuracy)) ? Number(submission.accuracy) : ''}"
               data-cso-wpm="${submission && Number.isFinite(Number(submission.wpm)) ? Number(submission.wpm) : ''}">
 

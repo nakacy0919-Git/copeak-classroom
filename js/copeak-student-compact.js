@@ -7,7 +7,7 @@
   if (window.__csoV3Loaded) return;
   window.__csoV3Loaded = true;
   const scriptUrl = document.currentScript?.src || new URL('js/copeak-student-compact.js', location.href).href;
-  const cssUrl = new URL('../css/copeak-student-dashboard-v3.css?v=20261117-assignment-number', scriptUrl);
+  const cssUrl = new URL('../css/copeak-student-dashboard-v3.css?v=20261117-card-design', scriptUrl);
   const link = document.createElement('link');
   link.rel = 'stylesheet'; link.href = cssUrl.href;
   link.id = 'csoV3Styles';
@@ -25,6 +25,8 @@
     target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2"/>',
     check: '<path d="m5 12 5 5L20 7"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/>',
+    alert: '<path d="M10.3 4 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4a2 2 0 0 0-3.4 0ZM12 9v4m0 4h.01"/>',
     arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
     layers: '<path d="m12 3-9 5 9 5 9-5-9-5Zm-9 10 9 5 9-5m-18 5 9 5 9-5"/>',
     sparkles: '<path d="m12 2 1.4 5.6L19 9l-5.6 1.4L12 16l-1.4-5.6L5 9l5.6-1.4L12 2Zm6 13 .8 2.3L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.7L18 15Z"/>',
@@ -53,7 +55,7 @@
       const pct=card.querySelector('.student-pass-panel');
       rows.push({key:'c:'+(readingId(card)||i),type:'copeak',title:clean(card.querySelector('.assignment-title')?.textContent)||'Copeak課題',status,
         done:key==='done'||(!key&&/提出済み|完了|合格/.test(status)),upcoming:key==='upcoming'||/公開前/.test(status),overdue:key==='late'||/締切済み|締切終了/.test(status),
-        assignmentNo:clean(card.dataset.assignmentNumber),assignmentLabel:clean(card.dataset.assignmentLabel),source:card,rank,pct,acc:card.dataset.csoAccuracy||'',wpm:card.dataset.csoWpm||'',deadline:clean(card.querySelector('.student-deadline-inline')?.textContent)||''});
+        assignmentNo:clean(card.dataset.assignmentNumber),assignmentLabel:clean(card.dataset.assignmentLabel),dueMs:num(card.dataset.dueMs),releaseMs:num(card.dataset.releaseMs),deadlineDate:clean(card.dataset.deadlineDate),source:card,rank,pct,acc:card.dataset.csoAccuracy||'',wpm:card.dataset.csoWpm||'',deadline:clean(card.querySelector('.student-deadline-inline')?.textContent)||''});
     });
     picList?.querySelectorAll('.psl-card').forEach((card,i)=>{
       const status=clean(card.querySelector('.psl-chip')?.textContent)||'未完了';
@@ -149,15 +151,55 @@
     if(item.type!=='copeak')return '';
     return item.assignmentNo ? 'No. '+item.assignmentNo : item.assignmentLabel;
   }
+  // Classify against the original timestamp, not translated display text.
+  // Only open, unfinished work pulses; closing a lesson immediately stops it.
+  function deadlineState(item, now=Date.now()){
+    if(item.type!=='copeak'||!Number.isFinite(item.dueMs))return {kind:'normal',remaining:''};
+    const left=item.dueMs-now;
+    if(item.done)return {kind:'complete',remaining:''};
+    if(left<=0)return {kind:'expired',remaining:''};
+    if(item.upcoming||(Number.isFinite(item.releaseMs)&&item.releaseMs>now))return {kind:'normal',remaining:''};
+    if(left>48*3600000)return {kind:'normal',remaining:''};
+    const remaining=left>24*3600000?'あと2日':left>=3600000?'あと'+Math.ceil(left/3600000)+'時間':left>=60000?'あと'+Math.ceil(left/60000)+'分':'あと1分未満';
+    return {kind:'urgent',remaining};
+  }
   function tile(item){
-    const b=make('button','cso-tile '+(item.type==='picspeak'?'cso-pink':'cso-green')+(item.done?' cso-complete':'')+(item.overdue?' cso-expired':''));b.type='button';const tag=assignmentTag(item);b.title=[tag,item.title].filter(Boolean).join(' | ');
-    b.setAttribute('aria-label',` ${label(item)}、${tag ? tag+'、' : ''}${item.title}、${standardStatus(item)}。詳細を開く`.trim());
-    const row=make('div','cso-tile-top');const kind=make('span','cso-tile-kind');kind.append(icon(glyph(item),16),make('span','',label(item)));
-    const state=make('span','cso-state '+(item.done?'cso-state-done':item.overdue?'cso-state-late':item.upcoming?'cso-state-next':/練習中/.test(item.status)?'cso-state-practice':'cso-state-todo'),standardStatus(item));row.append(kind,state);b.append(row);
-    const inner=make('div','cso-tile-middle');const textBlock=make('div','cso-tile-text');if(tag)textBlock.append(make('span','cso-assignment-number',tag));textBlock.append(make('strong','cso-tile-title',item.title));inner.append(textBlock);const stamp=make('span','cso-tile-illustration');stamp.append(icon(glyph(item),22));inner.append(stamp);b.append(inner);
-    const foot=make('div','cso-tile-footer');let detail=item.type==='picspeak'&&item.headline&&item.headline!=='—'?'最高 '+item.headline:item.deadline||'';
-    foot.append(make('span','cso-tile-data',detail||'タップして詳細を確認'),make('span','cso-tile-link',item.done?'成果を見る ↗':'課題を見る ↗'));b.append(foot);
-    b.addEventListener('click',()=>openModal(item,b));return b;
+    const reading=item.type==='copeak', d=deadlineState(item);
+    const b=make('button','cso-tile '+(reading?'cso-green cso-reading-card':'cso-pink')+(item.done?' cso-complete':'')+(item.overdue||d.kind==='expired'?' cso-expired':'')+(d.kind==='urgent'?' cso-deadline-urgent':''));
+    b.type='button';const tag=assignmentTag(item);b.title=[tag,item.title].filter(Boolean).join(' | ');
+    const currentStatus=d.kind==='urgent'?'締切間近':standardStatus(item);
+    b.setAttribute('aria-label',[tag,item.title,standardStatus(item),reading&&item.deadlineDate?'締切 '+item.deadlineDate:'',d.remaining,'詳細を開く'].filter(Boolean).join('、'));
+    const row=make('div','cso-tile-top');
+    if(reading){
+      const number=make('span','cso-assignment-number',tag||'クラス課題');
+      row.append(number);
+    }else{
+      const kind=make('span','cso-tile-kind');kind.append(icon(glyph(item),16),make('span','',label(item)));row.append(kind);
+    }
+    const statusClass=item.done?'cso-state-done':d.kind==='urgent'?'cso-state-urgent':item.overdue?'cso-state-late':item.upcoming?'cso-state-next':/練習中/.test(item.status)?'cso-state-practice':'cso-state-todo';
+    const state=make('span','cso-state '+statusClass);
+    if(d.kind==='urgent')state.append(icon('alert',14));
+    state.append(make('span','',currentStatus));
+    if(d.kind==='urgent'&&standardStatus(item)!==currentStatus)state.title=standardStatus(item);
+    row.append(state);b.append(row);
+    const inner=make('div','cso-tile-middle');
+    const textBlock=make('div','cso-tile-text');textBlock.append(make('strong','cso-tile-title',item.title));
+    const stamp=make('span','cso-tile-illustration');stamp.append(icon(glyph(item),22));
+    if(reading)inner.append(stamp,textBlock);else inner.append(textBlock,stamp);
+    b.append(inner);
+    const foot=make('div','cso-tile-footer');
+    if(reading){
+      const deadline=make('span','cso-deadline-box cso-deadline-'+d.kind);
+      deadline.append(icon('calendar',16));
+      const date=make('span','cso-deadline-date');date.append(make('span','cso-deadline-caption','締切'),make('strong','',item.deadlineDate||'—'));deadline.append(date);
+      if(d.remaining){const remaining=make('span','cso-deadline-remaining');remaining.append(icon('clock',13),make('span','',d.remaining));deadline.append(remaining);}
+      foot.append(deadline);
+    }else{
+      const detail=item.headline&&item.headline!=='—'?'最高 '+item.headline:item.deadline||'';
+      foot.append(make('span','cso-tile-data',detail||'タップして詳細を確認'));
+    }
+    foot.append(make('span','cso-tile-link',item.done?'成果を見る →':'課題を見る →'));b.append(foot);
+    b.addEventListener('click',()=>{const latest=main.items.find(r=>r.key===item.key);if(latest)openModal(latest,b);});return b;
   }
   function render(){
     if(!root)return;
@@ -181,8 +223,15 @@
     const statusLabel=main.status==='done'?'完了した課題':main.status==='todo'?'未完了の課題':'すべての課題';
     const sourceLabel=main.source==='copeak'?' · Copeak':main.source==='picspeak'?' · PicSpeak':'';
     root.querySelector('#csoStatusLine').textContent=`${statusLabel}${sourceLabel} ${ordered.length} 件 · 全 ${all.length} 件`;
-    grid.replaceChildren();for(const item of ordered.slice(main.page*limit,(main.page+1)*limit))grid.append(tile(item));
-    if(!filtered.length)grid.append(make('p','cso-empty',main.status==='todo'?'未完了の課題はありません。':'該当する課題はありません。'));
+    // Keep unchanged cards in place across the one-second countdown render.
+    // This also preserves keyboard focus and the deadline pulse animation.
+    const pageItems=ordered.slice(main.page*limit,(main.page+1)*limit);
+    const signature=JSON.stringify([main.status,main.source,main.page,pageItems.map(item=>[item.key,item.title,item.assignmentNo,item.assignmentLabel,item.status,item.done,item.upcoming,item.overdue,item.deadlineDate,item.deadline,item.headline,item.mode,deadlineState(item)])]);
+    if(grid.dataset.cardSignature!==signature){
+      grid.dataset.cardSignature=signature;
+      grid.replaceChildren();for(const item of pageItems)grid.append(tile(item));
+      if(!filtered.length)grid.append(make('p','cso-empty',main.status==='todo'?'未完了の課題はありません。':'該当する課題はありません。'));
+    }
     footer.replaceChildren();if(ordered.length>limit){const prev=make('button','cso-pagination','前へ');prev.type='button';prev.disabled=main.page<=0;prev.addEventListener('click',()=>{main.page--;render();});const cur=make('span','',`${main.page+1} / ${max+1} ページ`);const next=make('button','cso-pagination','次へ');next.type='button';next.disabled=main.page>=max;next.addEventListener('click',()=>{main.page++;render();});footer.append(prev,cur,next);}
     if(main.modal){const latest=all.find(r=>r.key===main.selected);if(latest)fillModal(latest);else closeModal();}
   }
@@ -196,7 +245,7 @@
   }
   function fillModal(item){
     const pink=item.type==='picspeak';dialog.classList.toggle('cso-modal-pink',pink);
-    dialogType.textContent=[assignmentTag(item),label(item),standardStatus(item)].filter(Boolean).join('  /  ');dialogTitle.textContent=item.title;
+    dialogType.textContent=[assignmentTag(item),item.type==='copeak'?'':label(item),standardStatus(item)].filter(Boolean).join('  /  ');dialogTitle.textContent=item.title;
     const start=item.source.querySelector('.start-btn,.psl-challenge');dialogCTA.disabled=!start||start.disabled;
     dialogCTA.querySelector('span:last-child').textContent=dialogCTA.disabled?'現在は開始できません':pink?'PicSpeakに挑戦する':'Copeakで音読を始める';
     dialogNote.textContent=dialogCTA.disabled?'公開日時または締切をご確認ください':'タップして教材を開きます';

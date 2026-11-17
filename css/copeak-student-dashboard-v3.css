@@ -266,3 +266,33 @@ body.cso-v3 .student-main{min-width:0}
 /* Same class-local assignment number as the teacher's Assignment card. */
 #csoBoard .cso-tile-text{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
 #csoBoard .cso-assignment-number{display:inline-block;color:#14532d;background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:2px 7px;font-size:12px;font-weight:850;line-height:1.25;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* Assignment card: embedded number ribbon, large title and real deadline. */
+#csoBoard .cso-reading-card{min-height:162px;padding:0 12px 11px;border-radius:20px;gap:9px;background:linear-gradient(155deg,#fff 20%,#f8fcfa 100%);border-color:#dceae4;box-shadow:0 6px 18px rgba(12,78,56,.08);filter:none}
+#csoBoard .cso-reading-card .cso-tile-top{margin:0 -12px;min-height:40px;align-items:flex-start;gap:5px;padding:0 10px 0 0}
+#csoBoard .cso-reading-card .cso-assignment-number{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:88px;max-width:58%;height:40px;box-sizing:border-box;padding:0 23px 2px 15px;border:0;border-radius:19px 0 28px 0;clip-path:polygon(0 0,100% 0,91% 20%,80% 79%,71% 100%,0 100%);background:linear-gradient(150deg,#19a477 0%,#087a52 45%,#04593b 100%);color:white;font-size:19px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.015em;text-shadow:0 1px 2px #064d3b55;white-space:nowrap}
+#csoBoard .cso-reading-card .cso-state{display:inline-flex;align-items:center;gap:3px;max-width:55%;margin-top:9px;padding:5px 8px;font-size:11px;font-weight:800;line-height:1.25;white-space:normal;overflow:visible;text-overflow:clip;text-align:center}
+#csoBoard .cso-reading-card .cso-state-urgent{color:#975000;background:#ffebc6}
+#csoBoard .cso-reading-card .cso-state-late{color:#9b3d35;background:#fce7e5}
+#csoBoard .cso-reading-card .cso-state-todo{color:#9c3c54;background:#fcecf0}
+#csoBoard .cso-reading-card .cso-tile-middle{justify-content:flex-start;align-items:center;gap:9px;min-height:43px}
+#csoBoard .cso-reading-card .cso-tile-text{display:block;flex:1;min-width:0}
+#csoBoard .cso-reading-card .cso-tile-title{font-size:clamp(13px,1.15vw,17px);font-weight:850;line-height:1.38;color:#112b31;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:anywhere}
+#csoBoard .cso-reading-card .cso-tile-illustration{width:40px;height:40px;border-radius:12px;transform:none;background:radial-gradient(circle at 25% 20%,#edfff6,#bdeed8);color:#087c54}
+#csoBoard .cso-reading-card .cso-tile-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:5px 8px;border-top:0;padding:0;min-width:0}
+#csoBoard .cso-reading-card .cso-deadline-box{flex:1 1 150px;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px;border-radius:10px;padding:6px 8px;background:#eef5f1;border:1px solid #e1ebe5;color:#355a4c;line-height:1.3}
+#csoBoard .cso-reading-card .cso-deadline-box>.cso-icon{flex:none}
+#csoBoard .cso-reading-card .cso-deadline-date{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 5px;min-width:0;flex:1 1 auto}
+#csoBoard .cso-reading-card .cso-deadline-caption{font-size:10px;font-weight:800;white-space:nowrap}
+#csoBoard .cso-reading-card .cso-deadline-date strong{font-size:12px;font-weight:850;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#csoBoard .cso-reading-card .cso-deadline-expired{background:#fceeed;border-color:#f7dbd8;color:#a33c36}
+#csoBoard .cso-reading-card .cso-deadline-complete{background:#edf8f0;border-color:#d6eddd;color:#297447}
+#csoBoard .cso-reading-card.cso-deadline-urgent{border-color:#f2c4bb;background:linear-gradient(155deg,#fff 30%,#fff9f4 100%);box-shadow:0 7px 20px #aa4d3219}
+#csoBoard .cso-reading-card .cso-deadline-urgent{background:#fff0ee;border-color:#f6cbc6;color:#b91c1c}
+#csoBoard .cso-reading-card .cso-deadline-remaining{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:4px 7px;background:#d92d32;color:#fff;font-size:11px;font-weight:900;white-space:nowrap;animation:cso-deadline-pulse 1.8s ease-in-out infinite}
+#csoBoard .cso-reading-card .cso-tile-link{font-size:11px;line-height:1.3;font-weight:850;white-space:nowrap}
+@keyframes cso-deadline-pulse{0%,100%{box-shadow:0 0 0 0 rgba(217,45,50,.10);background-color:#d92d32}50%{box-shadow:0 0 0 3px rgba(217,45,50,.22);background-color:#b91c1c}}
+@media(max-width:1100px){#csoBoard .cso-reading-card{padding:0 10px 10px}#csoBoard .cso-reading-card .cso-tile-top{margin:0 -10px}}
+@media(max-width:870px){#csoBoard .cso-reading-card .cso-tile-title{font-size:14px}#csoBoard .cso-reading-card .cso-deadline-box{flex-basis:100%}}
+@media(max-width:650px){#csoBoard .cso-reading-card{min-height:164px;border-radius:15px;padding:0 8px 9px;gap:7px}#csoBoard .cso-reading-card .cso-tile-top{margin:0 -8px;min-height:34px;padding-right:6px}#csoBoard .cso-reading-card .cso-assignment-number{min-width:76px;height:34px;font-size:15px;padding-left:10px;padding-right:18px;border-radius:14px 0 25px 0}#csoBoard .cso-reading-card .cso-state{font-size:10px;margin-top:6px;padding:4px 5px}#csoBoard .cso-reading-card .cso-tile-title{font-size:13px}#csoBoard .cso-reading-card .cso-tile-illustration{height:31px;width:31px;border-radius:9px}#csoBoard .cso-reading-card .cso-deadline-box{padding:5px 6px;gap:3px 4px}#csoBoard .cso-reading-card .cso-deadline-date strong{font-size:11px}}
+@media(prefers-reduced-motion:reduce){#csoBoard .cso-reading-card .cso-deadline-remaining{animation:none!important}}
