@@ -55,7 +55,7 @@
       const pct=card.querySelector('.student-pass-panel');
       rows.push({key:'c:'+(readingId(card)||i),type:'copeak',title:clean(card.querySelector('.assignment-title')?.textContent)||'Copeak課題',status,
         done:key==='done'||(!key&&/提出済み|完了|合格/.test(status)),upcoming:key==='upcoming'||/公開前/.test(status),overdue:key==='late'||/締切済み|締切終了/.test(status),
-        assignmentNo:clean(card.dataset.assignmentNumber),assignmentLabel:clean(card.dataset.assignmentLabel),dueMs:num(card.dataset.dueMs),releaseMs:num(card.dataset.releaseMs),deadlineDate:clean(card.dataset.deadlineDate),source:card,rank,pct,acc:card.dataset.csoAccuracy||'',wpm:card.dataset.csoWpm||'',deadline:clean(card.querySelector('.student-deadline-inline')?.textContent)||''});
+        assignmentNo:clean(card.dataset.assignmentNumber),assignmentLabel:clean(card.dataset.assignmentLabel),dueMs:num(card.dataset.dueMs),releaseMs:num(card.dataset.releaseMs),deadlineDate:clean(card.dataset.deadlineDate),source:card,rank,pct,acc:card.dataset.csoAccuracy||'',wpm:card.dataset.csoWpm||'',performance:card.dataset.csoPerformance||'',reads:card.dataset.csoReads||'0',latestAcc:card.dataset.csoLatestAccuracy||'',latestWpm:card.dataset.csoLatestWpm||'',deadline:clean(card.querySelector('.student-deadline-inline')?.textContent)||''});
     });
     picList?.querySelectorAll('.psl-card').forEach((card,i)=>{
       const status=clean(card.querySelector('.psl-chip')?.textContent)||'未完了';
@@ -213,7 +213,7 @@
     const pct=all.length?Math.round(100*done.length/all.length):0;
     root.querySelector('#csoHeaderBar').style.width=pct+'%';root.querySelector('#csoHeaderRatio').textContent=`${done.length}/${all.length} · ${pct}%`;
     renderRank(all);
-    stats.replaceChildren(metricBox('layers','残っている課題',String(pending.length)+' 件','公開前・期限切れを含む'),metricBox('check','完了した課題',`${done.length} / ${all.length}`,'Copeak提出・PicSpeak合格'),metricBox('target','Copeak 平均Accuracy',clean(document.querySelector('#avgAccuracy')?.textContent)||'—','音読の記録'),metricBox('bolt','Copeak 最高WPM',clean(document.querySelector('#bestWpm')?.textContent)||'—','音読の記録'));
+    stats.replaceChildren(metricBox('layers','残っている課題',String(pending.length)+' 件','公開前・期限切れを含む'),metricBox('check','完了した課題',`${done.length} / ${all.length}`,'Copeak提出・PicSpeak合格'),metricBox('target','Copeak 平均Accuracy',clean(document.querySelector('#avgAccuracy')?.textContent)||'—','クラス課題の最高記録・教員修正反映'),metricBox('bolt','Copeak 最高WPM',clean(document.querySelector('#bestWpm')?.textContent)||'—','クラス課題の最高記録・教員修正反映'));
     for(const b of nav.querySelectorAll('button')){b.setAttribute('aria-pressed',String(b.dataset.status===main.status));b.textContent=(b.dataset.status==='todo'?'未完了':b.dataset.status==='done'?'完了':'すべて')+'  '+(b.dataset.status==='todo'?pending.length:b.dataset.status==='done'?done.length:all.length);}
     const filtered=all.filter(r=>(main.status==='all'||(main.status==='done'?r.done:!r.done))&&(main.source==='all'||r.type===main.source));
     // sourceRows reads the server-backed, class-ordered reading list. Preserve
@@ -262,7 +262,10 @@
     if(pink){const scores=[...item.source.querySelectorAll('.psl-scores>div')];for(let i=0;i<Math.min(3,scores.length);i++){
       const value=clean(scores[i].querySelector('strong')?.textContent)||'—';const cap=clean(scores[i].querySelector('span')?.textContent)||['最高達成率','練習回数','累計単語'][i];quick.append(kpi(cap,value,'',i===0?'target':i===1?'layers':'microphone'));}
     }else{
-      const acc=num(item.acc),wpm=num(item.wpm);quick.append(kpi('Accuracy',acc===null?'—':acc.toFixed(1)+'%','音読の正確率','target'),kpi('WPM',wpm===null?'—':Math.round(wpm).toString(),'1分間に読む単語数','bolt'));
+      const acc=num(item.acc),wpm=num(item.wpm),performance=num(item.performance),reads=num(item.reads);
+      quick.append(kpi('Accuracy',acc===null?'—':acc+'%','Gradebookと同じ最高記録・教員修正反映','target'),kpi('WPM',wpm===null?'—':String(wpm),'Gradebookと同じ最高記録・教員修正反映','bolt'),kpi('Reading Performance',performance===null?'—':performance+'/100','最高記録・教員修正反映','target'),kpi('音読回数',String(reads??0)+'回','提出された全音読記録','layers'));
+      const latestA=num(item.latestAcc),latestW=num(item.latestWpm);
+      if(latestA!==null||latestW!==null){const last=make('p','cso-kpi-note','最新の音読（参考）：Accuracy '+(latestA===null?'—':latestA+'%')+' / WPM '+(latestW===null?'—':latestW));last.style.margin='10px 0 0';perf.append(last);}
     }
     if(!quick.children.length)quick.append(kpi('成績','—','課題に取り組むと表示されます','target'));
     perf.append(quick);right.append(perf,getRankContent(item));

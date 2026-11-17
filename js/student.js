@@ -4,7 +4,7 @@ import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
 import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
 import { assignmentProgressStatus } from './assignment-progress.mjs';
-import { manualMetricOverride } from './manual-score-precedence.mjs';
+import { bestMetricMap, effectiveMetric, countAttempts, summarizeScores } from './shared-gradebook.mjs?v=20261117';
 import { sortClassAssignments } from './assignment-order.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
@@ -1079,72 +1079,7 @@ function latestMap(
 // ASSIGNMENT STATUS
 // ==========================================
 
-function bestStudentMetricMap(
-  rows,
-  metric
-) {
-
-  const map =
-    new Map();
-
-
-  rows.forEach(
-    row => {
-
-      // Previous Comprehension scores are not comparable with WCPM-v1.
-      if (metric === 'comprehension' && row.score_version !== 'wcpm-v1') return;
-
-      const raw =
-        row?.[metric];
-
-
-      if (
-        raw === null ||
-        raw === undefined
-      ) {
-        return;
-      }
-
-
-      const value =
-        Number(raw);
-
-
-      if (
-        !Number.isFinite(value)
-      ) {
-        return;
-      }
-
-
-      const current =
-        map.get(
-          row.assignment_id
-        );
-
-
-      if (
-        !current ||
-        value >
-        Number(
-          current?.[metric] ??
-          -Infinity
-        )
-      ) {
-
-        map.set(
-          row.assignment_id,
-          row
-        );
-      }
-
-    }
-  );
-
-
-  return map;
-}
-
+function bestStudentMetricMap(rows, metric) { return bestMetricMap(rows, metric, row => row.assignment_id); }
 
 function studentManualScoreMap(
   rows
@@ -1170,79 +1105,24 @@ function studentManualScoreMap(
 }
 
 
-function studentEffectiveMetric(manualRow, automaticRow, metric) {
-  const manualValue = manualMetricOverride(manualRow, automaticRow, metric);
-  if (manualValue !== null) return manualValue;
-
-  const automaticValue =
-    automaticRow?.[
-      metric
-    ];
-
-
-  if (
-    automaticValue === null ||
-    automaticValue === undefined
-  ) {
-    return null;
-  }
-
-
-  const number =
-    Number(
-      automaticValue
-    );
-
-
-  return Number.isFinite(
-    number
-  )
-    ? Math.round(number)
-    : null;
-}
-
+function studentEffectiveMetric(manualRow, automaticRow, metric) { return effectiveMetric(manualRow, automaticRow, metric); }
 
 function studentPassState(assignment, maps) {
   const base = evaluatePassCriteria(assignment, null, null);
-  const targets = { ...base.targets, comprehension: null };
-
-  const preservedRecord = maps.passingAttempts.get(`${ctx.user.id}|${assignment.id}`);
-  const priorPass = Boolean(preservedRecord?.legacy_pass);
-
-  if (!base.configured) {
-    return {
-      configured: priorPass,
-      passed: priorPass,
-      legacyPassed: priorPass,
-      hasScore: false,
-      accuracy: null,
-      wpm: null,
-      comprehension: null,
-      targets
-    };
-  }
-
   const manualRow = maps.manual.get(assignment.id);
-  const accuracy = studentEffectiveMetric(
-    manualRow, maps.accuracy.get(assignment.id), 'accuracy'
-  );
-  const wpm = studentEffectiveMetric(
-    manualRow, maps.wpm.get(assignment.id), 'wpm'
-  );
-  // A PASS is earned by ONE submission meeting the targets simultaneously.
-  // Personal bests above are retained for progress display only.
+  const accuracy = studentEffectiveMetric(manualRow, maps.accuracy.get(assignment.id), 'accuracy');
+  const wpm = studentEffectiveMetric(manualRow, maps.wpm.get(assignment.id), 'wpm');
+  const comprehension = studentEffectiveMetric(manualRow, maps.comprehension.get(assignment.id), 'comprehension');
   const passRecord = maps.passingAttempts.get(`${ctx.user.id}|${assignment.id}`);
-  const passed = Boolean(passRecord);
-
+  const legacyPassed = Boolean(passRecord?.legacy_pass);
   return {
-    configured: base.configured,
-    passed,
-    legacyPassed: Boolean(passRecord?.legacy_pass),
-    hasScore: accuracy !== null || wpm !== null,
-    accuracy,
-    wpm,
-    comprehension: null,
-    targets
+    configured: base.configured || legacyPassed,
+    passed: legacyPassed || (base.configured && Boolean(passRecord)),
+    legacyPassed,
+    hasScore: accuracy !== null || wpm !== null || comprehension !== null,
+    accuracy, wpm, comprehension,
+    reads: maps.attempts.get(assignment.id) || 0,
+    targets: { ...base.targets, comprehension: null }
   };
 }
 
@@ -2836,51 +2716,14 @@ function render() {
   // SCORE SUMMARY
   // ========================================
 
-  const scores =
-    [
-      ...map.values()
-    ];
-
-
-  $('#avgAccuracy').textContent =
-    scores.length
-
-      ? pct(
-          scores.reduce(
-            (
-              sum,
-              item
-            ) =>
-              sum +
-              Number(
-                item.accuracy ||
-                0
-              ),
-            0
-          ) /
-          scores.length
-        )
-
-      : '—';
-
-
-  $('#bestWpm').textContent =
-    scores.length
-
-      ? Math.round(
-          Math.max(
-            ...scores.map(
-              item =>
-                Number(
-                  item.wpm ||
-                  0
-                )
-            )
-          )
-        )
-
-      : '—';
-
+  // Do not include past/unpublished assignments or individual study in the
+  // classroom summary: match the teacher's default class Gradebook scope.
+  const scoreRows = assignments.filter(a => a.audience_type !== 'targeted')
+    .map(a => studentPassState(a, passMaps));
+  const accuracySummary = summarizeScores(scoreRows.map(s => s.accuracy));
+  const wpmSummary = summarizeScores(scoreRows.map(s => s.wpm));
+  $('#avgAccuracy').textContent = accuracySummary.average === null ? '—' : accuracySummary.average + '%';
+  $('#bestWpm').textContent = wpmSummary.maximum === null ? '—' : String(wpmSummary.maximum);
 
   renderNextAssignment(
     map, passMaps
@@ -3212,6 +3055,7 @@ function buildStudentPassMaps() {
     wpm: bestStudentMetricMap(submissions, 'wpm'),
     comprehension: bestStudentMetricMap(submissions, 'comprehension'),
     manual: studentManualScoreMap(manualScores),
+    attempts: countAttempts(submissions, row => row.assignment_id),
     passingAttempts: buildPassingAttemptMap(assignments, submissions, preservedPasses)
   };
 }
@@ -3442,8 +3286,12 @@ function renderAssignmentList(
               data-due-ms="${assignment.due_at && dueTime !== null ? dueTime : ''}"
               data-release-ms="${assignment.release_at && releaseTime !== null ? releaseTime : ''}"
               data-deadline-date="${escapeHtml(assignment.due_at ? formatDateTime(assignment.due_at) : '—')}"
-              data-cso-accuracy="${submission && Number.isFinite(Number(submission.accuracy)) ? Number(submission.accuracy) : ''}"
-              data-cso-wpm="${submission && Number.isFinite(Number(submission.wpm)) ? Number(submission.wpm) : ''}">
+              data-cso-accuracy="${passState.accuracy ?? ''}"
+              data-cso-wpm="${passState.wpm ?? ''}"
+              data-cso-performance="${passState.comprehension ?? ''}"
+              data-cso-reads="${passState.reads}"
+              data-cso-latest-accuracy="${submission?.accuracy ?? ''}"
+              data-cso-latest-wpm="${submission?.wpm ?? ''}">
 
               <div class="weekbox">
   <span>${assignment.audience_type === "targeted" ? (activeLanguage === "ja" ? "個別" : "SELF") : (activeLanguage === "ja" ? "課題" : "NO.")}</span>
@@ -3563,14 +3411,12 @@ function renderAssignmentList(
 
 
                 ${
-                  submission
+                  passState.accuracy !== null
 
                     ? `
                       <strong>
 
-                        ${pct(
-                          submission.accuracy
-                        )}
+                        ${passState.accuracy}%
 
                       </strong>
 

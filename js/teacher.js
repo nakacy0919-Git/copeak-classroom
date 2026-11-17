@@ -2,7 +2,7 @@ import { reviewDeliveryUrl } from './launch-safety.js';
 import { buildTeacherPracticeUrl } from './teacher-reading-practice.mjs?v=20261117-focus';
 import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
-import { manualMetricOverride } from './manual-score-precedence.mjs';
+import { bestMetricMap, effectiveMetric, countAttempts } from './shared-gradebook.mjs?v=20261117';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
 import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
@@ -377,83 +377,14 @@ function latestMap(
 // Accuracy最高記録
 // ==========================================
 
-function bestSubmissionMap(
-  rows
-) {
-
-  const map =
-    new Map();
-
-
-  rows.forEach(
-    row => {
-
-      const key =
-        `${row.student_id}|${row.assignment_id}`;
-
-
-      const current =
-        map.get(
-          key
-        );
-
-
-      if (
-        !current ||
-        Number(
-          row.accuracy || 0
-        ) >
-        Number(
-          current.accuracy || 0
-        )
-      ) {
-
-        map.set(
-          key,
-          row
-        );
-      }
-    }
-  );
-
-
-  return map;
-}
-
+function bestSubmissionMap(rows) { return bestMetricMap(rows, "accuracy"); }
 
 // ==========================================
 // ATTEMPT COUNT
 // 音読回数
 // ==========================================
 
-function attemptCountMap(
-  rows
-) {
-
-  const map =
-    new Map();
-
-
-  rows.forEach(
-    row => {
-
-      const key =
-        `${row.student_id}|${row.assignment_id}`;
-
-
-      map.set(
-        key,
-        (
-          map.get(key) ||
-          0
-        ) + 1
-      );
-    }
-  );
-
-
-  return map;
-}
+function attemptCountMap(rows) { return countAttempts(rows); }
 
 // ==========================================
 // PUBLISHED ASSIGNMENTS
@@ -751,26 +682,8 @@ function renderSummary() {
             best.get(key);
 
 
-          if (
-            manualRow?.score !== null &&
-            manualRow?.score !== undefined
-          ) {
-
-            values.push(
-              Number(
-                manualRow.score
-              )
-            );
-
-          } else if (result) {
-
-            values.push(
-              Number(
-                result.accuracy ||
-                0
-              )
-            );
-          }
+          const accuracy = effectiveMetric(manualRow, result, 'accuracy');
+          if (accuracy !== null) values.push(accuracy);
 
         }
       );
@@ -812,103 +725,9 @@ function renderSummary() {
       : '—';
 }
 
-function bestWpmSubmissionMap(
-  rows
-) {
+function bestWpmSubmissionMap(rows) { return bestMetricMap(rows, "wpm"); }
 
-  const map =
-    new Map();
-
-
-  rows.forEach(
-    row => {
-
-      const key =
-        `${row.student_id}|${row.assignment_id}`;
-
-      const current =
-        map.get(key);
-
-
-      if (
-        !current ||
-        Number(
-          row.wpm ||
-          0
-        ) >
-        Number(
-          current.wpm ||
-          0
-        )
-      ) {
-
-        map.set(
-          key,
-          row
-        );
-      }
-
-    }
-  );
-
-
-  return map;
-}
-
-
-function bestComprehensionSubmissionMap(
-  rows
-) {
-
-  const map =
-    new Map();
-
-
-  rows.forEach(
-    row => {
-
-      if (row.score_version !== 'wcpm-v1') return;
-      if (
-        row.comprehension ===
-          null ||
-        row.comprehension ===
-          undefined
-      ) {
-        return;
-      }
-
-
-      const key =
-        `${row.student_id}|${row.assignment_id}`;
-
-      const current =
-        map.get(key);
-
-
-      if (
-        !current ||
-        Number(
-          row.comprehension
-        ) >
-        Number(
-          current.comprehension ||
-          0
-        )
-      ) {
-
-        map.set(
-          key,
-          row
-        );
-      }
-
-    }
-  );
-
-
-  return map;
-}
-
+function bestComprehensionSubmissionMap(rows) { return bestMetricMap(rows, "comprehension"); }
 
 function gradebookMetricLabel(
   metric
@@ -1150,9 +969,7 @@ const select = $('#gradebookMetricMode');
 }
 
 
-function metricManualValue(manualRow, metric, automaticRow = null) {
-  return manualMetricOverride(manualRow, automaticRow, metric);
-}
+
 
 
 function csvEscape(
@@ -1269,58 +1086,9 @@ const key = `${student.id}|${assignment.id}`;
               bestComp.get(key);
 
 
-            const manualAccuracy =
-              metricManualValue(manualRow, 'accuracy', accuracyResult);
-
-
-            const manualWpm =
-              metricManualValue(manualRow, 'wpm', wpmResult);
-
-
-            const manualComp =
-              metricManualValue(manualRow, 'comprehension', compResult);
-
-
-            const accuracy =
-              manualAccuracy ??
-              (
-                accuracyResult
-                  ? Math.round(
-                      Number(
-                        accuracyResult.accuracy ||
-                        0
-                      )
-                    )
-                  : ''
-              );
-
-
-            const wpm =
-              manualWpm ??
-              (
-                wpmResult
-                  ? Math.round(
-                      Number(
-                        wpmResult.wpm ||
-                        0
-                      )
-                    )
-                  : ''
-              );
-
-
-            const comprehension =
-              manualComp ??
-              (
-                compResult
-                  ? Math.round(
-                      Number(
-                        compResult.comprehension ||
-                        0
-                      )
-                    )
-                  : ''
-              );
+            const accuracy = effectiveMetric(manualRow, accuracyResult, 'accuracy') ?? '';
+            const wpm = effectiveMetric(manualRow, wpmResult, 'wpm') ?? '';
+            const comprehension = effectiveMetric(manualRow, compResult, 'comprehension') ?? '';
 
 
             const passResultCsv =
@@ -1544,58 +1312,9 @@ const key = `${student.id}|${assignment.id}`;
                     bestComp.get(key);
 
 
-                  const manualA =
-                    metricManualValue(manualRow, 'accuracy', aResult);
-
-
-                  const manualW =
-                    metricManualValue(manualRow, 'wpm', wResult);
-
-
-                  const manualC =
-                    metricManualValue(manualRow, 'comprehension', cResult);
-
-
-                  const accuracy =
-                    manualA ??
-                    (
-                      aResult
-                        ? Math.round(
-                            Number(
-                              aResult.accuracy ||
-                              0
-                            )
-                          )
-                        : null
-                    );
-
-
-                  const wpm =
-                    manualW ??
-                    (
-                      wResult
-                        ? Math.round(
-                            Number(
-                              wResult.wpm ||
-                              0
-                            )
-                          )
-                        : null
-                    );
-
-
-                  const comprehension =
-                    manualC ??
-                    (
-                      cResult
-                        ? Math.round(
-                            Number(
-                              cResult.comprehension ||
-                              0
-                            )
-                          )
-                        : null
-                    );
+                  const accuracy = effectiveMetric(manualRow, aResult, 'accuracy');
+                  const wpm = effectiveMetric(manualRow, wResult, 'wpm');
+                  const comprehension = effectiveMetric(manualRow, cResult, 'comprehension');
 
 
                   const reads =
