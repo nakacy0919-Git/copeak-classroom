@@ -262,3 +262,7 @@ body.cso-v3 .student-main{min-width:0}
     margin:5px 0 9px;
   }
 }
+
+/* Same class-local assignment number as the teacher's Assignment card. */
+#csoBoard .cso-tile-text{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+#csoBoard .cso-assignment-number{display:inline-block;color:#14532d;background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:2px 7px;font-size:12px;font-weight:850;line-height:1.25;white-space:nowrap;font-variant-numeric:tabular-nums}

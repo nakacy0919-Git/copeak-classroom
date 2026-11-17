@@ -45,8 +45,13 @@ let activeLanguage =
 window.addEventListener('online', () => {
   if (ctx && !ctx.demo) void flushClassroomDiagnostics(getClient('student'), ctx.user.id);
 });
-window.addEventListener('pageshow', () => {
-  if (ctx && !ctx.demo) void flushClassroomDiagnostics(getClient('student'), ctx.user.id);
+window.addEventListener('pageshow', event => {
+  if (ctx && !ctx.demo) {
+    void flushClassroomDiagnostics(getClient('student'), ctx.user.id);
+    // Safari/back-forward cache restores the previous DOM without running loadLive.
+    // Re-read class metadata and assignments before displaying restored cards.
+    if (event.persisted) void loadLive().then(render).catch(error => console.warn('[Classroom] restore refresh failed', error));
+  }
 });
 function reportFailure(assignmentId, code, error) {
   try {
@@ -2317,7 +2322,7 @@ function renderReadingRankCard() {
       rankAssignments
         .map(
           assignment =>
-            `${assignment.id}:${assignment.week_no}:${assignment.title}`
+            `${assignment.id}:${assignmentLabel(assignment, activeLanguage)}:${assignment.class_display_order ?? ''}:${assignment.title}`
         )
         .join('|')
     ].join('::');
@@ -3432,6 +3437,8 @@ function renderAssignmentList(
             <article
               class="assignment student-assignment-card ${passState.configured ? 'has-pass-criteria' : ''}"
               data-status="${status.key}"
+              data-assignment-label="${escapeHtml(assignmentLabel(assignment, activeLanguage))}"
+              data-assignment-number="${assignmentNumber(assignment) ?? ''}"
               data-cso-accuracy="${submission && Number.isFinite(Number(submission.accuracy)) ? Number(submission.accuracy) : ''}"
               data-cso-wpm="${submission && Number.isFinite(Number(submission.wpm)) ? Number(submission.wpm) : ''}">
 
