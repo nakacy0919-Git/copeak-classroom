@@ -38,6 +38,6 @@
 #csoBoard .cso-health-notice[data-level=warning] .cso-health-action{background:#815009}
 #csoBoard .cso-health-foot{margin:0;font-size:11px;line-height:1.45;color:#526b62}
 #csoBoard .cso-health-loading{grid-column:1/-1;padding:14px;color:#526b62}
-#csoBoard .cso-health-scorestrip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 16px}
+#csoBoard .cso-stats.cso-health-scorestrip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 16px}
 @media(max-width:1050px){#csoBoard .cso-health-counts{grid-template-columns:repeat(2,minmax(0,1fr))}#csoBoard .cso-health-ring{max-width:172px}#csoBoard .cso-health-panel{grid-template-columns:minmax(145px,25%) minmax(0,1fr)}}
 @media(max-width:650px){#csoBoard .cso-health-signal{max-width:none;width:100%;min-width:0;padding:12px}#csoBoard .cso-health-light{width:48px;height:48px}#csoBoard .cso-health-panel{grid-template-columns:minmax(0,1fr);padding:11px;gap:10px}#csoBoard .cso-health-ringcard{flex-direction:row;gap:15px}#csoBoard .cso-health-ring{max-width:138px;padding:9px}#csoBoard .cso-health-count{padding:10px;gap:5px}#csoBoard .cso-health-notice{padding:10px}#csoBoard .cso-health-action{width:100%}}

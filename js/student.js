@@ -2739,8 +2739,8 @@ function render() {
     const state = studentPassState(assignment, passMaps);
     const attempted = map.has(assignment.id) || state.hasScore;
     return {
-      releaseMs: validTime(assignment.release_at),
-      dueMs: validTime(assignment.due_at),
+      releaseMs: assignment.release_at ? validTime(assignment.release_at) : null,
+      dueMs: assignment.due_at ? validTime(assignment.due_at) : null,
       complete: assignmentProgressStatus(state, map.has(assignment.id)).complete,
       passed: state.passed,
       attempted
