@@ -89,7 +89,7 @@ test('signout closes only personal Copeak windows for the current student', asyn
     assignmentId: uuidA, ok: true
   });
   await sent.done;
-  assert.equal(closePersonalIntroWindows(uuidB) >= 0, true); // unrelated earlier sessions may exist
+  assert.equal(closePersonalIntroWindows('55555555-5555-4555-8555-555555555555'), 0);
   assert.equal(closed, false);
   assert.equal(closePersonalIntroWindows(otherStudent), 1);
   assert.equal(closed, true);
