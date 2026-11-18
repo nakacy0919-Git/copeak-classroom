@@ -1,5 +1,12 @@
 -- Personalized Copeak: Self-Introduction templates and private student drafts.
 -- This migration is staged in Git only. Do not apply to production without a separate review.
+-- Existing databases only allow Text and Dialogue. Expand the CHECK atomically.
+alter table public.assignments
+  drop constraint if exists assignments_lesson_type_valid;
+alter table public.assignments
+  add constraint assignments_lesson_type_valid
+  check (lesson_type in ('text', 'dialogue', 'self_intro'));
+
 alter table public.assignments
   add column if not exists lesson_template jsonb;
 
