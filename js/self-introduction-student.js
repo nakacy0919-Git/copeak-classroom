@@ -10,6 +10,27 @@
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
+  const activeEditors = new Set();
+
+  function clearTemporaryDrafts(store = null) {
+    // Explicit logout on a shared device must not leave any student's
+    // unsynced introduction answers in this tab's sessionStorage.
+    for (const dismiss of [...activeEditors]) dismiss();
+    const storage = store || (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
+    if (!storage) return 0;
+    const prefix = 'copeak:selfintro:unsynced:v1:';
+    let cleared = 0;
+    try {
+      for (let i = storage.length - 1; i >= 0; i--) {
+        const key = storage.key(i);
+        if (!key || !key.startsWith(prefix)) continue;
+        storage.removeItem(key);
+        cleared++;
+      }
+    } catch (_error) { /* Browser storage may be disabled. */ }
+    return cleared;
+  }
+
   function keyFor(studentId, assignmentId) {
     // Never use a shared key, class ID alone, or an unauthenticated device identity.
     return 'copeak:selfintro:unsynced:v1:' + studentId + ':' + assignmentId;
@@ -347,8 +368,10 @@
     function dismiss() {
       clearTimeout(timer);
       window.removeEventListener('online', retryWhenOnline);
+      activeEditors.delete(dismiss);
       overlay.remove();
     }
+    activeEditors.add(dismiss);
 
     closeButton.addEventListener('click', () => { void close(); });
     saveButton.addEventListener('click', () => { void flush(); });
@@ -443,6 +466,6 @@
     }
   }
 
-  root.CopeakSelfIntroStudent = { open, isWithinPracticeWindow };
-  if (typeof module !== 'undefined' && module.exports) module.exports = { isWithinPracticeWindow, keyFor, saveVersionedDraft };
+  root.CopeakSelfIntroStudent = { open, isWithinPracticeWindow, clearTemporaryDrafts };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { isWithinPracticeWindow, keyFor, saveVersionedDraft, clearTemporaryDrafts };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
