@@ -56,6 +56,7 @@ end;
 $;
 
 revoke all on function public.touch_student_intro_draft_updated_at() from public, anon;
+grant execute on function public.touch_student_intro_draft_updated_at() to authenticated;
 
 drop trigger if exists set_student_intro_draft_updated_at on public.student_intro_drafts;
 create trigger set_student_intro_draft_updated_at
