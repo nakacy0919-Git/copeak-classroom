@@ -8,6 +8,7 @@ import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mj
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
 import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
+import { LEARNING_NOTICE_MODES, normalizeLearningNoticeMode } from './student-learning-health.mjs?v=20261119-modes';
 import { createTeacherAssignmentCollapseStore, isAssignmentEnded, isAssignmentCollapsed } from './teacher-assignment-collapse.mjs';
 import {
   requireUser,
@@ -2984,6 +2985,8 @@ function render() {
   renderTable();
 
   renderAssignmentManager();
+
+  renderLearningNoticeSettings();
 
   $('#classTitle').textContent =
     selectedClass?.name ||
@@ -10959,6 +10962,73 @@ assignmentManagerRoot?.addEventListener('keydown', event => {
       }
     }
   );
+
+
+/**
+ * Class-specific, teacher-owned guidance settings.
+ * Saves only class metadata; grading/assignment records remain unchanged.
+ */
+function renderLearningNoticeSettings() {
+  const select = $('#teacherLearningNoticeMode');
+  const save = $('#saveTeacherLearningNoticeMode');
+  const description = $('#teacherLearningNoticeDescription');
+  const feedback = $('#teacherLearningNoticeFeedback');
+  if (!select || !save || !description || !feedback) return;
+  const mode = normalizeLearningNoticeMode(selectedClass?.learning_notice_mode);
+  select.value = mode;
+  description.textContent = LEARNING_NOTICE_MODES[mode].description;
+  const canEdit = Boolean(selectedClass && (ctx?.demo || selectedClass.teacher_id === ctx?.user?.id));
+  select.disabled = !canEdit;
+  save.disabled = !canEdit;
+  feedback.textContent = canEdit ? '' : 'このクラスの管理担当の先生のみ変更できます。';
+}
+
+$('#teacherLearningNoticeMode')?.addEventListener('change', event => {
+  const mode = normalizeLearningNoticeMode(event.target.value);
+  $('#teacherLearningNoticeDescription').textContent = LEARNING_NOTICE_MODES[mode].description;
+  $('#teacherLearningNoticeFeedback').textContent =
+    mode === normalizeLearningNoticeMode(selectedClass?.learning_notice_mode)
+      ? '' : '未保存の変更があります。「設定を保存」を押してください。';
+});
+
+$('#saveTeacherLearningNoticeMode')?.addEventListener('click', async event => {
+  const select = $('#teacherLearningNoticeMode');
+  const feedback = $('#teacherLearningNoticeFeedback');
+  const button = event.currentTarget;
+  const classId = selectedClass?.id;
+  if (!classId || !select) return;
+  const mode = normalizeLearningNoticeMode(select.value);
+  if (!ctx?.demo && selectedClass?.teacher_id !== ctx?.user?.id) {
+    feedback.textContent = 'このクラスの管理担当の先生のみ変更できます。';
+    return;
+  }
+  button.disabled = true;
+  feedback.textContent = '保存しています…';
+  try {
+    if (!ctx.demo) {
+      const { data, error } = await getClient('teacher')
+        .from('classes')
+        .update({ learning_notice_mode: mode })
+        .eq('id', classId)
+        .eq('teacher_id', ctx.user.id)
+        .select('id,learning_notice_mode')
+        .single();
+      if (error) throw error;
+      if (data?.id !== classId) throw new Error('クラス設定の保存を確認できませんでした。');
+    }
+    const target = classes.find(item => item.id === classId);
+    if (target) target.learning_notice_mode = mode;
+    if (selectedClass?.id === classId) selectedClass.learning_notice_mode = mode;
+    feedback.textContent = ctx.demo
+      ? 'デモ画面の一時設定です。本番データは変更されません。'
+      : '保存しました。次回の生徒画面の読み込みから反映されます。';
+  } catch (error) {
+    console.error('[Classroom] Learning guidance setting save failed:', error);
+    feedback.textContent = '保存できませんでした。データベース更新の適用状況と操作権限を確認してください。';
+  } finally {
+    button.disabled = false;
+  }
+});
 
 // ==========================================
 // START

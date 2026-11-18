@@ -1,8 +1,9 @@
 /* Student overview only. No assignment tile/card, ranking, or modal styles. */
 #csoBoard .cso-health-signal{--signal-bg:#f0f4f5;--signal-ink:#344e58;display:flex;gap:14px;align-items:center;max-width:62%;min-width:250px;padding:13px 19px;border-radius:20px;color:var(--signal-ink);background:var(--signal-bg);border:1px solid color-mix(in srgb,var(--signal-ink) 15%,transparent);box-shadow:0 6px 20px #123b3310}
 #csoBoard .cso-health-signal[data-level=normal]{--signal-bg:#dff8eb;--signal-ink:#09653f}
-#csoBoard .cso-health-signal[data-level=warning]{--signal-bg:#ffefb7;--signal-ink:#754203}
-#csoBoard .cso-health-signal[data-level=danger]{--signal-bg:#bc2028;--signal-ink:#fff}
+#csoBoard .cso-health-signal[data-level=reminder]{--signal-bg:#e8f4ff;--signal-ink:#235b84}
+#csoBoard .cso-health-signal[data-level=plan]{--signal-bg:#fff3d9;--signal-ink:#73510b}
+#csoBoard .cso-health-signal[data-level=support]{--signal-bg:#e8f1f0;--signal-ink:#285b53}
 #csoBoard .cso-health-light{display:grid;place-items:center;width:58px;height:58px;flex:none;border-radius:50%;background:color-mix(in srgb,var(--signal-ink) 13%,transparent);border:2px solid currentColor}
 #csoBoard .cso-health-signal-text{display:grid;gap:3px;min-width:0}
 #csoBoard .cso-health-signal-text small{font-size:11px;font-weight:800}
@@ -20,22 +21,24 @@
 #csoBoard .cso-health-count{--count-ink:#245d9a;--count-bg:#ecf5ff;display:flex;flex-direction:column;gap:9px;min-width:0;padding:13px 11px;border:1px solid color-mix(in srgb,var(--count-ink) 24%,transparent);border-radius:15px;color:var(--count-ink);background:var(--count-bg)}
 #csoBoard .cso-health-count[data-kind=pass]{--count-ink:#076846;--count-bg:#e7f8ef}
 #csoBoard .cso-health-count[data-kind=incomplete]{--count-ink:#785006;--count-bg:#fff6de}
-#csoBoard .cso-health-count[data-kind=missing]{--count-ink:#a21d36;--count-bg:#fff0f2}
+#csoBoard .cso-health-count[data-kind=missing]{--count-ink:#3f6479;--count-bg:#ecf4f9}
 #csoBoard .cso-health-count-label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:850;overflow-wrap:anywhere}
 #csoBoard .cso-health-count-value{display:flex;align-items:baseline;gap:4px;white-space:nowrap}
 #csoBoard .cso-health-count-value strong{font-size:clamp(26px,3.35vw,40px);font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums}
 #csoBoard .cso-health-count-value span,#csoBoard .cso-health-count small{font-size:11px;font-weight:650}
 #csoBoard .cso-health-count small{line-height:1.4;overflow-wrap:anywhere}
 #csoBoard .cso-health-notice{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;padding:12px 14px;border-radius:13px;background:#edf7f2;color:#175d43}
-#csoBoard .cso-health-notice[data-level=danger]{background:#fff0f0;color:#a21926}
-#csoBoard .cso-health-notice[data-level=warning]{background:#fff4db;color:#754203}
+#csoBoard .cso-health-notice[data-level=reminder]{background:#eff7ff;color:#2a5b81}
+#csoBoard .cso-health-notice[data-level=plan]{background:#fff4df;color:#755618}
+#csoBoard .cso-health-notice[data-level=support]{background:#edf5f3;color:#315e55}
 #csoBoard .cso-health-notice[data-level=neutral]{background:#f2f5f6;color:#405761}
 #csoBoard .cso-health-notice-copy{flex:1;min-width:100px;display:flex;flex-direction:column;gap:2px}
 #csoBoard .cso-health-notice-copy strong{font-size:15px;line-height:1.45;font-weight:850}
 #csoBoard .cso-health-notice-copy small{font-size:12px;line-height:1.5}
 #csoBoard .cso-health-action{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:43px;border:0;border-radius:10px;padding:9px 12px;background:#087a52;color:#fff;font-size:12px;font-weight:800;white-space:nowrap}
-#csoBoard .cso-health-notice[data-level=danger] .cso-health-action{background:#b91d28}
-#csoBoard .cso-health-notice[data-level=warning] .cso-health-action{background:#815009}
+#csoBoard .cso-health-notice[data-level=reminder] .cso-health-action{background:#28658e}
+#csoBoard .cso-health-notice[data-level=plan] .cso-health-action{background:#80651b}
+#csoBoard .cso-health-notice[data-level=support] .cso-health-action{background:#35685d}
 #csoBoard .cso-health-foot{margin:0;font-size:11px;line-height:1.45;color:#526b62}
 #csoBoard .cso-health-loading{grid-column:1/-1;padding:14px;color:#526b62}
 #csoBoard .cso-stats.cso-health-scorestrip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 16px}

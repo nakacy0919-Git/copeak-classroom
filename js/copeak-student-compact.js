@@ -131,7 +131,7 @@
     if(!data){healthStatus.dataset.level='neutral';healthStatus.append(make('strong','','状況を確認中'));healthPanel.append(make('p','cso-health-loading','課題の状況を読み込んでいます。'));return;}
     const level=data.level;
     healthStatus.dataset.level=level;
-    const light=make('span','cso-health-light');light.append(icon(level==='normal'?'check':level==='neutral'?'layers':'alert',30));
+    const light=make('span','cso-health-light');light.append(icon(level==='normal'?'check':level==='neutral'?'layers':level==='support'?'book':'clock',30));
     const statusText=make('div','cso-health-signal-text');statusText.append(make('small','','現在の学習状況'),make('strong','',data.title),make('span','',data.message));
     healthStatus.append(light,statusText);
     const left=make('div','cso-health-ringcard');
@@ -159,17 +159,17 @@
     right.append(counts);
     const notice=make('div','cso-health-notice');notice.dataset.level=level;
     const desc=make('div','cso-health-notice-copy');
-    const message=data.overdue>0?'締切超過 '+data.overdue+'件（未提出 '+data.overdueUnsubmitted+'件）':data.near>0?'48時間以内の未完了 '+data.near+'件':data.total-data.complete>0?'残り '+(data.total-data.complete)+'件。':'次の課題もこの調子で！';
+    const message=data.overdue>0?'締切後の未完了 '+data.overdue+'件（未提出 '+data.overdueUnsubmitted+'件）':data.near>0?'締切が近い課題 '+data.near+'件':data.total-data.complete>0?'残り '+(data.total-data.complete)+'件':'すべて達成！';
     desc.append(make('strong','',message));
-    desc.append(make('small','',data.overdue>0?'締切後の対応は先生に相談し、取り組める課題から始めましょう。':data.total===0?'公開予定の課題は一覧で確認できます。':'期限の近い課題から優先しましょう。'));
-    notice.append(icon(level==='normal'?'check':level==='neutral'?'layers':'alert',24),desc);
+    desc.append(make('small','',data.message));
+    notice.append(icon(level==='normal'?'check':level==='neutral'?'layers':level==='support'?'book':'clock',24),desc);
     if(data.total>data.complete){
       const action=make('button','cso-health-action','未完了の課題を確認');action.type='button';action.append(icon('arrow',16));
       action.addEventListener('click',()=>{main.status='todo';main.source='copeak';main.page=0;const sourceSelect=root.querySelector('#csoSourceSelect');if(sourceSelect)sourceSelect.value='copeak';render();root.querySelector('.cso-task-head')?.scrollIntoView({block:'start',behavior:'auto'});});
       notice.append(action);
     }
     right.append(notice);
-    const foot=make('p','cso-health-foot','公開前 '+data.future+'件は達成率・警告の対象外。PicSpeakはこの集計に含みません。');
+    const foot=make('p','cso-health-foot','公開前 '+data.future+'件は達成率・学習状況表示の対象外。PicSpeakはこの集計に含みません。');
     right.append(foot);healthPanel.append(left,right);
   }
   function chip(name,txt){const c=make('span','cso-chip');c.append(icon(name,15),make('span','',txt));return c;}

@@ -1,0 +1,12 @@
+
+/* Teacher-only class guidance setting; does not affect student pages. */
+.teacher-learning-notice-settings{display:grid;gap:10px;margin:14px 0 20px;padding:18px;border:1px solid #d8e8e0;border-radius:15px;background:#f6fbf8}
+.teacher-learning-notice-settings h3{margin:0 0 4px;font-size:16px;color:#1f4f3d}
+.teacher-learning-notice-settings p{margin:0;font-size:13px;line-height:1.55;color:#51685d}
+.teacher-learning-notice-settings-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.teacher-learning-notice-settings-controls label{font-size:13px;font-weight:750;color:#345247}
+.teacher-learning-notice-settings-controls select{width:min(100%,260px);min-height:40px;background:white}
+.teacher-learning-notice-settings-controls button{min-height:40px}
+.teacher-learning-notice-settings .teacher-learning-notice-description{font-weight:600;color:#38614e}
+.teacher-learning-notice-settings .teacher-learning-notice-feedback{min-height:1.2em;color:#225d47}
+@media(max-width:560px){.teacher-learning-notice-settings-controls{align-items:stretch;flex-direction:column}.teacher-learning-notice-settings-controls select,.teacher-learning-notice-settings-controls button{width:100%}}

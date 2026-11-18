@@ -4,7 +4,7 @@ import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
 import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
 import { assignmentProgressStatus } from './assignment-progress.mjs';
-import { summarizeLearningHealth } from './student-learning-health.mjs?v=20261117';
+import { summarizeLearningHealth } from './student-learning-health.mjs?v=20261119-modes';
 import { bestMetricMap, effectiveMetric, countAttempts, summarizeScores } from './shared-gradebook.mjs?v=20261117';
 import { sortClassAssignments } from './assignment-order.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
@@ -2746,7 +2746,7 @@ function render() {
       attempted
     };
   });
-  const overview = JSON.stringify(summarizeLearningHealth(healthRows));
+  const overview = JSON.stringify(summarizeLearningHealth(healthRows, Date.now(), currentClass?.learning_notice_mode));
   const overviewTarget = $('#assignmentList');
   if (overviewTarget && overviewTarget.dataset.csoLearningHealth !== overview) {
     overviewTarget.dataset.csoLearningHealth = overview;
@@ -5529,24 +5529,20 @@ async function loadLive() {
   // CLASS MEMBERSHIP
   // ========================================
 
-  const {
-    data: members,
-    error: memberError
-  } =
-    await sb
-      .from(
-        'class_members'
-      )
-      .select(
-        'class_id,classes(id,name,school_id)'
-      )
-      .eq(
-        'student_id',
-        ctx.user.id
-      )
-      .limit(
-        1
-      );
+  // New class-level guidance setting; keep older databases readable until
+  // the migration is applied, without masking unrelated membership errors.
+  let { data: members, error: memberError } =
+    await sb.from('class_members')
+      .select('class_id,classes(id,name,school_id,learning_notice_mode)')
+      .eq('student_id', ctx.user.id)
+      .limit(1);
+  if (memberError && /learning_notice_mode/i.test(String(memberError.message || ''))) {
+    ({ data: members, error: memberError } =
+      await sb.from('class_members')
+        .select('class_id,classes(id,name,school_id)')
+        .eq('student_id', ctx.user.id)
+        .limit(1));
+  }
 
 
   if (
