@@ -2046,7 +2046,7 @@
         <div><button type="button" id="selfIntroRecommended" class="btn btn-light">このレベルの推奨項目を適用</button></div>
         <label class="selfintro-field-row">
           <input id="selfIntroStudentChoice" type="checkbox">
-          <span><strong>生徒が表現を選べるようにする</strong><small>将来の生徒入力画面で、教師が選んだ表現候補を提示します。</small></span>
+          <span><strong>生徒が表現を選べるようにする</strong><small>ONの場合のみ、生徒の画面に表現の選択肢が表示されます。</small></span>
         </label>
         <div>
           <label for="selfIntroInstructions">生徒への指示（任意）</label>
@@ -2070,6 +2070,7 @@
       <div class="selfintro-preview-head"><span>Sample Student Preview</span><span id="selfIntroPreviewWords">0 words</span></div>
       <p id="selfIntroPreviewText" class="selfintro-preview-text"></p>
     </div>
+    <p class="tiny muted" style="margin:9px 0 0">生徒ごとに英文が変わるため、固定モデル音声とサンプル英文の和訳は生徒のCopeak起動時に使用しません。</p>
     <div class="selfintro-actions">
       <button type="button" id="selfIntroReset" class="btn btn-light">初期化</button>
       <button type="button" id="selfIntroSaveDraft" class="btn btn-primary">下書きを保存</button>
