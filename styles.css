@@ -6215,6 +6215,22 @@ strong {
 }
 
 
+.grade-best-only-badge {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:5px;
+  padding:3px 8px;
+  border:1px solid #fcd34d;
+  border-radius:999px;
+  background:#fef3c7;
+  color:#92400e;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.01em;
+  white-space:nowrap;
+}
+
 /* Pass criteria ON / OFF */
 
 .assignment-pass-toggle {
