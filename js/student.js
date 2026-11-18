@@ -4489,10 +4489,11 @@ async function openCopeak(assignment, personalizedText = null, preparedPopup = n
   );
 
 
-  url.searchParams.set(
-    'eng',
-    lessonText
-  );
+  // Do not ever place an individually generated introduction into URL parameters.
+  // Unlike shared Text / Dialogue lessons, private text uses the message handshake.
+  if (!isPersonalizedIntroduction) {
+    url.searchParams.set('eng', lessonText);
+  }
 
   const scoreExclusions = globalThis.CopeakScoreExclusions.safeList(assignment.score_exclusions);
   if (scoreExclusions.length) {
@@ -4501,7 +4502,9 @@ async function openCopeak(assignment, personalizedText = null, preparedPopup = n
 
 
   // The teacher's sample translation cannot match each student's personal text.
-  url.searchParams.set('jpn', isPersonalizedIntroduction ? '' : (assignment.lesson_translation || ''));
+  if (!isPersonalizedIntroduction) {
+    url.searchParams.set('jpn', assignment.lesson_translation || '');
+  }
 
 
   url.searchParams.set(
