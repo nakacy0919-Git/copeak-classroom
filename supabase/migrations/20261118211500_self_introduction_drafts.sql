@@ -48,12 +48,12 @@ create index if not exists student_intro_drafts_student_id_idx
 create or replace function public.touch_student_intro_draft_updated_at()
 returns trigger language plpgsql
 set search_path = public
-as $
+as $$
 begin
   new.updated_at := clock_timestamp();
   return new;
 end;
-$;
+$$;
 
 revoke all on function public.touch_student_intro_draft_updated_at() from public, anon;
 grant execute on function public.touch_student_intro_draft_updated_at() to authenticated;
