@@ -9156,6 +9156,7 @@ function useAssignmentOcrAsText() {
 
   $('#assignmentLessonType').value =
     'text';
+  window.CopeakSelfIntro?.syncLessonType();
 
 
   $('#assignmentTextEditor')
@@ -9398,6 +9399,7 @@ function useAssignmentOcrAsDialogue() {
 
   $('#assignmentLessonType').value =
     'dialogue';
+  window.CopeakSelfIntro?.syncLessonType();
 
 
   $('#assignmentTextEditor')
