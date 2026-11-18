@@ -1,8 +1,17 @@
 -- A small, isolated PostgreSQL fixture for the unapplied Self-Introduction migration.
 -- Use a brand-new throwaway database; NEVER run this against the live Supabase project.
 create schema if not exists auth;
-create role authenticated nologin;
-create role anon nologin;
+-- Roles are cluster-global; an earlier CI fixture may already have created them.
+do $
+begin
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+    create role authenticated nologin;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'anon') then
+    create role anon nologin;
+  end if;
+end;
+$;
 grant usage on schema public, auth to authenticated, anon;
 
 create function auth.uid() returns uuid
