@@ -4,7 +4,7 @@ import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { bestMetricMap, effectiveMetric, countAttempts } from './shared-gradebook.mjs?v=20261117';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
-import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
+import { evaluatePassCriteria, buildPassingAttemptMap, bestsMeetTargetsWithoutPass } from './pass-criteria.mjs';
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
 import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
@@ -1382,7 +1382,14 @@ const key = `${student.id}|${assignment.id}`;
                           </div>
                         `
 
-                      : '';
+                      : bestsMeetTargetsWithoutPass(assignment, accuracy, wpm, passResult.passed)
+                        ? `
+                          <div class="grade-best-only-badge"
+                            title="表示しているAccuracyとWPMは別々の最高記録です。1回の音読で両方の合格基準を満たす必要があります。">
+                            同時達成待ち
+                          </div>
+                        `
+                        : '';
 
                   const metricButton =
                     (
