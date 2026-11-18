@@ -124,3 +124,12 @@ test('student logout closes temporary editor and clears backups before authentic
   assert.match(source, /CopeakSelfIntroStudent\?\.clearTemporaryDrafts\?\.\(\)/);
   assert.match(source, /await signOut\(\)/);
 });
+
+
+test('demo shows self-introduction preview but cannot launch without student auth', () => {
+  const { readFileSync } = require('node:fs');
+  const { resolve } = require('node:path');
+  const code = readFileSync(resolve(__dirname, '../js/self-introduction-student.js'), 'utf8');
+  assert.match(code, /start\.disabled = demo \|\| !ready \|\| !canPractice \|\| conflicted/);
+  assert.match(code, /if \(demo\) \{\s*showStatus\('デモでは音読を開始できません/);
+});
