@@ -1,8 +1,23 @@
 -- Check target extension and RLS, using mocked authenticated identities.
 update public.assignments
-set lesson_type = 'self_intro'
+set lesson_type = 'self_intro',
+    lesson_template = '{"version":1,"level":"beginner","fields":["name","hobby"],"expressions":{}}'::jsonb
 where id in ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
              'cccccccc-cccc-4ccc-8ccc-cccccccccccc');
+
+-- Reject malformed published Self-Introduction templates and owner reassignment.
+do $
+declare denied boolean := false;
+begin
+  begin
+    update public.assignments
+    set lesson_template = '{}'::jsonb
+    where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  exception when check_violation then denied := true;
+  end;
+  if not denied then raise exception 'Published assignment accepted malformed template'; end if;
+end;
+$;
 
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
@@ -105,6 +120,20 @@ begin
 end;
 $$;
 reset role;
+
+-- The trigger must reject reassignment even when an admin role bypasses RLS.
+do $
+declare denied boolean := false;
+begin
+  begin
+    update public.student_intro_drafts
+    set student_id = '22222222-2222-4222-8222-222222222222'
+    where assignment_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  exception when check_violation then denied := true;
+  end;
+  if not denied then raise exception 'Student draft owner reassignment was accepted'; end if;
+end;
+$;
 
 set role anon;
 do $$
