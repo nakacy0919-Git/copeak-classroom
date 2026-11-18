@@ -183,7 +183,7 @@
         const text = engine().generateStudentText(cfg, answers, choices);
         $('#introStudentPreview', overlay).textContent = text;
         $('#introStudentWordCount', overlay).textContent = text.trim().split(/\s+/).length + ' words';
-        start.disabled = !ready || !canPractice;
+        start.disabled = !ready || !canPractice || conflicted;
       } catch (error) {
         start.disabled = true;
         showStatus(error.message, true);
@@ -365,7 +365,7 @@
       if (!popup) { showStatus('ポップアップの許可を確認してください。', true); return; }
       start.disabled = true;
       const success = await flush();
-      if (!success || dirty) {
+      if (!success || dirty || conflicted) {
         popup.close();
         showStatus(lastError ? '保存に失敗しました。再試行してください。' : '保存完了後にもう一度お試しください。', true);
         start.disabled = false;
