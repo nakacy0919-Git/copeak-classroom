@@ -46,3 +46,46 @@ test('serialized teacher template contains no generated student values', () => {
   const json = JSON.stringify(builder.normalize(builder.defaultConfig()));
   assert.doesNotMatch(json, /Sakura High School|Yuki|playing basketball/);
 });
+
+test('missing personalized fields never silently use teacher sample data', () => {
+  const cfg = builder.normalize({ fields: ['name', 'school', 'hobby'] });
+  assert.equal(builder.validateAnswers(cfg, { name: 'Mai', school: 'Example School' }).ok, false);
+  assert.throws(() => builder.generateStudentText(cfg, { name: 'Mai', school: 'Example School' }),
+    /趣味/);
+});
+
+test('personalized preview uses exact student answers, not Yuki or sample school', () => {
+  const cfg = builder.normalize({ fields: ['name', 'school', 'goal'] });
+  const result = builder.generateStudentText(cfg, {
+    name: 'Haruka', school: 'Midori Junior High School', goal: 'study medicine'
+  });
+  assert.match(result, /Haruka/);
+  assert.match(result, /Midori Junior High School/);
+  assert.match(result, /study medicine/);
+  assert.doesNotMatch(result, /Yuki|Sakura High School/);
+});
+
+test('expression selection is ignored unless teacher enables it', () => {
+  const params = { fields: ['name', 'hobby'], expressions: { hobby: 'like' }, allowStudentChoice: false };
+  const input = { name: 'Sora', hobby: 'drawing' };
+  assert.match(builder.generateStudentText(params, input, { hobby: 'free' }), /I like drawing\./);
+  assert.match(builder.generateStudentText({ ...params, allowStudentChoice: true }, input, { hobby: 'free' }),
+    /In my free time, I love drawing\./);
+});
+
+test('grade must come from a safe grade list', () => {
+  const cfg = builder.normalize({ fields: ['name', 'grade'] });
+  assert.equal(builder.validateAnswers(cfg, { name: 'Tom', grade: 'Grade 7' }).ok, true);
+  assert.equal(builder.validateAnswers(cfg, { name: 'Tom', grade: 'Grade 13' }).ok, false);
+});
+
+test('reason without hobby is removed automatically', () => {
+  const cfg = builder.normalize({ fields: ['name', 'reason', 'school'] });
+  assert.equal(cfg.fields.includes('reason'), false);
+});
+
+test('student answers strip control characters and enforce short input', () => {
+  const data = builder.cleanAnswers({ name: '  Mi\nka ', hobby: 'h'.repeat(150) });
+  assert.equal(data.name, 'Mi ka');
+  assert.equal(data.hobby.length, 120);
+});
