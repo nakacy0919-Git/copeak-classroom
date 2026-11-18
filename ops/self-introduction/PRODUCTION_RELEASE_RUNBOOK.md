@@ -1,7 +1,7 @@
 # Copeak Classroom Self-Introduction — 本番リリース手順（準備版）
 
 **作成日:** 2026-11-19  
-**状態:** 本番DBの読み取り専用事前点検に合格。**本番移行SQLは未適用・Vercelデプロイも未実施。**  
+**状態:** 本番DBの読み取り専用事前点検とGitHub実CIに合格。**本番移行SQLは未適用・Vercelデプロイも未実施。**  
 **対象の本番Supabase:** `copeak-classroom`（project ref: `sxcbudhcxiblpdzpgfep`）
 
 ## 1. 変更範囲
@@ -23,7 +23,7 @@
 
 ## 3. リリース前の必須ゲート
 
-1. ClassroomとCopeakの現在のQAブランチの全Nodeテストを**実際のGitHub Actions/Node環境で**実行し、成功ログを確認する。過去の模擬テストのみで合格扱いにしない。
+1. **GitHub実CIは合格済み（2026-11-19）**。ClassroomのNode/既存教材/分離PostgreSQL RLSテスト：run 44403129714 SUCCESS。Copeakのプライベート受信テスト：run 44402806643 SUCCESS、iPad音声回帰：run 44402806537 SUCCESS。該当コードを変更したら必ず再実行する。
 2. マイグレーション `supabase/migrations/20261118211500_self_introduction_drafts.sql` をレビューする。最新版にはテンプレート妥当性と保存主キーの変更禁止が含まれる。
 3. Supabase本番プロジェクトの**復旧可能なバックアップ**とPITR/復元方法を管理画面で確認。バックアップ未確認なら移行しない。ダンプを取得する場合は暗号化された管理端末で扱い、GitHubやチャットに貼らない。
 4. 先生・生徒の実在アカウントのデータをSQLテスト用に流用しない。実運用検証には専用のダミーアカウントと未公開の課題を用意する。
@@ -71,7 +71,7 @@
 
 ## 6. 公開可否の判定
 
-本番DBの事前条件は **PASS**。しかし公開可否は **HOLD**（本番DB変更・実ブラウザ実行・実CI・バックアップ復旧確認が未完了）。
+本番DBの事前条件13/13と GitHub実CI（Node＋分離PostgreSQLのRLS確認）は **PASS**。しかし公開可否は **HOLD**（本番DB移行未実施、バックアップ復旧の確認未完了、iPad/Safari実機と生徒2人の限定動作確認が未完了）。
 
 今回の作業はあくまで**本番適用に向けたコードと手順の準備**であり、デプロイ・DB移行・mainマージは含まない。
 
@@ -85,3 +85,9 @@
 - `docs/self-introduction-stage6-qa-report.md` — 第6段階品質チェック
 
 **Vercel:** 両方のリポジトリの `vercel.json` の `git.deploymentEnabled=false` を維持する。
+
+## 8. GitHubレビュー用PR（未マージ）
+
+- Classroom Draft PR: https://github.com/nakacy0919-Git/copeak-classroom/pull/5
+- Copeak Draft PR: https://github.com/nakacy0919-Git/copeak/pull/67
+- **Draft PRは承認前にマージしない。** GitHub Actionsの実行はVercelデプロイとは別であり、Vercelへの自動反映は無効のまま。
