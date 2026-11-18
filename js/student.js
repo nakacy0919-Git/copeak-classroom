@@ -83,7 +83,12 @@ function getDirectSyncLaunchManager() {
   return directSyncLaunchManager;
 }
 
-$('#signOut').onclick = signOut;
+$('#signOut').onclick = async () => {
+  // A shared classroom device must not keep unsent personal answers after logout.
+  // Already saved answers remain available securely through Supabase on next login.
+  window.CopeakSelfIntroStudent?.clearTemporaryDrafts?.();
+  await signOut();
+};
 
 
 // ==========================================
