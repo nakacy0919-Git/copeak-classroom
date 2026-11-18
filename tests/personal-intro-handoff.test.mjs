@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { preparePersonalIntroHandoff } from '../js/personal-intro-handoff.mjs';
+import { preparePersonalIntroHandoff, closePersonalIntroWindows } from '../js/personal-intro-handoff.mjs';
 
 const uuidA = '11111111-1111-4111-8111-111111111111';
 const uuidB = '22222222-2222-4222-8222-222222222222';
@@ -68,4 +68,30 @@ test('personal text must be bounded and all IDs UUIDs', () => {
     studentId: uuidB, nonce: uuidC, text: 'Hi.', eventTarget: target }));
   assert.throws(() => preparePersonalIntroHandoff({ popup, url, assignmentId: uuidA,
     studentId: uuidB, nonce: uuidC, text: 'A'.repeat(6001), eventTarget: target }));
+});
+
+
+test('signout closes only personal Copeak windows for the current student', async () => {
+  const { popup, target, messages } = environment();
+  const otherStudent = '44444444-4444-4444-8444-444444444444';
+  let closed = false;
+  popup.close = () => { closed = true; popup.closed = true; };
+  const sent = preparePersonalIntroHandoff({
+    popup, url, studentId: otherStudent, assignmentId: uuidA, nonce: uuidC,
+    text: 'My private lesson.', eventTarget: target
+  });
+  target.send(popup, origin, {
+    type: 'copeak-classroom-intro-ready', nonce: uuidC,
+    assignmentId: uuidA, studentId: otherStudent
+  });
+  target.send(popup, origin, {
+    type: 'copeak-classroom-intro-ack', nonce: uuidC,
+    assignmentId: uuidA, ok: true
+  });
+  await sent.done;
+  assert.equal(closePersonalIntroWindows(uuidB) >= 0, true); // unrelated earlier sessions may exist
+  assert.equal(closed, false);
+  assert.equal(closePersonalIntroWindows(otherStudent), 1);
+  assert.equal(closed, true);
+  assert.equal(messages.at(-1)[0].type, 'copeak-classroom-intro-end');
 });
