@@ -6530,6 +6530,13 @@ let youtubeClip =
   }
 
 
+  // Every student generates a different passage. A fixed teacher recording
+  // cannot be a valid locked Shadowing model for all Self-Introduction drafts.
+  if (lessonType === 'self_intro' && practiceMode === 'shadowing') {
+    msg.textContent = 'Self-Introductionでは固定MP3と英文が一致しないため、Shadowing固定課題にはできません。Reading・Paced・VanishまたはFreeを選択してください。';
+    return;
+  }
+
   const existingAudio =
     Boolean(
       existingAssignment?.audio_object_key ||
