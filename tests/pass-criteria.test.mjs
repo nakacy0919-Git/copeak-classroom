@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluatePassCriteria, buildPassingAttemptMap } from '../js/pass-criteria.mjs';
+import { evaluatePassCriteria, buildPassingAttemptMap, bestsMeetTargetsWithoutPass } from '../js/pass-criteria.mjs';
 
 const cases = [
   ['old Reading Performance target does not block PASS',
@@ -135,4 +135,34 @@ test('historical passes cannot bleed into other assignments', () => {
   ];
   const results = buildPassingAttemptMap(assignments, [], previous);
   assert.deepEqual([...results.keys()], ['s2|a1']);
+});
+
+test('personal bests can be above both targets while same-reading PASS is still missing', () => {
+  const assignment = { id: 'lesson', pass_enabled: true, pass_accuracy: 80, pass_wpm: 100 };
+  const attempts = [
+    { student_id: 'student', assignment_id: 'lesson', accuracy: 86, wpm: 94 },
+    { student_id: 'student', assignment_id: 'lesson', accuracy: 76, wpm: 110 }
+  ];
+  const passes = buildPassingAttemptMap([assignment], attempts, []);
+  assert.equal(passes.has('student|lesson'), false);
+  assert.equal(bestsMeetTargetsWithoutPass(assignment, 86, 110, false), true);
+});
+
+test('a preserved historical pass never shows as awaiting both targets', () => {
+  const assignment = { id: 'lesson', pass_enabled: true, pass_accuracy: 80, pass_wpm: 100 };
+  const attempts = [
+    { student_id: 'returning', assignment_id: 'lesson', accuracy: 86, wpm: 94 },
+    { student_id: 'returning', assignment_id: 'lesson', accuracy: 76, wpm: 110 }
+  ];
+  const passes = buildPassingAttemptMap([assignment], attempts, [
+    { student_id: 'returning', assignment_id: 'lesson' }
+  ]);
+  assert.equal(passes.get('returning|lesson').legacy_pass, true);
+  assert.equal(bestsMeetTargetsWithoutPass(assignment, 86, 110, true), false);
+});
+
+test('best-score explanation is never displayed as an implied PASS when targets are disabled or missing', () => {
+  assert.equal(bestsMeetTargetsWithoutPass({ pass_enabled: false, pass_accuracy: 80, pass_wpm: 100 }, 90, 120, false), false);
+  assert.equal(bestsMeetTargetsWithoutPass({ pass_enabled: true, pass_accuracy: 80, pass_wpm: 100 }, 79, 120, false), false);
+  assert.equal(bestsMeetTargetsWithoutPass({ pass_enabled: true, pass_accuracy: 80, pass_wpm: 100 }, 90, 99, false), false);
 });
