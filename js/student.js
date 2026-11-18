@@ -3260,6 +3260,12 @@ function renderAssignmentList(
           }
 
 
+          if (assignment.lesson_type === 'self_intro' && !isNotOpen && !isClosed) {
+            actionLabel = activeLanguage === 'ja'
+              ? '自己紹介を作る・練習'
+              : 'Create & Practice Introduction';
+          }
+
           const deadlineLabel =
             deadline.state ===
               'upcoming'
@@ -3477,7 +3483,7 @@ function renderAssignmentList(
                   </button>
 
 
-                  ${assignment.lesson_type === 'self_intro'
+                  ${assignment.lesson_type === 'self_intro' && !isNotOpen
                     ? `<button type="button" class="btn btn-sm btn-light selfintro-edit" data-id="${escapeHtml(assignment.id)}">${activeLanguage === 'ja' ? '自己紹介を編集' : 'Edit Introduction'}</button>`
                     : ''}
 
