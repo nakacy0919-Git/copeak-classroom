@@ -6,7 +6,7 @@ where id in ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
              'cccccccc-cccc-4ccc-8ccc-cccccccccccc');
 
 -- Reject malformed published Self-Introduction templates and owner reassignment.
-do $
+do $$
 declare denied boolean := false;
 begin
   begin
@@ -17,7 +17,7 @@ begin
   end;
   if not denied then raise exception 'Published assignment accepted malformed template'; end if;
 end;
-$;
+$$;
 
 set role authenticated;
 set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
@@ -122,7 +122,7 @@ $$;
 reset role;
 
 -- The trigger must reject reassignment even when an admin role bypasses RLS.
-do $
+do $$
 declare denied boolean := false;
 begin
   begin
@@ -133,7 +133,7 @@ begin
   end;
   if not denied then raise exception 'Student draft owner reassignment was accepted'; end if;
 end;
-$;
+$$;
 
 set role anon;
 do $$
