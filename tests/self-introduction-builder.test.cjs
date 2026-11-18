@@ -89,3 +89,15 @@ test('student answers strip control characters and enforce short input', () => {
   assert.equal(data.name, 'Mi ka');
   assert.equal(data.hobby.length, 120);
 });
+
+
+test('student-supplied HTML delimiters cannot reach the reading passage', () => {
+  const cfg = builder.normalize({ fields: ['name', 'hobby'], allowStudentChoice: true });
+  const input = { name: '<img src=x onerror=alert(1)>Aki', hobby: 'reading <script>alert(1)</script>' };
+  const cleaned = builder.cleanAnswers(input);
+  assert.equal(/[<>]/.test(cleaned.name), false);
+  assert.equal(/[<>]/.test(cleaned.hobby), false);
+  const output = builder.generateStudentText(cfg, input);
+  assert.equal(/[<>]/.test(output), false);
+  assert.match(output, /Aki/);
+});
