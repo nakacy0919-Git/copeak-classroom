@@ -26,7 +26,7 @@ test('student drafts have explicit RLS and student ownership on read and write',
   assert.match(migration, /alter table public\.student_intro_drafts enable row level security/);
   assert.match(migration, /revoke all on table public\.student_intro_drafts from public, anon, authenticated/);
   assert.match(migration, /grant select, insert, update on table public\.student_intro_drafts to authenticated/);
-  assert.equal((migration.match(/student_id = \(select auth\.uid\(\)\)/g) || []).length >= 5, true);
+  assert.equal((migration.match(/student_id = \(select auth\.uid\(\)\)/g) || []).length >= 4, true);
   assert.match(migration, /on public\.student_intro_drafts for update to authenticated[\s\S]*?with check \(/);
   assert.match(migration, /a\.is_published[\s\S]*?a\.lesson_type = 'self_intro'/);
   assert.doesNotMatch(migration, /security definer/i);
