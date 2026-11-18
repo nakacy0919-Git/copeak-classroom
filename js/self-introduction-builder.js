@@ -173,13 +173,13 @@
     }
   }
 
-  function restore(classId = 'default') {
+  function restore(classId = 'default', assignmentTemplate = null) {
     classKey = String(classId || 'default');
     let saved;
     try {
       saved = JSON.parse(window.localStorage.getItem(draftPrefix + classKey) || 'null');
     } catch (_error) { saved = null; }
-    model = normalize(saved);
+    model = normalize(assignmentTemplate && typeof assignmentTemplate === 'object' ? assignmentTemplate : saved);
     activeTab = 'basics';
     activeExpression = 'name';
     if (mounted) {
