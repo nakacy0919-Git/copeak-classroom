@@ -9,7 +9,7 @@ import { bestMetricMap, effectiveMetric, countAttempts, summarizeScores } from '
 import { sortClassAssignments } from './assignment-order.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
-import { preparePersonalIntroHandoff } from './personal-intro-handoff.mjs';
+import { preparePersonalIntroHandoff, closePersonalIntroWindows } from './personal-intro-handoff.mjs';
 import {
   requireUser,
   getClient,
@@ -87,6 +87,7 @@ $('#signOut').onclick = async () => {
   // A shared classroom device must not keep unsent personal answers after logout.
   // Already saved answers remain available securely through Supabase on next login.
   window.CopeakSelfIntroStudent?.clearTemporaryDrafts?.();
+  closePersonalIntroWindows(ctx?.user?.id || null);
   await signOut();
 };
 
