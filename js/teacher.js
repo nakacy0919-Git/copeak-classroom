@@ -4949,6 +4949,12 @@ function updateAssignmentDeliveryStatus() {
   const stats = $('#assignmentDeliveryStats');
 
   if (!status || !stats) return;
+  if ($('#assignmentLessonType')?.value === 'self_intro') {
+    stats.textContent = 'Self-Introduction · 教員用テンプレートの下書き';
+    status.textContent = '生徒への配布と個別英文の生成は、次の開発段階で接続します。';
+    status.style.color = '#475569';
+    return;
+  }
 
   try {
     const d = previewAssignmentDelivery();
@@ -5174,6 +5180,8 @@ function openAssignmentEditor(
     assignment?.lesson_text ||
     '';
   window.CopeakFocus.restore('assignmentText', editorIsDialogue ? [] : window.CopeakFocus.fromUrl(assignment?.copeak_url || '', ($('#assignmentText')?.value || '').trim()));
+  window.CopeakSelfIntro?.restore(selectedClass?.id);
+  window.CopeakSelfIntro?.syncLessonType();
   $('#assignmentScoreExclusions').value =
     Array.isArray(assignment?.score_exclusions)
       ? assignment.score_exclusions.join('\n')
@@ -6334,6 +6342,10 @@ async function removeAssignmentAudio() {
 async function saveAssignment() {
 
   if (!selectedClass) {
+    return;
+  }
+  if ($('#assignmentLessonType')?.value === 'self_intro') {
+    $('#assignmentMsg').textContent = 'Self-Introductionは現在、先生用テンプレートの下書き段階です。中央の「下書きを保存」をご利用ください。生徒配布はまだできません。';
     return;
   }
 
@@ -10585,28 +10597,16 @@ $('#suggestAssignmentScoreExclusions').onclick = () => {
   $('#assignmentMsg').textContent = '候補を入力しました。内容を確認してください。';
 };
 
-$('#assignmentLessonType').onchange =
-  () => {
+$('#assignmentLessonType').onchange = () => {
+  const lessonType = $('#assignmentLessonType').value;
+  $('#assignmentTextEditor').classList.toggle('hidden', lessonType !== 'text');
+  $('#assignmentDialogueEditor').classList.toggle('hidden', lessonType !== 'dialogue');
+  window.CopeakSelfIntro?.syncLessonType();
+  updateAssignmentDeliveryStatus();
+};
 
-    const isDialogue =
-      $('#assignmentLessonType').value ===
-      'dialogue';
-
-    $('#assignmentTextEditor')
-      .classList
-      .toggle(
-        'hidden',
-        isDialogue
-      );
-
-    $('#assignmentDialogueEditor')
-      .classList
-      .toggle(
-        'hidden',
-        !isDialogue
-      );
-
-  };
+// Shared teacher builder stays isolated from legacy Text and Dialogue.
+window.CopeakSelfIntro?.mount();
 
 $('#addAssignmentDialogueLine').onclick =
   () => {
