@@ -43,6 +43,25 @@ create table if not exists public.student_intro_drafts (
 create index if not exists student_intro_drafts_student_id_idx
   on public.student_intro_drafts(student_id, updated_at desc);
 
+-- Server-managed revision timestamp for optimistic concurrency.
+-- Prevents stale browser tabs from silently replacing a newer student draft.
+create or replace function public.touch_student_intro_draft_updated_at()
+returns trigger language plpgsql
+set search_path = public
+as $
+begin
+  new.updated_at := clock_timestamp();
+  return new;
+end;
+$;
+
+revoke all on function public.touch_student_intro_draft_updated_at() from public, anon;
+
+drop trigger if exists set_student_intro_draft_updated_at on public.student_intro_drafts;
+create trigger set_student_intro_draft_updated_at
+before insert or update on public.student_intro_drafts
+for each row execute function public.touch_student_intro_draft_updated_at();
+
 alter table public.student_intro_drafts enable row level security;
 
 revoke all on table public.student_intro_drafts from public, anon, authenticated;
