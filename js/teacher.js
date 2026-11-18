@@ -4950,8 +4950,8 @@ function updateAssignmentDeliveryStatus() {
 
   if (!status || !stats) return;
   if ($('#assignmentLessonType')?.value === 'self_intro') {
-    stats.textContent = 'Self-Introduction · 教員用テンプレートの下書き';
-    status.textContent = '生徒への配布と個別英文の生成は、次の開発段階で接続します。';
+    stats.textContent = 'Self-Introduction · 個別英文を作成';
+    status.textContent = '設定を保存すると、生徒が入力した情報から自分専用の英文が作成されます。';
     status.style.color = '#475569';
     return;
   }
@@ -5144,11 +5144,8 @@ function openAssignmentEditor(
 
   updateAssignmentPracticeModeState();
 
-  const editorLessonType =
-    assignment?.lesson_type ===
-      'dialogue'
-      ? 'dialogue'
-      : 'text';
+  const editorLessonType = ['text','dialogue','self_intro'].includes(assignment?.lesson_type)
+    ? assignment.lesson_type : 'text';
 
   $('#assignmentLessonType').value =
     editorLessonType;
@@ -5180,7 +5177,7 @@ function openAssignmentEditor(
     assignment?.lesson_text ||
     '';
   window.CopeakFocus.restore('assignmentText', editorIsDialogue ? [] : window.CopeakFocus.fromUrl(assignment?.copeak_url || '', ($('#assignmentText')?.value || '').trim()));
-  window.CopeakSelfIntro?.restore(selectedClass?.id);
+  window.CopeakSelfIntro?.restore(selectedClass?.id, assignment?.lesson_template || null);
   window.CopeakSelfIntro?.syncLessonType();
   $('#assignmentScoreExclusions').value =
     Array.isArray(assignment?.score_exclusions)
@@ -6344,10 +6341,7 @@ async function saveAssignment() {
   if (!selectedClass) {
     return;
   }
-  if ($('#assignmentLessonType')?.value === 'self_intro') {
-    $('#assignmentMsg').textContent = 'Self-Introductionは現在、先生用テンプレートの下書き段階です。中央の「下書きを保存」をご利用ください。生徒配布はまだできません。';
-    return;
-  }
+  // Self-Introduction uses the existing assignment distribution workflow.
 
 
   const existingAssignment =
@@ -6381,11 +6375,15 @@ const week =
       .trim();
 
 
-  const lessonType =
-    $('#assignmentLessonType').value ===
-      'dialogue'
-      ? 'dialogue'
-      : 'text';
+  const selectedLessonType = $('#assignmentLessonType').value;
+  const lessonType = ['text','dialogue','self_intro'].includes(selectedLessonType)
+    ? selectedLessonType : 'text';
+  const introTemplate = lessonType === 'self_intro'
+    ? window.CopeakSelfIntro?.getConfig() : null;
+  if (lessonType === 'self_intro' && !window.CopeakSelfIntro?.validate(introTemplate)?.ok) {
+    $('#assignmentMsg').textContent = '自己紹介の項目を2つ以上選択してください。';
+    return;
+  }
 
 
   const lessonDialogue =
@@ -6394,20 +6392,11 @@ const week =
       : [];
 
 
-  const lessonText =
-    lessonType === 'dialogue'
-
-      ? lessonDialogue
-          .map(
-            item =>
-              item.text
-          )
-          .filter(Boolean)
-          .join('\n')
-
-      : $('#assignmentText')
-          .value
-          .trim();
+  const lessonText = lessonType === 'self_intro'
+    ? window.CopeakSelfIntro.generatePreview(introTemplate)
+    : lessonType === 'dialogue'
+      ? lessonDialogue.map(item => item.text).filter(Boolean).join('\n')
+      : $('#assignmentText').value.trim();
 
   let scoreExclusions;
   try {
@@ -7005,6 +6994,7 @@ release_at:
         : null,
     lesson_text:
       lessonText,
+    lesson_template: introTemplate,
     copeak_url: window.CopeakFocus.withUrl(existingAssignment?.copeak_url, window.COPEAK_CONFIG.copeakBaseUrl, lessonType === 'text' ? window.CopeakFocus.get('assignmentText', lessonText) : [], lessonText),
 
     score_exclusions:
@@ -7705,6 +7695,8 @@ release_at:
 
         lesson_text:
           assignment.lesson_text,
+        lesson_template:
+          assignment.lesson_type === 'self_intro' ? assignment.lesson_template || null : null,
 
         score_exclusions:
           globalThis.CopeakScoreExclusions.safeList(assignment.score_exclusions),
