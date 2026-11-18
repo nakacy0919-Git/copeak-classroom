@@ -5,6 +5,7 @@
 - Student-specific Self-Introduction input uses `student_intro_drafts` in Supabase as designed in Stages 2-3 (migration still unapplied in production).
 - Unsynced form answers are temporarily backed up in `sessionStorage` per authenticated student + assignment.
 - On explicit student logout, `CopeakSelfIntroStudent.clearTemporaryDrafts()` closes the active input sheet, removes pending retry handlers, and clears all `copeak:selfintro:unsynced:v1:*` keys from this tab's temporary store.
+- The Classroom sender tracks only popups opened for private introductions and attempts to close those popups on explicit logout. A verified `copeak-classroom-intro-end` message is also sent as a fallback when direct popup closing is restricted. Ordinary Text and Dialogue tabs are left alone.
 - Previously saved answers remain in Supabase and remain editable by the authenticated student on their next sign-in.
 - When a student is not signed out but another user inherits the same browser session, application-level browser storage is **not** a secure account boundary. School shared devices should use different browser profiles or clear site data between users.
 
