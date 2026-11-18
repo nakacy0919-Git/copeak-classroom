@@ -99,7 +99,9 @@
         ? '<select id="intro-input-' + id + '" data-answer="' + id + '"><option value="">学年を選択</option>' +
           Array.from({ length: 12 }, (_, index) => {
             const name = 'Grade ' + (index + 1);
-            return '<option value="' + name + '">' + name + '</option>';
+            const n = index + 1;
+            const label = n <= 6 ? '小' + n : n <= 9 ? '中' + (n - 6) : '高' + (n - 9);
+            return '<option value="' + name + '">' + name + '（' + label + '）</option>';
           }).join('') + '</select>'
         : '<input id="intro-input-' + id + '" data-answer="' + id + '" ' +
           (field.id === 'age' ? 'type="number" min="1" max="120" inputmode="numeric"' : 'type="text"') +
