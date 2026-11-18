@@ -3,6 +3,37 @@
  * Only public class/assignment metadata enters the URL. The student's writing
  * is sent in memory to a trusted Copeak window after a verified ready signal.
  */
+// Keep only windows opened for private introductions. Ordinary Copeak tabs
+// are deliberately excluded, even when they share the same destination domain.
+const privateWindows = new Map();
+
+export function closePersonalIntroWindows(studentId = null) {
+  let closed = 0;
+  for (const [popup, session] of privateWindows) {
+    if (studentId && session.studentId !== studentId) continue;
+    privateWindows.delete(popup);
+    try {
+      if (popup && !popup.closed) {
+        popup.postMessage({
+          type: 'copeak-classroom-intro-end',
+          assignmentId: session.assignmentId,
+          studentId: session.studentId,
+          nonce: session.nonce
+        }, session.targetOrigin);
+        // Popups opened by window.open can normally be closed by their opener.
+        // Copeak also listens for the message as a fallback if close is blocked.
+        if (typeof popup.close === 'function') popup.close();
+        closed += 1;
+      }
+    } catch (_error) { /* Browser may forbid window close; Copeak has the message fallback. */ }
+  }
+  return closed;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => closePersonalIntroWindows());
+}
+
 export function preparePersonalIntroHandoff({
   popup, url, assignmentId, studentId, nonce, text,
   eventTarget = window, timeoutMs = 60000
@@ -15,6 +46,7 @@ export function preparePersonalIntroHandoff({
       !text.trim() || text.length > 6000) {
     throw new Error('安全な自己紹介の受け渡しに必要な情報が不足しています。');
   }
+  privateWindows.set(popup, { targetOrigin, assignmentId, studentId, nonce });
   let settled = false;
   let receivedReady = false;
   let timer = null;
@@ -29,6 +61,7 @@ export function preparePersonalIntroHandoff({
     settled = true;
     if (timer !== null) clearTimeout(timer);
     eventTarget.removeEventListener('message', onMessage);
+    if (error) privateWindows.delete(popup);
     if (error) rejectPromise(error);
     else resolvePromise();
   }
