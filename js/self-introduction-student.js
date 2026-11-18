@@ -40,6 +40,38 @@
       && release < deadline && release <= now && now < deadline;
   }
 
+  function conflictError() {
+    const error = new Error('REMOTE_CONFLICT');
+    error.kind = 'conflict';
+    return error;
+  }
+
+  // Pure persistence boundary: compare a server-managed updated_at before UPDATE.
+  // Unit tests can supply a fake Supabase client without using student DOM.
+  async function saveVersionedDraft({ client, assignmentId, studentId, answers, expressionChoices, expectedVersion }) {
+    if (!client || !assignmentId || !studentId) throw new Error('保存先が不明です。');
+    let result;
+    if (expectedVersion) {
+      result = await client.from('student_intro_drafts')
+        .update({ answers, expression_choices: expressionChoices })
+        .eq('assignment_id', assignmentId)
+        .eq('student_id', studentId)
+        .eq('updated_at', expectedVersion)
+        .select('updated_at').maybeSingle();
+      if (!result.error && !result.data) throw conflictError();
+    } else {
+      result = await client.from('student_intro_drafts')
+        .insert({ assignment_id: assignmentId, student_id: studentId, answers, expression_choices: expressionChoices })
+        .select('updated_at').single();
+    }
+    if (result.error) {
+      if (result.error.code === '23505') throw conflictError();
+      throw result.error;
+    }
+    if (!result.data?.updated_at) throw new Error('保存時刻を確認できませんでした。');
+    return result.data.updated_at;
+  }
+
   async function open({ assignment, studentId, client, launch, demo = false }) {
     if (!assignment || !studentId || typeof launch !== 'function' || !engine()) {
       throw new Error('Self-Introductionを開始するための情報が不足しています。');
@@ -214,37 +246,12 @@
         expression_choices: cfg.allowStudentChoice ? { ...choices } : {}
       };
       showStatus('保存中…');
-      saving = (async () => {
-        if (demo) return null;
-        let result;
-        if (remoteVersion) {
-          result = await client.from('student_intro_drafts')
-            .update({ answers: payload.answers, expression_choices: payload.expression_choices })
-            .eq('assignment_id', assignment.id)
-            .eq('student_id', studentId)
-            .eq('updated_at', remoteVersion)
-            .select('updated_at').maybeSingle();
-          if (!result.error && !result.data) {
-            const conflictError = new Error('REMOTE_CONFLICT');
-            conflictError.kind = 'conflict';
-            throw conflictError;
-          }
-        } else {
-          result = await client.from('student_intro_drafts')
-            .insert(payload)
-            .select('updated_at').single();
-        }
-        if (result.error) {
-          if (result.error.code === '23505') {
-            const conflictError = new Error('REMOTE_CONFLICT');
-            conflictError.kind = 'conflict';
-            throw conflictError;
-          }
-          throw result.error;
-        }
-        if (!result.data?.updated_at) throw new Error('保存時刻を確認できませんでした。');
-        return result.data.updated_at;
-      })();
+      saving = demo ? Promise.resolve(null) : saveVersionedDraft({
+        client, assignmentId: assignment.id, studentId,
+        answers: payload.answers,
+        expressionChoices: payload.expression_choices,
+        expectedVersion: remoteVersion
+      });
       try {
         const updatedVersion = await saving;
         if (!demo) remoteVersion = updatedVersion;
@@ -416,5 +423,5 @@
   }
 
   root.CopeakSelfIntroStudent = { open, isWithinPracticeWindow };
-  if (typeof module !== 'undefined' && module.exports) module.exports = { isWithinPracticeWindow, keyFor };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { isWithinPracticeWindow, keyFor, saveVersionedDraft };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
