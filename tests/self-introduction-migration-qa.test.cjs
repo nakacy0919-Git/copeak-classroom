@@ -45,3 +45,26 @@ test('RLS verification is bound to isolated test database', () => {
   assert.match(verify, /Unassigned student created a draft/);
   assert.match(verify, /Unauthenticated role read student drafts/);
 });
+
+
+test('production requires complete published teacher templates and stable student draft ownership', () => {
+  assert.match(migration, /assignments_published_self_intro_template_valid/);
+  assert.match(migration, /lesson_template->>'version' = '1'/);
+  assert.match(migration, /lesson_template->>'level' in \('beginner', 'intermediate', 'advanced'\)/);
+  assert.match(migration, /new\.assignment_id is distinct from old\.assignment_id/);
+  assert.match(migration, /new\.student_id is distinct from old\.student_id/);
+  assert.match(verify, /Published assignment accepted malformed template/);
+  assert.match(verify, /Student draft owner reassignment was accepted/);
+});
+
+test('teacher cannot publish locked Shadowing based on another students sample audio', () => {
+  const teacher = readFileSync(resolve(root, 'js/teacher.js'), 'utf8');
+  assert.match(teacher, /lessonType === 'self_intro' && practiceMode === 'shadowing'/);
+  assert.match(teacher, /Shadowing固定課題にはできません/);
+});
+
+test('migration keeps safe ownership grants and never grants drafts to anonymous users', () => {
+  assert.match(migration, /revoke all on table public\.student_intro_drafts from public, anon, authenticated/);
+  assert.match(migration, /grant select, insert, update on table public\.student_intro_drafts to authenticated/);
+  assert.doesNotMatch(migration, /grant\s+(?:all|select|update|insert)\s+on table public\.student_intro_drafts to anon/i);
+});
