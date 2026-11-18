@@ -138,7 +138,9 @@
     for (const field of fields) {
       if (field.id === 'closing') continue;
       const value = typeof raw?.[field.id] === 'string' ? raw[field.id] : String(raw?.[field.id] ?? '');
-      result[field.id] = value.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 120);
+      // Copeak also renders lesson words into HTML spans. Never propagate angle
+      // brackets from untrusted student fields into that HTML renderer.
+      result[field.id] = value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/[<>]/g, '').trim().slice(0, 120);
     }
     return result;
   }
