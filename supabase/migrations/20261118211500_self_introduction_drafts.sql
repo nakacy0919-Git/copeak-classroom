@@ -1,5 +1,6 @@
 -- Personalized Copeak: Self-Introduction templates and private student drafts.
--- This migration is staged in Git only. Do not apply to production without a separate review.
+-- Production candidate only. Apply once with migration history after explicit release approval.
+-- This file is forward-compatible with existing Text and Dialogue rows.
 -- Existing databases only allow Text and Dialogue. Expand the CHECK atomically.
 alter table public.assignments
   drop constraint if exists assignments_lesson_type_valid;
@@ -18,6 +19,27 @@ alter table public.assignments
     or (
       jsonb_typeof(lesson_template) = 'object'
       and octet_length(lesson_template::text) <= 12000
+    )
+  );
+
+-- Prevent a published Self-Introduction assignment from missing
+-- a structurally usable teacher template. Leave legacy lessons untouched.
+alter table public.assignments
+  add constraint assignments_published_self_intro_template_valid
+  check (
+    lesson_type <> 'self_intro'
+    or is_published is false
+    or (
+      lesson_template is not null
+      and jsonb_typeof(lesson_template) = 'object'
+      and lesson_template->>'version' = '1'
+      and lesson_template->>'level' in ('beginner', 'intermediate', 'advanced')
+      and jsonb_typeof(lesson_template->'expressions') = 'object'
+      and case
+        when jsonb_typeof(lesson_template->'fields') = 'array'
+          then jsonb_array_length(lesson_template->'fields') between 2 and 12
+        else false
+      end
     )
   );
 
@@ -50,6 +72,14 @@ returns trigger language plpgsql
 set search_path = public
 as $$
 begin
+  if tg_op = 'UPDATE'
+     and (
+       new.assignment_id is distinct from old.assignment_id
+       or new.student_id is distinct from old.student_id
+     ) then
+    raise exception 'Introduction draft ownership and assignment cannot be reassigned'
+      using errcode = '23514';
+  end if;
   new.updated_at := clock_timestamp();
   return new;
 end;
