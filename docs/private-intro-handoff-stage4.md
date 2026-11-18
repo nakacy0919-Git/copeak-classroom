@@ -27,6 +27,8 @@ When a separate release is approved:
 - Personal English text is **not** present in the navigated GET URL; this avoids the earlier direct URL disclosure risk.
 - The URL still contains the existing Classroom `classroom_student` identifier (a UUID), classroom assignment ID and a temporary handshake nonce needed for Direct Sync. Do not call the URL entirely free of student-related metadata.
 - The personal text is still stored locally by Copeak in its **IndexedDB lesson library** to support re-opening and reading practice. Shared devices must not be treated as private merely because URL text was removed. Data-retention/cleanup and separation across student accounts need a distinct review before general release.
+- Private Copeak lessons are explicitly marked, and the existing Quick Share / Classic Share / multiplayer export pathways are blocked for them. The legacy Google Form result payload sends a generic private-text label instead of the student's English text.
+- Personal text is sanitized in both the Classroom generator and Copeak receiver to avoid HTML tag injection into the legacy reading view.
 - Student drafts remain in Supabase and protected by assignment-aware RLS once the staged migration is approved and installed.
 - Avoid providing sensitive information, exact home addresses, or legal full names in student-entered fields.
 
