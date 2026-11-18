@@ -2,7 +2,7 @@ import { reportClassroomDiagnostic, flushClassroomDiagnostics } from './classroo
 import './scoring-exclusions.js';
 import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
-import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
+import { evaluatePassCriteria, buildPassingAttemptMap, bestsMeetTargetsWithoutPass } from './pass-criteria.mjs';
 import { assignmentProgressStatus } from './assignment-progress.mjs';
 import { summarizeLearningHealth } from './student-learning-health.mjs?v=20261117';
 import { bestMetricMap, effectiveMetric, countAttempts, summarizeScores } from './shared-gradebook.mjs?v=20261117';
@@ -1116,10 +1116,13 @@ function studentPassState(assignment, maps) {
   const comprehension = studentEffectiveMetric(manualRow, maps.comprehension.get(assignment.id), 'comprehension');
   const passRecord = maps.passingAttempts.get(`${ctx.user.id}|${assignment.id}`);
   const legacyPassed = Boolean(passRecord?.legacy_pass);
+  const passed = legacyPassed || (base.configured && Boolean(passRecord));
   return {
     configured: base.configured || legacyPassed,
-    passed: legacyPassed || (base.configured && Boolean(passRecord)),
+    passed,
     legacyPassed,
+    // Personal bests are displayed independently, but PASS needs one qualifying reading.
+    bestsOnly: bestsMeetTargetsWithoutPass(assignment, accuracy, wpm, passed),
     hasScore: accuracy !== null || wpm !== null || comprehension !== null,
     accuracy, wpm, comprehension,
     reads: maps.attempts.get(assignment.id) || 0,
@@ -1468,6 +1471,14 @@ function studentPassPanelHtml(
         : (activeLanguage === 'ja' ? '✓ 合格' : '✓ PASS');
   }
 
+  else if (state.bestsOnly) {
+
+    statusText =
+      activeLanguage === 'ja'
+        ? '各項目達成・同時合格待ち'
+        : 'Bests met · Same-reading PASS needed';
+  }
+
   else if (state.hasScore) {
 
     statusText =
@@ -1514,12 +1525,16 @@ function studentPassPanelHtml(
 
                 ? (state.legacyPassed
                     ? '以前の合格は保護されています。この課題は完了済みです。'
+                    : state.bestsOnly
+                    ? 'AccuracyとWPMの最高記録は両方基準以上ですが、別々の音読回です。1回の音読で両方の基準を同時に達成すると合格です。'
                     : state.targets.accuracy !== null && state.targets.wpm !== null
                     ? '表示値はそれぞれの最高記録です。合格には1回の音読でAccuracyとWPMを同時に達成してください。'
                     : '表示値は最高記録です。1回の音読で設定基準を達成すると合格です。')
 
                 : (state.legacyPassed
                     ? 'Your previous PASS is preserved. This assignment is complete.'
+                    : state.bestsOnly
+                    ? 'Both personal bests meet the targets, but not in the same reading. Meet BOTH targets in one reading to PASS.'
                     : state.targets.accuracy !== null && state.targets.wpm !== null
                     ? 'Values are separate personal bests. Meet BOTH targets in one reading to PASS.'
                     : 'Values show personal bests. Meet the target in one reading to PASS.')
@@ -1602,7 +1617,9 @@ function assignmentStatus(
   if (progress.key === 'attempted') {
     return {
       key: 'attempted',
-      label: activeLanguage === 'ja' ? '挑戦済み・未合格' : 'Attempted · Not Yet Passed'
+      label: passState?.bestsOnly
+        ? (activeLanguage === 'ja' ? '各項目達成・同時合格待ち' : 'Bests met · Same reading needed')
+        : (activeLanguage === 'ja' ? '挑戦済み・未合格' : 'Attempted · Not Yet Passed')
     };
   }
 
