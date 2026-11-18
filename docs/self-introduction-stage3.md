@@ -5,6 +5,7 @@
 - Personal introductions use a server-assigned `updated_at` timestamp. Saves compare the last read version before updating; older tabs are blocked from silently overwriting a newer draft.
 - If another tab/device saved a different draft, students keep their entered text and see two explicit choices: **load latest saved text** or **overwrite with current text** (each with confirmation).
 - Unsynced data is backed up in sessionStorage, scoped by student ID and assignment ID, and restored without depending on browser/device clock accuracy.
+- If a draft cannot be loaded because the device is offline, students may continue typing into a local-only draft. A reading launch is blocked until connectivity and remote save are restored.
 - The editor is no longer discarded when a second open is attempted. It also listens for network restoration and retries unsynced changes.
 - Beginner / Intermediate / Advanced now recommend genuinely different Expression Bank phrasing while teachers retain customized choices.
 - An isolated PostgreSQL fixture and RLS assertions were added to the existing pull-request test workflow. The fixture must run only against a throwaway CI database.
