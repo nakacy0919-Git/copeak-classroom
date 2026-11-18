@@ -41,3 +41,18 @@
 @media(max-width:760px){#assignmentManagementList .ta-redesign{gap:12px;padding:13px;grid-template-columns:62px minmax(0,1fr)}#assignmentManagementList .ta-redesign .teacher-assignment-main{padding-left:10px}#assignmentManagementList .ta-redesign .teacher-assignment-meta{font-size:11px}#assignmentManagementList .ta-redesign .teacher-assignment-actions>.btn,#assignmentManagementList .ta-more-trigger{padding:7px 10px;font-size:12px;min-height:40px}#assignmentManagementList .ta-redesign .ta-practice{min-width:0}#assignmentManagementList .ta-redesign .ta-arrow{width:36px;height:40px}}
 @media(max-width:480px){#assignmentManagementList .ta-redesign{grid-template-columns:49px minmax(0,1fr);gap:9px;padding:10px}#assignmentManagementList .ta-redesign .teacher-assignment-main{padding-left:8px}#assignmentManagementList .ta-redesign .teacher-assignment-heading{flex-wrap:wrap;gap:5px}#assignmentManagementList .ta-redesign .ta-heading-copy{flex-basis:100%}#assignmentManagementList .ta-reorder{margin-left:auto}#assignmentManagementList .ta-redesign .teacher-assignment-week strong{font-size:24px}#assignmentManagementList .ta-more-panel{position:static;margin-top:5px;min-width:0;width:100%}#assignmentManagementList .ta-more[open]{flex-basis:100%}#assignmentManagementList .ta-redesign .teacher-assignment-meta>span:not(:first-child){border-left:0;padding-left:0}}
 @media(prefers-reduced-motion:reduce){#assignmentManagementList .ta-redesign{transition:none}}
+
+
+/* Teacher assignment collapse: compact titles stay visible for ended lessons. */
+#assignmentManagementList .teacher-assignment-detail[hidden]{display:none!important}
+#assignmentManagementList .ta-ended-badge{display:inline-flex;align-items:center;padding:2px 9px;border:1px solid #c9d4cd;border-radius:100px;background:#edf1ee;color:#4e6257;font-size:11px;font-weight:800;white-space:nowrap}
+#assignmentManagementList .ta-redesign .ta-collapse-button{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:none;min-width:88px;min-height:41px;padding:5px 10px;color:#1c5b43;background:#eef7f2;border:1px solid #bbd9c9;border-radius:10px;cursor:pointer;font-weight:750}
+#assignmentManagementList .ta-collapse-button:hover{background:#e1f0e7;border-color:#91bba7}
+#assignmentManagementList .ta-collapse-button:focus-visible{outline:2px solid #087b51;outline-offset:3px}
+#assignmentManagementList .ta-collapse-symbol{display:inline-block;font-size:23px;font-weight:700;line-height:1}
+#assignmentManagementList .ta-collapse-text{font-size:12px;white-space:nowrap}
+#assignmentManagementList .ta-redesign.ta-is-collapsed{padding-top:12px;padding-bottom:12px;gap:12px}
+#assignmentManagementList .ta-is-collapsed .teacher-assignment-week{min-height:64px}
+#assignmentManagementList .ta-is-collapsed .teacher-assignment-main{align-self:center}
+@media(max-width:760px){#assignmentManagementList .ta-redesign .ta-collapse-button{min-width:40px;width:40px;min-height:40px;padding:0}#assignmentManagementList .ta-collapse-text{display:none}}
+@media(max-width:480px){#assignmentManagementList .ta-redesign.ta-is-collapsed{padding:10px;gap:9px}#assignmentManagementList .ta-is-collapsed .teacher-assignment-week{min-height:60px}}

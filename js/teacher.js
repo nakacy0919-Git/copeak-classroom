@@ -8,6 +8,7 @@ import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mj
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
 import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
+import { createTeacherAssignmentCollapseStore, isAssignmentEnded, isAssignmentCollapsed } from './teacher-assignment-collapse.mjs';
 import {
   requireUser,
   getClient,
@@ -83,6 +84,11 @@ let gradebookMetricMode = gradebookDefaultMetric;
 let gradebookAudienceMode = 'class';
 
 let editingAssignmentId = null;
+
+// Teacher-only local preference: per-class, per-assignment, never written to Supabase.
+const assignmentCollapseStore = createTeacherAssignmentCollapseStore((() => {
+  try { return window.localStorage; } catch { return null; }
+})());
 
 $('#signOut').onclick =
   signOut;
@@ -483,7 +489,8 @@ function renderAssignmentManager() {
 
 
   const sorted = sortClassAssignments(assignments);
-
+  const collapsePreferences = assignmentCollapseStore.read(selectedClass?.id);
+  const now = Date.now();
 
   root.innerHTML =
     sorted
@@ -546,8 +553,10 @@ function renderAssignmentManager() {
             return '<svg class="ta-icon" aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+icons[name]+'</svg>';
           };
           const aid = esc(assignment.id);
+          const ended = isAssignmentEnded(assignment, now);
+          const collapsed = isAssignmentCollapsed(assignment, collapsePreferences, now);
           return `
-            <article class="teacher-assignment-card ta-redesign">
+            <article class="teacher-assignment-card ta-redesign ${collapsed ? 'ta-is-collapsed' : ''}">
               <div class="teacher-assignment-week">
                 <span>${assignment.audience_type === 'targeted' ? '個別' : 'No.'}</span>
                 <strong class="${assignment.audience_type === 'targeted' ? 'assignment-study-label' : ''}">${assignment.audience_type === 'targeted' ? '自習教材' : (assignmentNumber(assignment) || assignment.week_no)}</strong>
@@ -561,14 +570,19 @@ function renderAssignmentManager() {
                       <span>${actionIcon('calendar')}${assignmentDateTimeLabel(assignment.release_at)} ～ ${assignmentDateTimeLabel(assignment.due_at)}</span>
                       <span>${actionIcon('users')}${submissionCount} 件の提出</span>
                       <span class="assignment-publish-badge ${published ? 'published' : 'draft'}">${published ? '公開中' : '非公開'}</span>
+                      ${ended ? '<span class="ta-ended-badge">終了</span>' : ''}
                     </div>
                   </div>
                   <div class="ta-reorder" role="group" aria-label="課題の表示順">
                     <button type="button" class="btn btn-sm btn-light ta-arrow" aria-label="課題を上へ移動" title="表示順を上へ" data-assignment-action="move-up" data-assignment-id="${aid}" ${index===0||!classOrderSupported?'disabled':''}>${actionIcon('up')}</button>
                     <button type="button" class="btn btn-sm btn-light ta-arrow" aria-label="課題を下へ移動" title="表示順を下へ" data-assignment-action="move-down" data-assignment-id="${aid}" ${index===sorted.length-1||!classOrderSupported?'disabled':''}>${actionIcon('down')}</button>
                   </div>
+                  <button type="button" class="ta-collapse-button" data-assignment-action="collapse" data-assignment-id="${aid}" aria-expanded="${!collapsed}" aria-controls="ta-details-${aid}" aria-label="${collapsed ? '課題を展開' : '課題を折りたたむ'}" title="${collapsed ? '課題を展開' : '課題を折りたたむ'}">
+                    <span class="ta-collapse-symbol" aria-hidden="true">${collapsed ? '+' : '−'}</span><span class="ta-collapse-text">${collapsed ? '展開' : '閉じる'}</span>
+                  </button>
                 </div>
-                <div class="teacher-assignment-excerpt">${esc(excerpt)}</div>
+                <div class="teacher-assignment-detail" id="ta-details-${aid}" ${collapsed ? 'hidden' : ''}>
+                  <div class="teacher-assignment-excerpt">${esc(excerpt)}</div>
                 ${modelAudioWarning ? `<p class="teacher-audio-expiry-warning" role="status">${esc(modelAudioWarning)}</p>` : ''}
                 <div class="teacher-assignment-actions">
                   <button type="button" class="btn btn-sm btn-primary ta-practice" data-assignment-action="practice" data-assignment-id="${aid}" title="先生自身がCopeakで音読・録音・採点します（生徒の成績には送信されません）" ${!lessonText?'disabled':''}>${actionIcon('mic')} 自分で音読</button>
@@ -582,6 +596,7 @@ function renderAssignmentManager() {
                       <button type="button" class="ta-delete" data-assignment-action="delete" data-assignment-id="${aid}" title="課題と提出記録を完全削除">${actionIcon('trash')} 完全削除</button>
                     </div>
                   </details>
+                </div>
                 </div>
               </div>
             </article>
@@ -10850,7 +10865,17 @@ assignmentManagerRoot?.addEventListener('keydown', event => {
 
       try {
 
-        if (action === 'practice') {
+        if (action === 'collapse') {
+          const isCollapsed = isAssignmentCollapsed(
+            assignment, assignmentCollapseStore.read(selectedClass?.id)
+          );
+          assignmentCollapseStore.set(selectedClass?.id, assignment.id, !isCollapsed);
+          renderAssignmentManager();
+          [...assignmentManagerRoot.querySelectorAll('[data-assignment-action="collapse"]')]
+            .find(el => el.dataset.assignmentId === assignment.id)
+            ?.focus({ preventScroll: true });
+
+        } else if (action === 'practice') {
           await openTeacherReadingPractice(assignment);
 
         } else if (action === 'deadline') {
