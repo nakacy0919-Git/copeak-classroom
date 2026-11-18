@@ -75,6 +75,7 @@
     const list = Array.isArray(raw?.fields) ? raw.fields : levelFields[level];
     const selected = new Set(list.filter(id => Object.hasOwn(byId, id)));
     selected.add('name');
+    if (selected.has('reason') && !selected.has('hobby')) selected.delete('reason');
     const expressions = {};
     for (const field of fields) {
       const valid = new Set(field.options.map(option => option[0]));
@@ -137,7 +138,10 @@
     model = normalize(saved);
     activeTab = 'basics';
     activeExpression = 'name';
-    if (mounted) render();
+    if (mounted) {
+      render();
+      $('selfIntroNotice').textContent = '設定を変更したら「下書きを保存」を押してください。生徒への配布はまだ行いません。';
+    }
   }
 
   function render() {
@@ -228,6 +232,8 @@
       if (!id || id === 'name') return;
       const selected = new Set(model.fields);
       if (event.target.checked) selected.add(id); else selected.delete(id);
+      if (id === 'reason' && event.target.checked) selected.add('hobby');
+      if (id === 'hobby' && !event.target.checked) selected.delete('reason');
       model.fields = fields.filter(field => selected.has(field.id)).map(field => field.id);
       render();
     });
