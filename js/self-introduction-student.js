@@ -32,11 +32,12 @@
   }
 
   function isWithinPracticeWindow(assignment) {
+    if (!assignment?.release_at || !assignment?.due_at) return false;
+    const release = Date.parse(assignment.release_at);
+    const deadline = Date.parse(assignment.due_at);
     const now = Date.now();
-    return Number.isFinite(new Date(assignment.release_at).getTime())
-      && Number.isFinite(new Date(assignment.due_at).getTime())
-      && now >= new Date(assignment.release_at).getTime()
-      && now < new Date(assignment.due_at).getTime();
+    return Number.isFinite(release) && Number.isFinite(deadline)
+      && release < deadline && release <= now && now < deadline;
   }
 
   async function open({ assignment, studentId, client, launch, demo = false }) {
