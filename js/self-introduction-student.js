@@ -359,6 +359,10 @@
         showStatus('この課題は現在、練習時間外です。入力内容は保存できます。', true);
         return;
       }
+      if (navigator.onLine === false) {
+        showStatus('オフライン中は音読を開始できません。保存と通信の復旧を確認してください。', true);
+        return;
+      }
       const text = engine().generateStudentText(cfg, answers, choices);
       // Open synchronously in the click gesture for Safari/iPad popup protection.
       const popup = window.open('about:blank', '_blank');
@@ -414,10 +418,27 @@
       // Keep the initially presented question in view.
       form.querySelector('[data-answer]')?.focus({ preventScroll: true });
     } catch (error) {
-      showStatus('入力内容を読み込めませんでした。先生にご確認ください。' +
-        (error.code === '42P01' ? '（DB更新が未適用です）' : ''), true);
-      start.disabled = true;
-      saveButton.disabled = true;
+      const offline = navigator.onLine === false;
+      if (offline) {
+        // Read-only network access may be unavailable in the classroom.
+        // Permit safe local editing, but never start practice before remote save.
+        const backup = readSessionBackup(sessionKey);
+        answers = engine().cleanAnswers(backup?.answers || {});
+        choices = backup?.choices || {};
+        ready = true;
+        dirty = true;
+        revision += 1;
+        saveButton.disabled = false;
+        populate();
+        start.disabled = true;
+        showStatus('現在オフラインです。入力はこのタブに一時保存します。再接続後にサーバーへ保存してください。', true);
+        writeSessionBackup(sessionKey, answers, choices);
+      } else {
+        showStatus('入力内容を読み込めませんでした。先生にご確認ください。' +
+          (error.code === '42P01' ? '（DB更新が未適用です）' : ''), true);
+        start.disabled = true;
+        saveButton.disabled = true;
+      }
       console.warn('[Copeak] Self-Introduction draft unavailable:', error.code || error.message);
     }
   }
