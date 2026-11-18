@@ -4241,6 +4241,7 @@ p {
 
 async function openCopeak(assignment, personalizedText = null, preparedPopup = null) {
   if (!assignment) return;
+  const isPersonalizedIntroduction = assignment.lesson_type === 'self_intro' && personalizedText !== null;
   if (assignment.lesson_type === 'self_intro' && personalizedText === null) {
     try {
       await window.CopeakSelfIntroStudent.open({
@@ -4492,11 +4493,8 @@ async function openCopeak(assignment, personalizedText = null, preparedPopup = n
   }
 
 
-  url.searchParams.set(
-    'jpn',
-    assignment.lesson_translation ||
-    ''
-  );
+  // The teacher's sample translation cannot match each student's personal text.
+  url.searchParams.set('jpn', isPersonalizedIntroduction ? '' : (assignment.lesson_translation || ''));
 
 
   url.searchParams.set(
@@ -4673,7 +4671,9 @@ if (
 
 
   let modelAudioNotice = null;
-  if (assignment.audio_object_key && !audioUrl) {
+  // A fixed teacher MP3 may say a different student's details.
+  // Personalized passages use Copeak's generated voice instead.
+  if (!isPersonalizedIntroduction && assignment.audio_object_key && !audioUrl) {
     const audioState = getAssignmentAudioState(assignment);
 
     // The server intentionally denies expired audio (410). There is no
@@ -4704,7 +4704,7 @@ if (
 
 
   if (
-    audioUrl
+    audioUrl && !isPersonalizedIntroduction
   ) {
 
     url.searchParams.set(
