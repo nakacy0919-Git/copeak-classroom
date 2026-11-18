@@ -150,9 +150,9 @@
     const canPractice = isWithinPracticeWindow(assignment);
     start.disabled = true;
     saveButton.disabled = true;
-    const notice = cfg.instructions
-      ? cfg.instructions
-      : '下の質問に答えると、自分だけの英文ができます。いつでも変更できます。';
+    const notice = demo
+      ? 'デモでは英文の編集・プレビューができます。Copeakでの音読は生徒アカウントでログインしてください。'
+      : (cfg.instructions || '下の質問に答えると、自分だけの英文ができます。いつでも変更できます。');
     $('#introStudentInstruction', overlay).textContent = notice;
 
     const isInputField = id => id !== 'closing';
@@ -204,7 +204,7 @@
         const text = engine().generateStudentText(cfg, answers, choices);
         $('#introStudentPreview', overlay).textContent = text;
         $('#introStudentWordCount', overlay).textContent = text.trim().split(/\s+/).length + ' words';
-        start.disabled = !ready || !canPractice || conflicted;
+        start.disabled = demo || !ready || !canPractice || conflicted;
       } catch (error) {
         start.disabled = true;
         showStatus(error.message, true);
@@ -376,6 +376,10 @@
     closeButton.addEventListener('click', () => { void close(); });
     saveButton.addEventListener('click', () => { void flush(); });
     start.addEventListener('click', async () => {
+      if (demo) {
+        showStatus('デモでは音読を開始できません。生徒アカウントでログインしてください。', true);
+        return;
+      }
       const check = engine().validateAnswers(cfg, answers);
       if (!check.ok) { showStatus(check.message, true); return; }
       if (!canPractice || !isWithinPracticeWindow(assignment)) {
