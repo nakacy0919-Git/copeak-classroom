@@ -114,6 +114,50 @@
     return sentences.join('\n');
   }
 
+  // Student-generated text NEVER substitutes demo data for missing answers.
+  // The teacher preview above intentionally uses sample values; keep these paths separate.
+  function cleanAnswers(raw = {}) {
+    const result = {};
+    for (const field of fields) {
+      if (field.id === 'closing') continue;
+      const value = typeof raw?.[field.id] === 'string' ? raw[field.id] : String(raw?.[field.id] ?? '');
+      result[field.id] = value.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 120);
+    }
+    return result;
+  }
+
+  function validateAnswers(raw, values) {
+    const cfg = normalize(raw);
+    const answers = cleanAnswers(values);
+    const missing = cfg.fields.filter(id => id !== 'closing' && !answers[id]);
+    if (missing.length) return { ok: false, message: byId[missing[0]].label + 'を入力してください。', missing, answers };
+    if (cfg.fields.includes('age') && !/^\d{1,3}$/.test(answers.age)) {
+      return { ok: false, message: '年齢は数字で入力してください。', missing: ['age'], answers };
+    }
+    if (cfg.fields.includes('age') && (Number(answers.age) < 1 || Number(answers.age) > 120)) {
+      return { ok: false, message: '年齢は1〜120の数字で入力してください。', missing: ['age'], answers };
+    }
+    if (cfg.fields.includes('grade') && !/^Grade (?:[1-9]|1[0-2])$/.test(answers.grade)) {
+      return { ok: false, message: '学年をGrade 1〜12から選んでください。', missing: ['grade'], answers };
+    }
+    return { ok: true, message: '', missing: [], answers };
+  }
+
+  function generateStudentText(raw, values, rawChoices = {}) {
+    const cfg = normalize(raw);
+    const validated = validateAnswers(cfg, values);
+    if (!validated.ok) throw new Error(validated.message);
+    const output = [];
+    for (const id of cfg.fields) {
+      const field = byId[id];
+      const requested = cfg.allowStudentChoice ? rawChoices?.[id] : null;
+      const chosenId = field.options.some(opt => opt[0] === requested) ? requested : cfg.expressions[id];
+      const phrase = (field.options.find(opt => opt[0] === chosenId) || field.options[0])[1];
+      output.push(phrase.replace(/\{([a-z]+)\}/g, (_, key) => validated.answers[key] || ''));
+    }
+    return output.join('\n');
+  }
+
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   }
@@ -262,7 +306,7 @@
     syncLessonType();
   }
 
-  const api = { fields, defaultConfig, normalize, validate, generatePreview, mount, restore, syncLessonType, getConfig: () => normalize(model) };
+  const api = { fields, defaultConfig, normalize, validate, generatePreview, cleanAnswers, validateAnswers, generateStudentText, mount, restore, syncLessonType, getConfig: () => normalize(model) };
   root.CopeakSelfIntro = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
