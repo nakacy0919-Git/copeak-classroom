@@ -9,6 +9,7 @@ import { bestMetricMap, effectiveMetric, countAttempts, summarizeScores } from '
 import { sortClassAssignments } from './assignment-order.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
+import { preparePersonalIntroHandoff } from './personal-intro-handoff.mjs';
 import {
   requireUser,
   getClient,
@@ -4735,6 +4736,15 @@ if (
   // NAVIGATE TO COPEAK
   // ========================================
 
+  // Self-Introduction transport: the generated personal text must NEVER be
+  // included in the navigation URL. Metadata and nonce alone remain in the URL.
+  if (isPersonalizedIntroduction) {
+    url.searchParams.delete('eng');
+    url.searchParams.delete('jpn');
+    url.searchParams.set('self_intro_handoff', '1');
+    url.searchParams.set('type', 'self-intro');
+  }
+
   // COPEAK_DELIVERY_SAFETY_V1
   const deliveryCheck = reviewDeliveryUrl(url);
 
@@ -4753,7 +4763,30 @@ if (
     return;
   }
 
-  popup.location.replace(url.toString());
+  let privateHandoff = null;
+  if (isPersonalizedIntroduction) {
+    try {
+      privateHandoff = preparePersonalIntroHandoff({
+        popup,
+        url: url.toString(),
+        assignmentId: assignment.id,
+        studentId: ctx.user.id,
+        nonce: launchNonce,
+        text: lessonText
+      });
+    } catch (error) {
+      popup.close();
+      throw error;
+    }
+  }
+  try {
+    popup.location.replace(url.toString());
+    if (privateHandoff) await privateHandoff.done;
+  } catch (error) {
+    if (!popup.closed) popup.close();
+    if (privateHandoff) privateHandoff.cancel();
+    throw error;
+  }
   if (modelAudioNotice) alert(modelAudioNotice);
 }
 
