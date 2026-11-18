@@ -99,3 +99,28 @@ test('invalid or absent dates never permit practice', () => {
   }
   assert.equal(student.isWithinPracticeWindow({ release_at: future, due_at: past }), false);
 });
+
+
+test('explicit logout clears all private unsynced drafts, not unrelated session data', () => {
+  const data = new Map([
+    [student.keyFor('studentA', 'assignment1'), 'personal A'],
+    [student.keyFor('studentB', 'assignment2'), 'personal B'],
+    ['student-ui-language', 'ja']
+  ]);
+  const storage = {
+    get length() { return data.size; },
+    key(index) { return [...data.keys()][index] || null; },
+    removeItem(key) { data.delete(key); }
+  };
+  const cleared = student.clearTemporaryDrafts(storage);
+  assert.equal(cleared, 2);
+  assert.deepEqual([...data.entries()], [['student-ui-language', 'ja']]);
+});
+
+test('student logout closes temporary editor and clears backups before authentication signout', () => {
+  const { readFileSync } = require('node:fs');
+  const { resolve } = require('node:path');
+  const source = readFileSync(resolve(__dirname, '../js/student.js'), 'utf8');
+  assert.match(source, /CopeakSelfIntroStudent\?\.clearTemporaryDrafts\?\.\(\)/);
+  assert.match(source, /await signOut\(\)/);
+});
