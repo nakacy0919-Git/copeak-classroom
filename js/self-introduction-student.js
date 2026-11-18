@@ -58,9 +58,15 @@
     let timer = null;
     let revision = 0;
     let lastError = '';
+    let remoteVersion = null;
+    let conflicted = false;
 
     // Build an isolated modal so the dashboard refresh never destroys an input field.
-    document.getElementById('selfIntroStudentOverlay')?.remove();
+    const previousEditor = document.getElementById('selfIntroStudentOverlay');
+    if (previousEditor) {
+      previousEditor.querySelector('[data-answer]')?.focus({ preventScroll: true });
+      return;
+    }
     const overlay = document.createElement('div');
     overlay.id = 'selfIntroStudentOverlay';
     overlay.className = 'intro-student-overlay';
@@ -72,6 +78,10 @@
       '<section class="intro-student-preview"><div class="intro-student-preview-heading">' +
       '<strong>My English Introduction</strong><span id="introStudentWordCount">0 words</span></div>' +
       '<p id="introStudentPreview" aria-live="polite"></p></section></div>' +
+      '<section id="introStudentConflict" class="intro-student-conflict" role="alert" hidden>' +
+      '<strong>別の端末で編集された内容があります</strong><p>今入力した文章は残っています。どちらの内容を使うか選んでください。</p>' +
+      '<div><button type="button" id="introStudentLoadLatest">最新の保存内容を表示</button>' +
+      '<button type="button" id="introStudentOverwrite">この入力で上書き</button></div></section>' +
       '<footer class="intro-student-footer"><p role="status" id="introStudentSaveStatus">読み込み中…</p>' +
       '<div class="intro-student-footer-buttons"><button type="button" id="introStudentSave" class="intro-student-secondary">保存</button>' +
       '<button type="button" id="introStudentStart" class="intro-student-primary">Copeakで練習</button></div></footer></section>';
@@ -81,6 +91,9 @@
     const start = $('#introStudentStart', overlay);
     const saveButton = $('#introStudentSave', overlay);
     const closeButton = $('.intro-student-close', overlay);
+    const conflictPanel = $('#introStudentConflict', overlay);
+    const latestButton = $('#introStudentLoadLatest', overlay);
+    const overwriteButton = $('#introStudentOverwrite', overlay);
     const canPractice = isWithinPracticeWindow(assignment);
     start.disabled = true;
     saveButton.disabled = true;
@@ -159,9 +172,13 @@
       revision += 1;
       dirty = true;
       writeSessionBackup(sessionKey, answers, choices);
-      showStatus('入力内容を保存します…');
       refreshPreview();
       clearTimeout(timer);
+      if (conflicted) {
+        showStatus('他の端末との編集競合があります。入力内容は保持しています。', true);
+        return;
+      }
+      showStatus('入力内容を保存します…');
       timer = setTimeout(() => { void flush(); }, 900);
     }
 
@@ -181,10 +198,11 @@
     });
 
     async function flush() {
-      if (!ready) return false;
+      if (!ready || conflicted) return false;
       if (saving) {
-        try { await saving; } catch (_error) { /* Reported below. */ }
+        try { await saving; } catch (_error) { /* First writer reports the error. */ }
         if (!dirty) return true;
+        if (conflicted) return false;
       }
       if (!dirty) return true;
       clearTimeout(timer);
@@ -193,25 +211,49 @@
         assignment_id: assignment.id,
         student_id: studentId,
         answers: engine().cleanAnswers(answers),
-        expression_choices: cfg.allowStudentChoice ? choices : {},
-        updated_at: new Date().toISOString()
+        expression_choices: cfg.allowStudentChoice ? { ...choices } : {}
       };
       showStatus('保存中…');
       saving = (async () => {
-        if (!demo) {
-          const { error } = await client.from('student_intro_drafts').upsert(payload, {
-            onConflict: 'assignment_id,student_id'
-          });
-          if (error) throw error;
+        if (demo) return null;
+        let result;
+        if (remoteVersion) {
+          result = await client.from('student_intro_drafts')
+            .update({ answers: payload.answers, expression_choices: payload.expression_choices })
+            .eq('assignment_id', assignment.id)
+            .eq('student_id', studentId)
+            .eq('updated_at', remoteVersion)
+            .select('updated_at').maybeSingle();
+          if (!result.error && !result.data) {
+            const conflictError = new Error('REMOTE_CONFLICT');
+            conflictError.kind = 'conflict';
+            throw conflictError;
+          }
+        } else {
+          result = await client.from('student_intro_drafts')
+            .insert(payload)
+            .select('updated_at').single();
         }
+        if (result.error) {
+          if (result.error.code === '23505') {
+            const conflictError = new Error('REMOTE_CONFLICT');
+            conflictError.kind = 'conflict';
+            throw conflictError;
+          }
+          throw result.error;
+        }
+        if (!result.data?.updated_at) throw new Error('保存時刻を確認できませんでした。');
+        return result.data.updated_at;
       })();
       try {
-        await saving;
+        const updatedVersion = await saving;
+        if (!demo) remoteVersion = updatedVersion;
         lastError = '';
         if (revision === token) {
           dirty = false;
-          clearSessionBackup(sessionKey);
-          showStatus(demo ? 'デモ内で保存しました。' : '✓ 保存しました。後から再編集できます。');
+          // Demo has no DB; retain the temporary preview backup.
+          if (!demo) clearSessionBackup(sessionKey);
+          showStatus(demo ? 'デモ内で一時保存しました。' : '✓ 保存しました。後から再編集できます。');
         } else {
           showStatus('新しい変更を保存します…');
           clearTimeout(timer);
@@ -220,7 +262,13 @@
         return !dirty;
       } catch (error) {
         lastError = error.message || '保存できませんでした。';
-        showStatus('保存できませんでした。通信状態を確認して再試行してください。', true);
+        if (error.kind === 'conflict') {
+          conflicted = true;
+          conflictPanel.hidden = false;
+          showStatus('別の端末の更新と重なりました。今の入力は消さずに保持しています。', true);
+        } else {
+          showStatus('保存できませんでした。通信状態を確認して再試行してください。', true);
+        }
         return false;
       } finally {
         saving = null;
@@ -232,7 +280,66 @@
         showStatus('保存されていない変更があります。閉じずに「保存」を押してください。', true);
         return;
       }
+      dismiss();
+    }
+
+    async function readLatest() {
+      if (demo) return null;
+      const { data, error } = await client.from('student_intro_drafts')
+        .select('answers,expression_choices,updated_at')
+        .eq('assignment_id', assignment.id)
+        .eq('student_id', studentId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    }
+
+    latestButton.addEventListener('click', async () => {
+      if (!window.confirm('今入力している内容を破棄して、最新の保存内容を表示しますか？')) return;
+      try {
+        const data = await readLatest();
+        answers = engine().cleanAnswers(data?.answers || {});
+        choices = data?.expression_choices && typeof data.expression_choices === 'object'
+          ? data.expression_choices : {};
+        remoteVersion = data?.updated_at || null;
+        dirty = false;
+        conflicted = false;
+        revision += 1;
+        clearTimeout(timer);
+        clearSessionBackup(sessionKey);
+        conflictPanel.hidden = true;
+        populate();
+        showStatus('最新の保存内容を読み込みました。');
+      } catch (_error) {
+        showStatus('最新の内容を確認できません。通信を確認してください。', true);
+      }
+    });
+
+    overwriteButton.addEventListener('click', async () => {
+      if (!window.confirm('別の端末で保存された内容を、現在入力している文章で上書きしますか？')) return;
+      try {
+        const data = await readLatest();
+        remoteVersion = data?.updated_at || null;
+        conflicted = false;
+        conflictPanel.hidden = true;
+        dirty = true;
+        revision += 1;
+        writeSessionBackup(sessionKey, answers, choices);
+        await flush();
+      } catch (_error) {
+        conflicted = true;
+        conflictPanel.hidden = false;
+        showStatus('最新の保存内容を確認できません。通信を確認してください。', true);
+      }
+    });
+
+    function retryWhenOnline() {
+      if (ready && dirty && !conflicted) void flush();
+    }
+    window.addEventListener('online', retryWhenOnline);
+    function dismiss() {
       clearTimeout(timer);
+      window.removeEventListener('online', retryWhenOnline);
       overlay.remove();
     }
 
@@ -259,7 +366,7 @@
       }
       try {
         await launch(text, popup);
-        overlay.remove();
+        dismiss();
       } catch (error) {
         popup.close();
         showStatus('Copeakを開けませんでした。' + (error.message || ''), true);
@@ -278,8 +385,10 @@
         answers = engine().cleanAnswers(data?.answers || {});
         choices = data?.expression_choices && typeof data.expression_choices === 'object'
           ? data.expression_choices : {};
+        remoteVersion = data?.updated_at || null;
+        // Session backup exists only for unsynced edits. Never compare device and server clocks.
         const backup = readSessionBackup(sessionKey);
-        if (backup && Number(backup.time) > Date.parse(data?.updated_at || 0)) {
+        if (backup) {
           answers = engine().cleanAnswers(backup.answers);
           choices = backup.choices || {};
           dirty = true;
