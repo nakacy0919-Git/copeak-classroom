@@ -7,6 +7,23 @@
     intermediate: ['name', 'school', 'grade', 'hobby', 'reason', 'goal', 'closing'],
     advanced: ['name', 'school', 'grade', 'hometown', 'hobby', 'reason', 'strength', 'goal', 'closing']
   };
+  const levelExpressions = {
+    beginner: {
+      name: 'hello', age: 'years', school: 'go', grade: 'in',
+      hometown: 'from', hobby: 'like', reason: 'because', strength: 'good',
+      goal: 'want', subject: 'favorite', club: 'member', closing: 'meet'
+    },
+    intermediate: {
+      name: 'hi', age: 'short', school: 'attend', grade: 'student',
+      hometown: 'come', hobby: 'enjoy', reason: 'one', strength: 'one',
+      goal: 'hope', subject: 'study', club: 'belong', closing: 'thanks'
+    },
+    advanced: {
+      name: 'pleasure', age: 'currently', school: 'student', grade: 'currently',
+      hometown: 'hometown', hobby: 'free', reason: 'meaning', strength: 'confident',
+      goal: 'dream', subject: 'interested', club: 'takepart', closing: 'learn'
+    }
+  };
   const fields = [
     { id: 'name', label: '名前・ニックネーム', sample: 'Yuki', hint: '本人の呼ばれたい名前。実名は必須にしない', options: [
       ['hello', 'Hello! My name is {name}.'],
@@ -67,7 +84,7 @@
   let mounted = false;
 
   function defaultConfig(level = 'intermediate') {
-    return { version: 1, level, fields: [...levelFields[level]], expressions: {}, allowStudentChoice: false, instructions: '' };
+    return { version: 1, level, fields: [...levelFields[level]], expressions: { ...levelExpressions[level] }, allowStudentChoice: false, instructions: '' };
   }
 
   function normalize(raw) {
@@ -80,7 +97,7 @@
     for (const field of fields) {
       const valid = new Set(field.options.map(option => option[0]));
       const picked = raw?.expressions?.[field.id];
-      expressions[field.id] = valid.has(picked) ? picked : field.options[0][0];
+      expressions[field.id] = valid.has(picked) ? picked : levelExpressions[level][field.id];
     }
     return {
       version: 1,
@@ -184,7 +201,7 @@
     activeExpression = 'name';
     if (mounted) {
       render();
-      $('selfIntroNotice').textContent = '設定を変更したら「下書きを保存」を押してください。生徒への配布はまだ行いません。';
+      $('selfIntroNotice').textContent = '設定を変更したら下書き保存、または課題の保存・配布を選んでください。';
     }
   }
 
@@ -242,7 +259,7 @@
     $('assignmentDialogueEditor')?.classList.toggle('hidden', value !== 'dialogue');
     const hint = $('assignmentLessonTypeHint');
     if (hint) hint.textContent = intro
-      ? '教員用テンプレートの下書きを作成できます。配布・生徒への入力画面は次の開発段階で接続します。'
+      ? '入力項目と表現を設定すると、生徒ごとに異なる自己紹介英文を作成できます。'
       : value === 'dialogue'
         ? '話者名は表示されますが、Copeakで読む対象はセリフのみです。'
         : '通常の英文を入力して音読教材を作成します。';
@@ -267,8 +284,27 @@
       activeTab = button.dataset.selfintroTab;
       render();
     });
-    $('selfIntroLevel').addEventListener('change', event => { model.level = event.target.value; render(); });
-    $('selfIntroRecommended').addEventListener('click', () => { model.fields = [...levelFields[model.level]]; render(); });
+    $('selfIntroLevel').addEventListener('change', event => {
+      const next = event.target.value;
+      if (!Object.hasOwn(levelExpressions, next)) return;
+      const previousDefaults = levelExpressions[model.level];
+      const nextDefaults = levelExpressions[next];
+      // Preserve explicit teacher selections; update only previously recommended phrases.
+      const expressions = { ...model.expressions };
+      for (const field of fields) {
+        if (expressions[field.id] === previousDefaults[field.id]) {
+          expressions[field.id] = nextDefaults[field.id];
+        }
+      }
+      model.level = next;
+      model.expressions = expressions;
+      render();
+    });
+    $('selfIntroRecommended').addEventListener('click', () => {
+      model.fields = [...levelFields[model.level]];
+      model.expressions = { ...levelExpressions[model.level] };
+      render();
+    });
     $('selfIntroStudentChoice').addEventListener('change', event => { model.allowStudentChoice = event.target.checked; render(); });
     $('selfIntroInstructions').addEventListener('input', event => { model.instructions = event.target.value.slice(0, 500); });
     $('selfIntroFieldList').addEventListener('change', event => {
@@ -306,7 +342,7 @@
     syncLessonType();
   }
 
-  const api = { fields, defaultConfig, normalize, validate, generatePreview, cleanAnswers, validateAnswers, generateStudentText, mount, restore, syncLessonType, getConfig: () => normalize(model) };
+  const api = { fields, levelExpressions, defaultConfig, normalize, validate, generatePreview, cleanAnswers, validateAnswers, generateStudentText, mount, restore, syncLessonType, getConfig: () => normalize(model) };
   root.CopeakSelfIntro = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
