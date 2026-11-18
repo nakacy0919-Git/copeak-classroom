@@ -30,6 +30,13 @@ export function evaluatePassCriteria(assignment, accuracy, wpm) {
   return { configured, passed, targets };
 }
 
+// Display-only diagnostic: separate personal bests may each clear their
+// target without any one reading that qualifies for PASS. This never
+// changes the official same-reading pass policy.
+export function bestsMeetTargetsWithoutPass(assignment, accuracyBest, wpmBest, passed) {
+  return !passed && evaluatePassCriteria(assignment, accuracyBest, wpmBest).passed;
+}
+
 // A PASS must be backed by one actual reading attempt meeting every enabled
 // threshold at once. The separately displayed personal-best metrics are NOT
 // evidence of a qualifying attempt and must never be combined here.
