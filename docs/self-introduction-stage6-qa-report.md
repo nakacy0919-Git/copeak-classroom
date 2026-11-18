@@ -3,13 +3,13 @@
 **Date:** 2026-11-19 (JST)  
 **Disposition:** NO GO for public release; development-only review completed with unresolved mandatory integration tests.  
 **Repositories:**
-- Classroom: \`qa/self-introduction-pre-release-stage6-20261119\`
-- Copeak: \`qa/private-intro-pre-release-stage6-20261119\`
+- Classroom: `qa/self-introduction-pre-release-stage6-20261119`
+- Copeak: `qa/private-intro-pre-release-stage6-20261119`
 
 ## Findings addressed in Stage 6
 
-1. **BLOCKER — malformed SQL delimiter.** \`supabase/migrations/20261118211500_self_introduction_drafts.sql\` contained an invalid single-dollar delimiter for the trigger function. The test fixture \`tests/sql/self-introduction-fixture.sql\` had the same problem for conditional role creation. Both were repaired to correctly paired PostgreSQL dollar-quoted blocks. Added \`tests/self-introduction-migration-qa.test.cjs\` to prevent recurrence.
-2. **BLOCKER — outdated Copeak regression test.** The old \`tests/private_intro_handoff.test.mjs\` asserted the obsolete inline receiver. Updated it to exercise the current modular receiver, in-memory handoff and metadata-only storage.
+1. **BLOCKER — malformed SQL delimiter.** `supabase/migrations/20261118211500_self_introduction_drafts.sql` contained an invalid single-dollar delimiter for the trigger function. The test fixture `tests/sql/self-introduction-fixture.sql` had the same problem for conditional role creation. Both were repaired to correctly paired PostgreSQL dollar-quoted blocks. Added `tests/self-introduction-migration-qa.test.cjs` to prevent recurrence.
+2. **BLOCKER — outdated Copeak regression test.** The old `tests/private_intro_handoff.test.mjs` asserted the obsolete inline receiver. Updated it to exercise the current modular receiver, in-memory handoff and metadata-only storage.
 3. **UX — unauthenticated demo could attempt a protected launch.** The student introduction editor now allows demo input/preview while disabling Copeak launch without a valid student account, plus a regression test.
 4. **PRIVACY — local custom-lesson editor could rewrite a private lesson shell.** Copeak now refuses that edit path and directs the student back to Classroom; test added.
 5. **TEST QUALITY — incorrect RLS occurrence count.** Corrected the migration QA test to count four direct draft-owner checks separately from the profile lookups.
@@ -25,7 +25,7 @@
 | Metadata-only private storage and Direct Sync | Executed storage test callbacks and earlier history write scenario | PASS in simulation |
 | SQL migration spelling/quoting, policy shape | Static QA test checks after repairs | PASS (structural only) |
 | Legacy Text/Dialogue code paths | Inspected and guarded by static tests | PASS (structural only) |
-| Real Node \`npm test\` / Copeak \`node --test\` in repository checkout | Repository cannot be cloned in this inspection runtime | NOT RUN |
+| Real Node `npm test` / Copeak `node --test` in repository checkout | Repository cannot be cloned in this inspection runtime | NOT RUN |
 | Isolated PostgreSQL execution of staged migration + RLS | No disposable running Classroom test database available | NOT RUN |
 | Two real student accounts and cross-posting E2E | Requires staging auth / DB / browser | NOT RUN |
 | Actual Safari/iPad, Chrome, Edge voice/speech and popup | Requires deployed staging endpoints and physical browser testing | NOT RUN |
@@ -36,8 +36,8 @@
 
 ## Mandatory release blockers
 
-- The live \`copeak-classroom\` Supabase project still does **not** have \`assignments.lesson_template\` or \`student_intro_drafts\`. This is expected because deployment was prohibited; do not apply the pending migration without separate authorization.
-- The existing extra \`copeak-picspeak-test\` Supabase project is inactive and is not a ready, isolated Classroom validation environment.
+- The live `copeak-classroom` Supabase project still does **not** have `assignments.lesson_template` or `student_intro_drafts`. This is expected because deployment was prohibited; do not apply the pending migration without separate authorization.
+- The existing extra `copeak-picspeak-test` Supabase project is inactive and is not a ready, isolated Classroom validation environment.
 - There is no confirmed **real** browser run with two authenticated test students, different class audiences, cross-posted assignments, save/re-edit, deadline and Direct Sync submission.
 - No GitHub CI run result was available for these review-only QA branches. Confirm the test jobs are green in a genuine runner before release.
 
@@ -61,7 +61,7 @@
 3. Validate the pending Supabase migration in a separate test project, not the live project.
 4. Obtain approval for production migration and execute it separately.
 5. Deploy the compatible Classroom sender **last** only after staging passes, then verify with test users; coordinate release and rollback.
-6. Keep both repositories' \`vercel.json\` \`git.deploymentEnabled=false\` until the user explicitly approves any change.
+6. Keep both repositories' `vercel.json` `git.deploymentEnabled=false` until the user explicitly approves any change.
 
 ## Privacy caveats
 
