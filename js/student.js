@@ -3477,6 +3477,10 @@ function renderAssignmentList(
                   </button>
 
 
+                  ${assignment.lesson_type === 'self_intro'
+                    ? `<button type="button" class="btn btn-sm btn-light selfintro-edit" data-id="${escapeHtml(assignment.id)}">${activeLanguage === 'ja' ? '自己紹介を編集' : 'Edit Introduction'}</button>`
+                    : ''}
+
                   ${
                     ctx.demo &&
                     !submission &&
@@ -3541,6 +3545,10 @@ function renderAssignmentList(
   // ========================================
   // DEMO BUTTONS
   // ========================================
+
+  document.querySelectorAll('.selfintro-edit').forEach(button => {
+    button.onclick = () => openCopeak(assignments.find(item => item.id === button.dataset.id));
+  });
 
   document
     .querySelectorAll(
@@ -4231,14 +4239,20 @@ p {
 // OPEN COPEAK
 // ==========================================
 
-async function openCopeak(
-  assignment
-) {
-
-  if (
-    !assignment
-  ) {
-
+async function openCopeak(assignment, personalizedText = null, preparedPopup = null) {
+  if (!assignment) return;
+  if (assignment.lesson_type === 'self_intro' && personalizedText === null) {
+    try {
+      await window.CopeakSelfIntroStudent.open({
+        assignment,
+        studentId: ctx.demo ? 'demo-student' : ctx.user.id,
+        client: ctx.demo ? null : getClient('student'),
+        demo: !!ctx.demo,
+        launch: (text, popup) => openCopeak(assignment, text, popup)
+      });
+    } catch (error) {
+      alert('自己紹介の入力画面を開けませんでした。' + (error.message || ''));
+    }
     return;
   }
 
@@ -4268,11 +4282,8 @@ async function openCopeak(
       release
   ) {
 
-    alert(
-      t(
-        'alertNotOpen'
-      )
-    );
+    if (preparedPopup) preparedPopup.close();
+    alert(t('alertNotOpen'));
 
 
     return;
@@ -4288,11 +4299,8 @@ async function openCopeak(
       due
   ) {
 
-    alert(
-      t(
-        'alertClosed'
-      )
-    );
+    if (preparedPopup) preparedPopup.close();
+    alert(t('alertClosed'));
 
 
     return;
@@ -4303,23 +4311,15 @@ async function openCopeak(
   // LESSON TEXT
   // ========================================
 
-  const lessonText =
-    String(
-      assignment.lesson_text ||
-      ''
-    )
-      .trim();
+  const lessonText = String(personalizedText ?? assignment.lesson_text ?? '').trim();
 
 
   if (
     !lessonText
   ) {
 
-    alert(
-      t(
-        'alertNoLesson'
-      )
-    );
+    if (preparedPopup) preparedPopup.close();
+    alert(t('alertNoLesson'));
 
 
     return;
@@ -4338,6 +4338,7 @@ async function openCopeak(
 
   const url = new URL(base, location.href);
   if (url.origin !== new URL(window.COPEAK_CONFIG.copeakBaseUrl).origin) {
+    if (preparedPopup) preparedPopup.close();
     alert('Copeakの起動先URLを確認してください。');
     return;
   }
@@ -4618,11 +4619,7 @@ if (
   // Safari / iPad popup-blocker protection
   // ========================================
 
-  const popup =
-    window.open(
-      'about:blank',
-      '_blank'
-    );
+  const popup = preparedPopup || window.open('about:blank', '_blank');
 
 
   if (
