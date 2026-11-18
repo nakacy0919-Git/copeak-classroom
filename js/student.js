@@ -9,6 +9,7 @@ import { bestMetricMap, effectiveMetric, countAttempts, summarizeScores } from '
 import { sortClassAssignments } from './assignment-order.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import { createSyncLaunchManager } from './direct-sync-launch.js';
+import { preparePersonalIntroHandoff, closePersonalIntroWindows } from './personal-intro-handoff.mjs';
 import {
   requireUser,
   getClient,
@@ -82,7 +83,13 @@ function getDirectSyncLaunchManager() {
   return directSyncLaunchManager;
 }
 
-$('#signOut').onclick = signOut;
+$('#signOut').onclick = async () => {
+  // A shared classroom device must not keep unsent personal answers after logout.
+  // Already saved answers remain available securely through Supabase on next login.
+  window.CopeakSelfIntroStudent?.clearTemporaryDrafts?.();
+  closePersonalIntroWindows(ctx?.user?.id || null);
+  await signOut();
+};
 
 
 // ==========================================
@@ -3260,6 +3267,12 @@ function renderAssignmentList(
           }
 
 
+          if (assignment.lesson_type === 'self_intro' && !isNotOpen && !isClosed) {
+            actionLabel = activeLanguage === 'ja'
+              ? '自己紹介を作る・練習'
+              : 'Create & Practice Introduction';
+          }
+
           const deadlineLabel =
             deadline.state ===
               'upcoming'
@@ -3477,6 +3490,10 @@ function renderAssignmentList(
                   </button>
 
 
+                  ${assignment.lesson_type === 'self_intro' && !isNotOpen
+                    ? `<button type="button" class="btn btn-sm btn-light selfintro-edit" data-id="${escapeHtml(assignment.id)}">${activeLanguage === 'ja' ? '自己紹介を編集' : 'Edit Introduction'}</button>`
+                    : ''}
+
                   ${
                     ctx.demo &&
                     !submission &&
@@ -3541,6 +3558,10 @@ function renderAssignmentList(
   // ========================================
   // DEMO BUTTONS
   // ========================================
+
+  document.querySelectorAll('.selfintro-edit').forEach(button => {
+    button.onclick = () => openCopeak(assignments.find(item => item.id === button.dataset.id));
+  });
 
   document
     .querySelectorAll(
@@ -4231,14 +4252,21 @@ p {
 // OPEN COPEAK
 // ==========================================
 
-async function openCopeak(
-  assignment
-) {
-
-  if (
-    !assignment
-  ) {
-
+async function openCopeak(assignment, personalizedText = null, preparedPopup = null) {
+  if (!assignment) return;
+  const isPersonalizedIntroduction = assignment.lesson_type === 'self_intro' && personalizedText !== null;
+  if (assignment.lesson_type === 'self_intro' && personalizedText === null) {
+    try {
+      await window.CopeakSelfIntroStudent.open({
+        assignment,
+        studentId: ctx.demo ? 'demo-student' : ctx.user.id,
+        client: ctx.demo ? null : getClient('student'),
+        demo: !!ctx.demo,
+        launch: (text, popup) => openCopeak(assignment, text, popup)
+      });
+    } catch (error) {
+      alert('自己紹介の入力画面を開けませんでした。' + (error.message || ''));
+    }
     return;
   }
 
@@ -4268,11 +4296,8 @@ async function openCopeak(
       release
   ) {
 
-    alert(
-      t(
-        'alertNotOpen'
-      )
-    );
+    if (preparedPopup) preparedPopup.close();
+    alert(t('alertNotOpen'));
 
 
     return;
@@ -4288,11 +4313,8 @@ async function openCopeak(
       due
   ) {
 
-    alert(
-      t(
-        'alertClosed'
-      )
-    );
+    if (preparedPopup) preparedPopup.close();
+    alert(t('alertClosed'));
 
 
     return;
@@ -4303,23 +4325,15 @@ async function openCopeak(
   // LESSON TEXT
   // ========================================
 
-  const lessonText =
-    String(
-      assignment.lesson_text ||
-      ''
-    )
-      .trim();
+  const lessonText = String(personalizedText ?? assignment.lesson_text ?? '').trim();
 
 
   if (
     !lessonText
   ) {
 
-    alert(
-      t(
-        'alertNoLesson'
-      )
-    );
+    if (preparedPopup) preparedPopup.close();
+    alert(t('alertNoLesson'));
 
 
     return;
@@ -4338,6 +4352,7 @@ async function openCopeak(
 
   const url = new URL(base, location.href);
   if (url.origin !== new URL(window.COPEAK_CONFIG.copeakBaseUrl).origin) {
+    if (preparedPopup) preparedPopup.close();
     alert('Copeakの起動先URLを確認してください。');
     return;
   }
@@ -4480,10 +4495,11 @@ async function openCopeak(
   );
 
 
-  url.searchParams.set(
-    'eng',
-    lessonText
-  );
+  // Do not ever place an individually generated introduction into URL parameters.
+  // Unlike shared Text / Dialogue lessons, private text uses the message handshake.
+  if (!isPersonalizedIntroduction) {
+    url.searchParams.set('eng', lessonText);
+  }
 
   const scoreExclusions = globalThis.CopeakScoreExclusions.safeList(assignment.score_exclusions);
   if (scoreExclusions.length) {
@@ -4491,11 +4507,10 @@ async function openCopeak(
   }
 
 
-  url.searchParams.set(
-    'jpn',
-    assignment.lesson_translation ||
-    ''
-  );
+  // The teacher's sample translation cannot match each student's personal text.
+  if (!isPersonalizedIntroduction) {
+    url.searchParams.set('jpn', assignment.lesson_translation || '');
+  }
 
 
   url.searchParams.set(
@@ -4618,11 +4633,7 @@ if (
   // Safari / iPad popup-blocker protection
   // ========================================
 
-  const popup =
-    window.open(
-      'about:blank',
-      '_blank'
-    );
+  const popup = preparedPopup || window.open('about:blank', '_blank');
 
 
   if (
@@ -4676,7 +4687,9 @@ if (
 
 
   let modelAudioNotice = null;
-  if (assignment.audio_object_key && !audioUrl) {
+  // A fixed teacher MP3 may say a different student's details.
+  // Personalized passages use Copeak's generated voice instead.
+  if (!isPersonalizedIntroduction && assignment.audio_object_key && !audioUrl) {
     const audioState = getAssignmentAudioState(assignment);
 
     // The server intentionally denies expired audio (410). There is no
@@ -4707,7 +4720,7 @@ if (
 
 
   if (
-    audioUrl
+    audioUrl && !isPersonalizedIntroduction
   ) {
 
     url.searchParams.set(
@@ -4732,6 +4745,15 @@ if (
   // NAVIGATE TO COPEAK
   // ========================================
 
+  // Self-Introduction transport: the generated personal text must NEVER be
+  // included in the navigation URL. Metadata and nonce alone remain in the URL.
+  if (isPersonalizedIntroduction) {
+    url.searchParams.delete('eng');
+    url.searchParams.delete('jpn');
+    url.searchParams.set('self_intro_handoff', '1');
+    url.searchParams.set('type', 'self-intro');
+  }
+
   // COPEAK_DELIVERY_SAFETY_V1
   const deliveryCheck = reviewDeliveryUrl(url);
 
@@ -4750,7 +4772,30 @@ if (
     return;
   }
 
-  popup.location.replace(url.toString());
+  let privateHandoff = null;
+  if (isPersonalizedIntroduction) {
+    try {
+      privateHandoff = preparePersonalIntroHandoff({
+        popup,
+        url: url.toString(),
+        assignmentId: assignment.id,
+        studentId: ctx.user.id,
+        nonce: launchNonce,
+        text: lessonText
+      });
+    } catch (error) {
+      popup.close();
+      throw error;
+    }
+  }
+  try {
+    popup.location.replace(url.toString());
+    if (privateHandoff) await privateHandoff.done;
+  } catch (error) {
+    if (!popup.closed) popup.close();
+    if (privateHandoff) privateHandoff.cancel();
+    throw error;
+  }
   if (modelAudioNotice) alert(modelAudioNotice);
 }
 
