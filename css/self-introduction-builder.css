@@ -11,7 +11,7 @@
 .selfintro-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; margin-bottom:9px; padding:4px; background:#e2e8f0; border-radius:10px; }
 .selfintro-tab { border:0; border-radius:7px; padding:9px 5px; font:inherit; font-weight:700; font-size:12px; cursor:pointer; background:transparent; color:#475569; }
 .selfintro-tab.active { background:white; color:#1d4ed8; box-shadow:0 1px 3px #64748b33; }
-.selfintro-panel-frame { max-height:265px; min-height:175px; overflow-y:auto; overscroll-behavior:contain; padding:12px; border:1px solid #e2e8f0; border-radius:10px; background:white; }
+.selfintro-panel-frame { max-height:440px; min-height:310px; overflow-y:auto; overscroll-behavior:contain; padding:12px; border:1px solid #e2e8f0; border-radius:10px; background:white; }
 .selfintro-panel-frame [hidden] { display:none !important; }
 .selfintro-panel { display:grid; align-content:start; gap:12px; }
 .selfintro-panel label,.selfintro-panel legend { font-weight:700; font-size:13px; color:#334155; }
@@ -27,14 +27,26 @@
 .selfintro-expression-row span { font-size:13px; color:#1e293b; }
 .selfintro-preview { margin-top:10px; border-radius:10px; border:1px solid #bfdbfe; background:#eff6ff; padding:10px; }
 .selfintro-preview-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; font-size:12px; font-weight:700; color:#1e40af; }
-.selfintro-preview-text { margin:0; max-height:102px; overflow:auto; white-space:pre-wrap; font-size:13px; line-height:1.55; color:#0f172a; }
+.selfintro-preview-text { margin:0; max-height:170px; overflow:auto; white-space:pre-wrap; font-size:13px; line-height:1.55; color:#0f172a; }
 .selfintro-actions { display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; margin-top:10px; }
 .selfintro-notice { font-size:12px; line-height:1.4; margin:8px 0 0; color:#475569; }
 .selfintro-panel .selfintro-level-hint { margin-top:4px; }
 @media(max-width:700px) {
  .lesson-type-option { font-size:11px; padding:8px 3px; }
  .selfintro-field-grid { grid-template-columns:1fr; }
- .selfintro-panel-frame { max-height:230px; }
+ .selfintro-panel-frame { max-height:355px; min-height:245px; }
  .selfintro-tabs { gap:2px; }
  .selfintro-tab { font-size:11px; }
+}
+/* Expression Bank contains full sentences: preserve sentence casing.
+   Global .field label styling otherwise forces every option to uppercase. */
+.selfintro-panel label.selfintro-expression-row,
+.selfintro-panel label.selfintro-expression-row span {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.assignment-editor-main #assignmentLessonType {
+  display: block;
+  width: 100%;
+  min-height: 44px;
 }

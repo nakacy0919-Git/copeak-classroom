@@ -281,14 +281,6 @@
     if (mounted || !$('assignmentSelfIntroEditor')) return;
     mounted = true;
     model = normalize(model);
-    document.querySelectorAll('[data-lesson-type]').forEach(button => {
-      button.addEventListener('click', () => {
-        const select = $('assignmentLessonType');
-        if (!select || !['text', 'dialogue', 'self_intro'].includes(button.dataset.lessonType)) return;
-        select.value = button.dataset.lessonType;
-        select.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-    });
     $('assignmentLessonType')?.addEventListener('change', syncLessonType);
     $('selfIntroTabs').addEventListener('click', event => {
       const button = event.target.closest('[data-selfintro-tab]');
