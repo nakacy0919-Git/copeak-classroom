@@ -7803,6 +7803,9 @@ release_at:
           assignment.image_content_type ||
           null,
 
+        // Preserve the tiny list cover when duplicating, only when present.
+        ...(safeThumbnailUrl(assignment.thumbnail_data_url)
+          ? {thumbnail_data_url:safeThumbnailUrl(assignment.thumbnail_data_url)} : {}),
 
         youtube_url:
           assignment.youtube_url ||
