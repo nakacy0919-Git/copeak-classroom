@@ -5165,6 +5165,8 @@ function openAssignmentEditor(
   $('#assignmentLessonType').value =
     editorLessonType;
 
+  window.CopeakSelfIntro?.restore(selectedClass?.id, null);
+
   restoreAssignmentDialogueForm(
     assignment?.lesson_dialogue ||
     []
@@ -5402,6 +5404,7 @@ $('#assignmentPublished').checked =
       ? 'Save Changes'
       : 'Publish Assignment';
 
+  window.CopeakSelfIntro?.syncLessonType();
 
   $('#assignmentEditor')
     .classList
@@ -6350,6 +6353,10 @@ async function removeAssignmentAudio() {
 }
 
 async function saveAssignment() {
+  if ($('#assignmentLessonType')?.value === 'self_intro') {
+    $('#assignmentMsg').textContent = 'Self-Introductionの正式登録はまだ未公開です。画面内の「下書きを保存」を使用してください。';
+    return;
+  }
 
   if (!selectedClass) {
     return;
@@ -10603,28 +10610,16 @@ $('#suggestAssignmentScoreExclusions').onclick = () => {
   $('#assignmentMsg').textContent = '候補を入力しました。内容を確認してください。';
 };
 
-$('#assignmentLessonType').onchange =
-  () => {
+$('#assignmentLessonType').onchange = () => {
+  const mode = $('#assignmentLessonType').value;
+  $('#assignmentTextEditor').classList.toggle('hidden', mode !== 'text');
+  $('#assignmentDialogueEditor').classList.toggle('hidden', mode !== 'dialogue');
+  window.CopeakSelfIntro?.syncLessonType();
+  updateAssignmentDeliveryStatus();
+};
 
-    const isDialogue =
-      $('#assignmentLessonType').value ===
-      'dialogue';
-
-    $('#assignmentTextEditor')
-      .classList
-      .toggle(
-        'hidden',
-        isDialogue
-      );
-
-    $('#assignmentDialogueEditor')
-      .classList
-      .toggle(
-        'hidden',
-        !isDialogue
-      );
-
-  };
+// The defer script is available by the time this teacher module runs.
+window.CopeakSelfIntro?.mount();
 
 $('#addAssignmentDialogueLine').onclick =
   () => {
