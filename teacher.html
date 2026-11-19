@@ -37,6 +37,7 @@
   <link rel="stylesheet" href="css/self-introduction-builder.css?v=20261119-preview-only">
   <link rel="stylesheet" href="teacher-assignment-cards.css?v=20261119-collapse">
   <link rel="stylesheet" href="teacher-learning-notice-settings.css?v=20261119">
+  <link rel="stylesheet" href="teacher-thumbnail.css?v=20261119-preview">
 
 
 
@@ -1710,13 +1711,17 @@
 
 
         </div>
-
-
-
-
-
-
-
+        <div class="field assignment-thumbnail-editor">
+          <label for="assignmentThumbnailInput">教材一覧のサムネイル（補助画像とは別）</label>
+          <div class="assignment-thumbnail-content">
+            <img id="assignmentThumbnailPreview" src="./assets/copeak-default-thumbnail.svg" alt="サムネイルのプレビュー">
+            <div class="assignment-thumbnail-details">
+              <input class="input" id="assignmentThumbnailInput" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+              <div id="assignmentThumbnailStatus" class="tiny muted" role="status">未登録の場合はCopeakオリジナル画像を表示します</div>
+              <button id="assignmentThumbnailRemove" type="button" class="btn btn-sm btn-light">表紙を解除</button>
+            </div>
+          </div>
+        </div>
         <div class="assignment-editor-layout">
 
       <main class="assignment-editor-main">
