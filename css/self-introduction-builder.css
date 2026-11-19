@@ -50,3 +50,5 @@
   width: 100%;
   min-height: 44px;
 }
+
+.selfintro-delivery-hint{font-size:12px;line-height:1.6;color:#41556a;background:#f1f6fb;border:1px solid #d8e7f4;border-radius:9px;padding:10px 12px;margin:0 0 12px}

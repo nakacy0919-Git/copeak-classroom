@@ -31,4 +31,5 @@ test('the preview-only student delivery block remains in place',()=>{
  const teacher=fs.readFileSync(path.join(root,'js/teacher.js'),'utf8');
  assert.match(teacher,/Self-Introductionの正式登録はまだ未公開です/);
  assert.match(html,/Self-Introductionの正式な課題登録・生徒への配布はまだできません/);
+ assert.match(html,/生徒（Test生徒を含む）には配信されません/);
 });
