@@ -7001,7 +7001,6 @@ let uploadedImage =
   null;
 
   const row = {
-    thumbnail_data_url: assignmentThumbnailDataUrl,
     practice_mode:
       practiceMode,
 
@@ -7091,7 +7090,11 @@ youtube_loop:
     ? youtubeClip.loop
     : false
   };
-
+  // The nullable schema change is additive and deployed separately.
+  // Until it is applied, legacy assignment saves without covers must continue.
+  if(assignmentThumbnailDataUrl || (existingAssignment && Object.prototype.hasOwnProperty.call(existingAssignment,'thumbnail_data_url'))){
+    row.thumbnail_data_url=assignmentThumbnailDataUrl;
+  }
 
   try {
 if (audioFile) {
