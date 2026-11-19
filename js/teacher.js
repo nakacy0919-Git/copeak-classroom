@@ -8,6 +8,7 @@ import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mj
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
 import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
+import { initializeThumbnailEditor, restoreThumbnailEditor, assignmentThumbnailForSave, thumbnailUrl } from './assignment-thumbnail.mjs';
 import { LEARNING_NOTICE_MODES, normalizeLearningNoticeMode } from './student-learning-health.mjs?v=20261119-modes';
 import { createTeacherAssignmentCollapseStore, isAssignmentEnded, isAssignmentCollapsed } from './teacher-assignment-collapse.mjs';
 import {
@@ -565,7 +566,7 @@ function renderAssignmentManager() {
               <div class="teacher-assignment-main">
                 <div class="teacher-assignment-heading">
                   <div class="ta-heading-copy">
-                    <div class="teacher-assignment-title">${esc(assignment.title)}</div>
+                    <div class="ta-thumbnail-title"><img class="ta-thumbnail" src="${thumbnailUrl(assignment.thumbnail_data_url)}" alt="" loading="lazy"><div class="teacher-assignment-title">${esc(assignment.title)}</div></div>
                     <div class="teacher-assignment-meta">
                       <span>${actionIcon('book')}${esc(assignment.category || 'Reading')}</span>
                       <span>${actionIcon('calendar')}${assignmentDateTimeLabel(assignment.release_at)} ～ ${assignmentDateTimeLabel(assignment.due_at)}</span>
@@ -5024,6 +5025,8 @@ function openAssignmentEditor(
 ) {
 
   resetAssignmentOcr();
+  initializeThumbnailEditor();
+  restoreThumbnailEditor(assignment?.thumbnail_data_url);
 
   editingAssignmentId =
     assignment?.id ||
@@ -6977,6 +6980,10 @@ let uploadedAudio =
 let uploadedImage =
   null;
 
+  let thumbnailValue;
+  try { thumbnailValue = await assignmentThumbnailForSave(); }
+  catch (error) { msg.textContent = error.message || 'サムネイルの圧縮に失敗しました'; button.disabled=false; button.textContent='Save Assignment'; return; }
+
   const row = {
     practice_mode:
       practiceMode,
@@ -6992,7 +6999,7 @@ let uploadedImage =
 
 
     title,
-
+    ...(thumbnailValue !== undefined ? { thumbnail_data_url: thumbnailValue } : {}),
     category,
 
     week_no: week,
