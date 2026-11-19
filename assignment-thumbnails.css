@@ -1,0 +1,18 @@
+/* Independent Cover Thumbnails — not Copeak support / OCR image. */
+.assignment-cover-editor{margin:14px 0;padding:16px;border:1px solid #92c8ed;border-radius:16px;background:linear-gradient(122deg,#e8f7ff,#f6fcff);box-shadow:0 4px 15px #0b4f861c}
+.assignment-cover-editor>label{display:block;font-weight:850;color:#16466a}
+.assignment-cover-editor p.tiny{margin:5px 0 12px}
+.assignment-cover-edit-row{display:flex;align-items:center;gap:16px;min-width:0}
+.assignment-cover-edit-row>img{width:128px;height:72px;object-fit:cover;border-radius:11px;border:1px solid #b8d7ed;box-shadow:0 3px 9px #0e4c803b;flex:none;background:#073765}
+.assignment-cover-edit-controls{display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:7px}
+.assignment-cover-edit-controls input{max-width:100%;font-size:12px}
+.assignment-cover-edit-controls small{font-size:11px;color:#607c99}
+.assignment-cover-edit-controls button{font-size:12px}
+.teacher-assignment-thumbnail{width:92px;height:54px;object-fit:cover;border-radius:9px;border:1px solid #b3d9f4;box-shadow:0 3px 10px #07548a35;flex:none}
+.student-assignment-thumbnail{display:block;width:clamp(110px,22%,185px);height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:1px solid #b8dafa;box-shadow:0 4px 11px #05497630;margin-bottom:10px}
+@media(max-width:670px){
+  .assignment-cover-edit-row{align-items:flex-start;gap:9px}
+  .assignment-cover-edit-row>img{width:96px;height:54px}
+  .teacher-assignment-thumbnail{width:70px;height:43px}
+  .student-assignment-thumbnail{width:min(142px,48%)}
+}
