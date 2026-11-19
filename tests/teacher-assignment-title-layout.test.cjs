@@ -12,10 +12,10 @@ test('teacher assignment title is confined to editor main column', () => {
   assert.equal(layout, true, 'assignment two-column layout should exist');
   assert.ok(main, 'editor main column should exist');
   assert.match(main, /id="assignmentTitle"/);
-  assert.match(main[1], /id="assignmentLessonTypeLabel"/);
-  assert.ok(main[1].indexOf('id="assignmentTitle"') < main[1].indexOf('id="assignmentLessonTypeLabel"'), 'title should precede lesson type');
+  assert.match(main, /id="assignmentLessonTypeLabel"/);
+  assert.ok(main.indexOf('id="assignmentTitle"') < main.indexOf('id="assignmentLessonTypeLabel"'), 'title should precede lesson type');
   assert.equal((html.match(/id="assignmentTitle"/g) || []).length, 1);
-  assert.match(main[1], /<label for="assignmentTitle">/);
+  assert.match(main, /<label for="assignmentTitle">/);
 });
 
 test('sidebar and responsive two-column structure are still present', () => {
