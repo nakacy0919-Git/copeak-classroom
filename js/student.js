@@ -1,4 +1,5 @@
 import { reportClassroomDiagnostic, flushClassroomDiagnostics } from './classroom-diagnostics.js';
+import { safeThumbnailUrl } from './assignment-thumbnail.mjs';
 import './scoring-exclusions.js';
 import { reviewDeliveryUrl } from './launch-safety.js';
 import { assignmentNumber, assignmentLabel } from './assignment-labels.mjs';
@@ -3318,8 +3319,7 @@ function renderAssignmentList(
 
 
               <div class="student-assignment-content">
-
-
+                ${safeThumbnailUrl(assignment.thumbnail_data_url)?`<img class="student-assignment-thumbnail" src="${safeThumbnailUrl(assignment.thumbnail_data_url)}" alt="">`:''}
                 <div class="student-assignment-title-row">
 
                   <div class="assignment-title">
