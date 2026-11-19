@@ -21,6 +21,7 @@ const crypto =
 
 const MAX_FILE_SIZE =
   5 * 1024 * 1024;
+const MAX_THUMBNAIL_SIZE = 24 * 1024; // 24 KiB hard limit
 
 const UPLOAD_URL_SECONDS =
   5 * 60;
@@ -188,7 +189,7 @@ if (
 
   profileUrl.searchParams.set(
     'select',
-    'role'
+    'role,teacher_status'
   );
 
 
@@ -241,7 +242,8 @@ if (
 
   return {
     status: 200,
-    user
+    user,
+    approved: profiles[0]?.teacher_status === 'approved'
   };
 }
 
@@ -390,7 +392,7 @@ module.exports =
           body.fileSize
         );
       // ====================================
-      // AUDIO / IMAGE
+      // AUDIO / IMAGE / TINY THUMBNAIL
       // ====================================
 
       const lowerFileName =
@@ -411,6 +413,14 @@ module.exports =
 
 
       if (
+        body.mediaKind === 'thumbnail' &&
+        lowerFileName === 'thumbnail.webp'
+      ) {
+        mediaKind = 'thumbnail';
+        extension = '.webp';
+        normalizedContentType = 'image/webp';
+        allowedContentTypes = ['image/webp'];
+      } else if (
         lowerFileName.endsWith('.wav') ||
         lowerFileName.endsWith('.mp3')
       ) {
@@ -524,12 +534,9 @@ module.exports =
 
 
       if (
-        !Number.isFinite(
-          fileSize
-        ) ||
+        !Number.isSafeInteger(fileSize) ||
         fileSize <= 0 ||
-        fileSize >
-          MAX_FILE_SIZE
+        fileSize > (mediaKind === 'thumbnail' ? MAX_THUMBNAIL_SIZE : MAX_FILE_SIZE)
       ) {
 
         return sendJson(
@@ -537,11 +544,17 @@ module.exports =
           400,
           {
             error:
-              'Media file must be 5 MB or smaller.'
+              mediaKind === 'thumbnail'
+              ? 'Thumbnail must be 24 KiB or smaller.'
+              : 'Media file must be 5 MB or smaller.'
           }
         );
       }
 
+
+      if (mediaKind === 'thumbnail' && (!auth.approved || contentType !== 'image/webp')) {
+        return sendJson(res, 403, { error: 'Approved teacher and WebP required for thumbnail.' });
+      }
 
       // ====================================
       // R2 OBJECT KEY
@@ -555,9 +568,8 @@ module.exports =
 
       const objectKey =
         [
-          mediaKind === 'image'
-            ? 'classroom-images'
-            : 'classroom-audio',
+          mediaKind === 'thumbnail' ? 'classroom-thumbnails' :
+          mediaKind === 'image' ? 'classroom-images' : 'classroom-audio',
 
           auth.user.id,
 
