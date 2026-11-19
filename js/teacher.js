@@ -8,7 +8,7 @@ import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mj
 import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
 import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
-import { initializeThumbnailEditor, restoreThumbnailEditor, assignmentThumbnailForSave, thumbnailUrl } from './assignment-thumbnail.mjs';
+import { initializeThumbnailEditor, restoreThumbnailEditor, assignmentThumbnailForSave, uploadThumbnailToR2, hydrateThumbnailCards, thumbnailUrl } from './assignment-thumbnail.mjs?v=20261120-r2-tiny';
 import { LEARNING_NOTICE_MODES, normalizeLearningNoticeMode } from './student-learning-health.mjs?v=20261119-modes';
 import { createTeacherAssignmentCollapseStore, isAssignmentEnded, isAssignmentCollapsed } from './teacher-assignment-collapse.mjs';
 import {
@@ -566,7 +566,7 @@ function renderAssignmentManager() {
               <div class="teacher-assignment-main">
                 <div class="teacher-assignment-heading">
                   <div class="ta-heading-copy">
-                    <div class="ta-thumbnail-title"><img class="ta-thumbnail" src="${thumbnailUrl(assignment.thumbnail_data_url)}" alt="" loading="lazy"><div class="teacher-assignment-title">${esc(assignment.title)}</div></div>
+                    <div class="ta-thumbnail-title"><img class="ta-thumbnail" data-assignment-thumb-id="${aid}" data-thumb-key="${esc(assignment.thumbnail_object_key || '')}" src="${thumbnailUrl(assignment.thumbnail_data_url)}" alt="" loading="lazy"><div class="teacher-assignment-title">${esc(assignment.title)}</div></div>
                     <div class="teacher-assignment-meta">
                       <span>${actionIcon('book')}${esc(assignment.category || 'Reading')}</span>
                       <span>${actionIcon('calendar')}${assignmentDateTimeLabel(assignment.release_at)} ～ ${assignmentDateTimeLabel(assignment.due_at)}</span>
@@ -606,6 +606,7 @@ function renderAssignmentManager() {
         }
       )
       .join('');
+  if (!ctx?.demo) void hydrateThumbnailCards(sorted, getClient('teacher'), root);
 }
 
 // Class-local display ordering. Assignment IDs and Gradebook numbers stay fixed.
@@ -5026,7 +5027,7 @@ function openAssignmentEditor(
 
   resetAssignmentOcr();
   initializeThumbnailEditor();
-  restoreThumbnailEditor(assignment?.thumbnail_data_url);
+  restoreThumbnailEditor(assignment, ctx?.demo ? null : getClient('teacher'));
 
   editingAssignmentId =
     assignment?.id ||
@@ -6999,7 +7000,8 @@ let uploadedImage =
 
 
     title,
-    ...(thumbnailValue !== undefined ? { thumbnail_data_url: thumbnailValue } : {}),
+    // The old data-URL field is kept only as a legacy read fallback.
+    // New image bytes are never written to Supabase.
     category,
 
     week_no: week,
@@ -7077,6 +7079,18 @@ youtube_loop:
 
 
   try {
+    if (thumbnailValue instanceof File) {
+      button.textContent = 'Uploading thumbnail...';
+      const cover = await uploadThumbnailToR2(thumbnailValue, getClient('teacher'));
+      row.thumbnail_object_key = cover.objectKey;
+      row.thumbnail_size_bytes = cover.size;
+      row.thumbnail_data_url = null;
+      button.textContent = 'Saving...';
+    } else if (thumbnailValue === null) {
+      row.thumbnail_object_key = null;
+      row.thumbnail_size_bytes = null;
+      row.thumbnail_data_url = null;
+    }
 if (audioFile) {
 
   if (audioStatus) {
@@ -7772,6 +7786,9 @@ release_at:
           assignment.image_content_type ||
           null,
 
+        thumbnail_object_key: assignment.thumbnail_object_key || null,
+        thumbnail_size_bytes: assignment.thumbnail_size_bytes ?? null,
+        thumbnail_data_url: assignment.thumbnail_data_url || null,
 
         youtube_url:
           assignment.youtube_url ||
