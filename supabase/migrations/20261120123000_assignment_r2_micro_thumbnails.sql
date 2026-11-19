@@ -8,7 +8,7 @@ alter table public.assignments
   add constraint assignments_thumbnail_r2_key_valid check (
     thumbnail_object_key is null or (
       length(thumbnail_object_key) <= 160
-      and thumbnail_object_key ~ '^classroom-thumbnails/[0-9a-f-]{36}/[0-9]+-[0-9a-f-]{36}\\.webp$'
+      and thumbnail_object_key ~ '^classroom-thumbnails/[0-9a-f-]{36}/[0-9]+-[0-9a-f-]{36}[.]webp$'
     )
   );
 
