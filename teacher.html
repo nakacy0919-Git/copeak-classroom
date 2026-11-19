@@ -34,7 +34,7 @@
 
     href="styles.css">
   <link rel="stylesheet" href="deadline-notice.css">
-  <link rel="stylesheet" href="css/self-introduction-builder.css?v=20261119-preview-only">
+  <link rel="stylesheet" href="css/self-introduction-builder.css?v=20261119-dropdown-height-case">
   <link rel="stylesheet" href="teacher-assignment-cards.css?v=20261119-collapse">
   <link rel="stylesheet" href="teacher-learning-notice-settings.css?v=20261119">
 
@@ -1687,11 +1687,14 @@
 
 
 
+        <div class="assignment-editor-layout">
+
+      <main class="assignment-editor-main">
         <div class="field">
 
 
 
-          <label>
+          <label for="assignmentTitle">
 
             Title
 
@@ -1717,20 +1720,13 @@
 
 
 
-        <div class="assignment-editor-layout">
 
-      <main class="assignment-editor-main">
 <div class="field">
-  <label id="assignmentLessonTypeLabel">Lesson Type</label>
-  <div id="assignmentLessonTypeButtons" class="lesson-type-switch" role="group" aria-labelledby="assignmentLessonTypeLabel">
-    <button type="button" class="lesson-type-option active" data-lesson-type="text" aria-pressed="true">Text / 通常</button>
-    <button type="button" class="lesson-type-option" data-lesson-type="dialogue" aria-pressed="false">Dialogue / 会話</button>
-    <button type="button" class="lesson-type-option" data-lesson-type="self_intro" aria-pressed="false">Self-Introduction</button>
-  </div>
-  <select id="assignmentLessonType" class="input hidden" aria-hidden="true" tabindex="-1">
+  <label for="assignmentLessonType" id="assignmentLessonTypeLabel">Lesson Type</label>
+  <select id="assignmentLessonType" class="input" aria-describedby="assignmentLessonTypeHint">
     <option value="text">Text / 通常テキスト</option>
     <option value="dialogue">Dialogue / 会話文</option>
-    <option value="self_intro">Self-Introduction</option>
+    <option value="self_intro">Self-Introduction / 自己紹介</option>
   </select>
   <p id="assignmentLessonTypeHint" class="tiny muted" style="margin-top:7px">
     通常の英文を入力して音読教材を作成します。
@@ -2046,6 +2042,7 @@
       <strong>Self-Introduction Builder</strong>
       <span class="selfintro-stage">Teacher Template · 作成テスト版</span>
     </div>
+    <p class="selfintro-delivery-hint">現在は教材作成の確認用です。「下書きを保存」はこのブラウザへの保存であり、生徒（Test生徒を含む）には配信されません。</p>
     <div id="selfIntroTabs" class="selfintro-tabs" role="tablist" aria-label="自己紹介教材設定">
       <button type="button" class="selfintro-tab active" data-selfintro-tab="basics" role="tab" aria-selected="true">基本設定</button>
       <button type="button" class="selfintro-tab" data-selfintro-tab="fields" role="tab" aria-selected="false">入力項目</button>
@@ -3520,7 +3517,7 @@
 
 
 <script src="js/config.js"></script>
-<script defer src="js/self-introduction-builder.js?v=20261119-preview-only"></script>
+<script defer src="js/self-introduction-builder.js?v=20261119-dropdown-height-case"></script>
 <script src="js/focus-mode.js?v=20261119-collapse"></script>
 
 
