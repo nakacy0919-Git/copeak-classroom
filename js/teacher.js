@@ -88,6 +88,7 @@ let gradebookAudienceMode = 'class';
 let editingAssignmentId = null;
 let assignmentThumbnailDataUrl = null;
 let assignmentThumbnailBusy = false;
+let assignmentThumbnailGeneration=0;
 
 // Teacher-only local preference: per-class, per-assignment, never written to Supabase.
 const assignmentCollapseStore = createTeacherAssignmentCollapseStore((() => {
@@ -567,7 +568,7 @@ function renderAssignmentManager() {
               </div>
               <div class="teacher-assignment-main">
                 <div class="teacher-assignment-heading">
-                  ${safeThumbnailUrl(assignment.thumbnail_data_url)?`<img class="teacher-assignment-thumbnail" src="${safeThumbnailUrl(assignment.thumbnail_data_url)}" alt="">`:''}
+                  <img class="teacher-assignment-thumbnail" src="${safeThumbnailUrl(assignment.thumbnail_data_url)||'assets/copeak-classroom-thumbnail.svg'}" alt="">
                   <div class="ta-heading-copy">
                     <div class="teacher-assignment-title">${esc(assignment.title)}</div>
                     <div class="teacher-assignment-meta">
@@ -5073,6 +5074,7 @@ function openAssignmentEditor(
   $('#assignmentTitle').value =
     assignment?.title ||
     '';
+  assignmentThumbnailGeneration++;
   assignmentThumbnailBusy=false;
   assignmentThumbnailDataUrl=safeThumbnailUrl(assignment?.thumbnail_data_url);
   if($('#assignmentThumbnail'))$('#assignmentThumbnail').value='';
@@ -5460,6 +5462,7 @@ $('#assignmentPublished').checked =
 // ==========================================
 
 function closeAssignmentEditor() {
+  assignmentThumbnailGeneration++;
   assignmentThumbnailBusy=false;
   assignmentThumbnailDataUrl=null;
   if($('#assignmentThumbnail'))$('#assignmentThumbnail').value='';
@@ -10610,21 +10613,26 @@ $('#assignmentTargetList').onchange =
 $('#assignmentThumbnail')?.addEventListener('change', async event=>{
   const input=event.currentTarget,file=input.files?.[0];
   if(!file)return;
+  const generation=++assignmentThumbnailGeneration;
   assignmentThumbnailBusy=true;renderAssignmentThumbnailPreview();
   try{
     const value=await compressThumbnail(file);
-    if($('#assignmentThumbnail')!==input)return;
+    if(generation!==assignmentThumbnailGeneration)return;
     assignmentThumbnailDataUrl=value;
     $('#assignmentMsg').textContent='';
   }catch(error){
-    $('#assignmentMsg').textContent=error.message||'サムネイルを登録できませんでした';
+    if(generation===assignmentThumbnailGeneration)$('#assignmentMsg').textContent=error.message||'サムネイルを登録できませんでした';
   }finally{
-    assignmentThumbnailBusy=false;
-    input.value='';
-    renderAssignmentThumbnailPreview();
+    if(generation===assignmentThumbnailGeneration){
+      assignmentThumbnailBusy=false;
+      input.value='';
+      renderAssignmentThumbnailPreview();
+    }
   }
 });
 $('#removeAssignmentThumbnail')?.addEventListener('click',()=>{
+  assignmentThumbnailGeneration++;
+  assignmentThumbnailBusy=false;
   assignmentThumbnailDataUrl=null;
   if($('#assignmentThumbnail'))$('#assignmentThumbnail').value='';
   renderAssignmentThumbnailPreview();
