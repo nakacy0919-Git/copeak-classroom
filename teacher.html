@@ -40,6 +40,7 @@
 
 
 
+  <link rel="stylesheet" href="assignment-thumbnails.css?v=20261119-cover1">
 </head>
 
 
@@ -1716,6 +1717,19 @@
 
 
 
+
+        <div class="field assignment-cover-editor">
+          <label for="assignmentThumbnail">教材一覧用サムネイル（任意）</label>
+          <p class="tiny muted">補助画像とは別に、課題一覧だけに表示する画像です。PNG / JPEG / WebPを小さく圧縮して保存します。</p>
+          <div class="assignment-cover-edit-row">
+            <img id="assignmentThumbnailPreview" src="assets/copeak-classroom-thumbnail.svg" alt="教材一覧用サムネイルのプレビュー">
+            <div class="assignment-cover-edit-controls">
+              <input id="assignmentThumbnail" class="input" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+              <button id="removeAssignmentThumbnail" type="button" class="btn btn-sm btn-light">サムネイルを解除</button>
+              <small id="assignmentThumbnailStatus" role="status">未登録の場合はCopeakの共通画像を表示します</small>
+            </div>
+          </div>
+        </div>
 
         <div class="assignment-editor-layout">
 
@@ -3531,7 +3545,7 @@
 
   type="module"
 
-  src="js/teacher.js?v=20261119-selfintro-preview-only">
+  src="js/teacher.js?v=20261119-thumbnails1">
 
 </script>
 
