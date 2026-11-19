@@ -1,4 +1,5 @@
 import { reviewDeliveryUrl } from './launch-safety.js';
+import { compressThumbnail, safeThumbnailUrl } from './assignment-thumbnail.mjs';
 import { buildTeacherPracticeUrl } from './teacher-reading-practice.mjs?v=20261117-focus';
 import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
@@ -85,6 +86,8 @@ let gradebookMetricMode = gradebookDefaultMetric;
 let gradebookAudienceMode = 'class';
 
 let editingAssignmentId = null;
+let assignmentThumbnailDataUrl = null;
+let assignmentThumbnailBusy = false;
 
 // Teacher-only local preference: per-class, per-assignment, never written to Supabase.
 const assignmentCollapseStore = createTeacherAssignmentCollapseStore((() => {
@@ -564,6 +567,7 @@ function renderAssignmentManager() {
               </div>
               <div class="teacher-assignment-main">
                 <div class="teacher-assignment-heading">
+                  ${safeThumbnailUrl(assignment.thumbnail_data_url)?`<img class="teacher-assignment-thumbnail" src="${safeThumbnailUrl(assignment.thumbnail_data_url)}" alt="">`:''}
                   <div class="ta-heading-copy">
                     <div class="teacher-assignment-title">${esc(assignment.title)}</div>
                     <div class="teacher-assignment-meta">
@@ -5019,6 +5023,13 @@ function ensureAssignmentDeliveryPanel() {
     '</section>'
   );
 }
+function renderAssignmentThumbnailPreview(){
+  const img=$('#assignmentThumbnailPreview'),status=$('#assignmentThumbnailStatus'),remove=$('#removeAssignmentThumbnail');
+  if(img){img.src=assignmentThumbnailDataUrl||'assets/copeak-classroom-thumbnail.svg';}
+  if(status)status.textContent=assignmentThumbnailBusy?'画像を小さく圧縮しています…':assignmentThumbnailDataUrl?'教材一覧のサムネイルを登録済み':'未登録時はCopeak共通画像を表示します';
+  if(remove)remove.disabled=assignmentThumbnailBusy||!assignmentThumbnailDataUrl;
+}
+
 function openAssignmentEditor(
   assignment = null
 ) {
@@ -5062,6 +5073,10 @@ function openAssignmentEditor(
   $('#assignmentTitle').value =
     assignment?.title ||
     '';
+  assignmentThumbnailBusy=false;
+  assignmentThumbnailDataUrl=safeThumbnailUrl(assignment?.thumbnail_data_url);
+  if($('#assignmentThumbnail'))$('#assignmentThumbnail').value='';
+  renderAssignmentThumbnailPreview();
 
 
   const editorAudienceType =
@@ -5445,6 +5460,10 @@ $('#assignmentPublished').checked =
 // ==========================================
 
 function closeAssignmentEditor() {
+  assignmentThumbnailBusy=false;
+  assignmentThumbnailDataUrl=null;
+  if($('#assignmentThumbnail'))$('#assignmentThumbnail').value='';
+  renderAssignmentThumbnailPreview();
 
   resetAssignmentOcr();
 
@@ -6353,6 +6372,7 @@ async function removeAssignmentAudio() {
 }
 
 async function saveAssignment() {
+  if(assignmentThumbnailBusy){$('#assignmentMsg').textContent='サムネイルの圧縮が完了してから保存してください';return;}
   if ($('#assignmentLessonType')?.value === 'self_intro') {
     $('#assignmentMsg').textContent = 'Self-Introductionの正式登録はまだ未公開です。画面内の「下書きを保存」を使用してください。';
     return;
@@ -6978,6 +6998,7 @@ let uploadedImage =
   null;
 
   const row = {
+    thumbnail_data_url: assignmentThumbnailDataUrl,
     practice_mode:
       practiceMode,
 
@@ -10585,6 +10606,29 @@ $('#assignmentTargetList').onchange =
 
 
 // ==========================================
+
+$('#assignmentThumbnail')?.addEventListener('change', async event=>{
+  const input=event.currentTarget,file=input.files?.[0];
+  if(!file)return;
+  assignmentThumbnailBusy=true;renderAssignmentThumbnailPreview();
+  try{
+    const value=await compressThumbnail(file);
+    if($('#assignmentThumbnail')!==input)return;
+    assignmentThumbnailDataUrl=value;
+    $('#assignmentMsg').textContent='';
+  }catch(error){
+    $('#assignmentMsg').textContent=error.message||'サムネイルを登録できませんでした';
+  }finally{
+    assignmentThumbnailBusy=false;
+    input.value='';
+    renderAssignmentThumbnailPreview();
+  }
+});
+$('#removeAssignmentThumbnail')?.addEventListener('click',()=>{
+  assignmentThumbnailDataUrl=null;
+  if($('#assignmentThumbnail'))$('#assignmentThumbnail').value='';
+  renderAssignmentThumbnailPreview();
+});
 
 $('#newAssignment').onclick =
   openAssignmentEditor;
