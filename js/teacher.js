@@ -6979,6 +6979,17 @@ const due =
   }
 
 
+  // Do not risk a failed assignment save if this preview runs before the
+  // additive Classroom thumbnail migration has been applied.
+  if(assignmentThumbnailDataUrl && !ctx?.demo){
+    const {error:thumbnailSchemaError}=await getClient('teacher')
+      .from('assignments').select('thumbnail_data_url').limit(1);
+    if(thumbnailSchemaError){
+      msg.textContent='教材サムネイル用のDB移行が未適用です。従来の課題保存は可能ですが、サムネイル登録は移行後に利用できます。';
+      return;
+    }
+  }
+
   const button =
     $('#publishAssignment');
 
