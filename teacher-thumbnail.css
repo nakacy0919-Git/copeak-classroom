@@ -6,9 +6,9 @@
 }
 #assignmentEditor .assignment-editor-main{min-width:0}
 #assignmentEditor .assignment-title-field{
-  max-width:490px;
   width:100%;
-  margin:0 0 3px;
+  max-width:960px;
+  margin:0 0 16px;
 }
 #assignmentEditor .assignment-title-field label{
   display:block;
@@ -17,7 +17,7 @@
 }
 #assignmentEditor .assignment-title-field #assignmentTitle{
   width:100%;
-  max-width:490px;
+  max-width:960px;
   box-sizing:border-box;
   min-height:43px;
   padding:10px 13px;
@@ -169,7 +169,7 @@
 @media(max-width:1050px){
   #assignmentEditor .assignment-editor-layout{grid-template-columns:1fr}
   #assignmentEditor .assignment-editor-sidebar{width:100%}
-  #assignmentEditor .assignment-title-field{max-width:490px}
+  #assignmentEditor .assignment-title-field{max-width:100%}
 }
 @media(max-width:600px){
   #assignmentEditor .assignment-thumbnail-editor{padding:12px}
