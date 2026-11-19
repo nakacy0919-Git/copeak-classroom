@@ -34,7 +34,8 @@
 
     href="styles.css">
   <link rel="stylesheet" href="deadline-notice.css">
-  <link rel="stylesheet" href="teacher-assignment-cards.css?v=20261117">
+  <link rel="stylesheet" href="teacher-assignment-cards.css?v=20261119-collapse">
+  <link rel="stylesheet" href="teacher-learning-notice-settings.css?v=20261119">
 
 
 
@@ -1643,6 +1644,24 @@
 
 
 
+
+      <div class="teacher-learning-notice-settings" aria-labelledby="teacherLearningNoticeTitle">
+        <div>
+          <h3 id="teacherLearningNoticeTitle">生徒への学習状況の表示</h3>
+          <p>未完了課題のお知らせの強さをクラスごとに設定できます。どのモードでも生徒には前向きな言葉で表示します。</p>
+        </div>
+        <div class="teacher-learning-notice-settings-controls">
+          <label for="teacherLearningNoticeMode">管理モード</label>
+          <select id="teacherLearningNoticeMode" class="input">
+            <option value="strict">しっかり管理</option>
+            <option value="standard">標準管理（おすすめ）</option>
+            <option value="gentle">ゆったり管理</option>
+          </select>
+          <button id="saveTeacherLearningNoticeMode" type="button" class="btn btn-sm btn-primary">設定を保存</button>
+        </div>
+        <p id="teacherLearningNoticeDescription" class="teacher-learning-notice-description"></p>
+        <p id="teacherLearningNoticeFeedback" class="teacher-learning-notice-feedback" role="status" aria-live="polite"></p>
+      </div>
 
       <!-- EDITOR -->
 
@@ -3454,7 +3473,7 @@
 
 
 <script src="js/config.js"></script>
-<script src="js/focus-mode.js?v=20261117-ud-highlight"></script>
+<script src="js/focus-mode.js?v=20261119-collapse"></script>
 
 
 
@@ -3464,7 +3483,7 @@
 
   type="module"
 
-  src="js/teacher.js?v=20261117-gradebook-sync">
+  src="js/teacher.js?v=20261119-guidance-modes">
 
 </script>
 

@@ -5,6 +5,17 @@
   const names = ['赤','青','緑','オレンジ','紫'];
   const editors = new Map();
   const MAX = 60;
+  // Per-device display preference. Never store lesson text or highlights here.
+  // Each editor has an independent state; missing preference means collapsed.
+  const panelKey = id => 'copeak_classroom_focus_panel_open_v1:' + id;
+  function restorePanelOpen(id) {
+    try { return localStorage.getItem(panelKey(id)) === '1'; }
+    catch { return false; }
+  }
+  function savePanelOpen(id, isOpen) {
+    try { localStorage.setItem(panelKey(id), isOpen ? '1' : '0'); }
+    catch { /* Unavailable or blocked storage must not prevent opening the panel. */ }
+  }
   const highlights = ['#fff18a','#baf2ca','#b9e5ff','#ffc5de','#e5e7eb'];
   const highlightNames = ['黄','緑','青','ピンク','グレー'];
   // Palette indices remain compatible with legacy [start,end,color] tuples.
@@ -103,11 +114,23 @@
     if (editors.has(id)) return editors.get(id);
     const input = document.getElementById(id);
     if (!input) return null;
-    const panel = document.createElement('div');
+    const panel = document.createElement('details');
     panel.className = 'copeak-focus-editor';
     panel.style.cssText = 'margin:8px 0;padding:10px;border:1px solid #cbd5e1;border-radius:9px;background:#f8fafc;color:#334155;font-size:13px;line-height:1.5';
-    const heading = document.createElement('strong');
-    heading.textContent = 'Focus Mode｜表現意識';
+    // Native summary handles keyboard (Enter/Space), mouse, touch and accessibility.
+    const heading = document.createElement('summary');
+    heading.className = 'copeak-focus-toggle';
+    const symbol = document.createElement('span');
+    symbol.className = 'copeak-focus-toggle-symbol';
+    symbol.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('strong');
+    label.textContent = 'Focus Mode｜表現意識';
+    const hint = document.createElement('span');
+    hint.className = 'copeak-focus-toggle-hint';
+    hint.textContent = 'クリックして開閉';
+    heading.append(symbol, label, hint);
+    const content = document.createElement('div');
+    content.className = 'copeak-focus-content';
     const controls = document.createElement('div');
     controls.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:8px 0';
     const preview = document.createElement('div');
@@ -165,7 +188,11 @@
     button(formatRow,'選択解除',null,()=>choose('clear'));
     button(formatRow,'全解除',null,()=>{state.ranges=[];state.selection=null;state.text=input.value.trim();paintPreview(state);});
     const tip=document.createElement('p');tip.textContent='色だけではなく、太字・下線も組み合わせられます。太字・下線は同じ範囲を再選択して押すと解除できます。';tip.style.cssText='margin:3px 0;color:#475569;font-size:12px';controls.append(tip);
-    panel.append(heading,controls,status,preview); input.insertAdjacentElement('afterend',panel);
+    content.append(controls,status,preview);
+    panel.append(heading,content);
+    panel.open = restorePanelOpen(id);
+    panel.addEventListener('toggle', () => savePanelOpen(id, panel.open));
+    input.insertAdjacentElement('afterend',panel);
     paintPreview(state); return state;
   }
   function restore(id,value) {
@@ -206,6 +233,15 @@
   }
   const style=document.createElement('style');
   style.textContent=`
+.copeak-focus-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;min-height:32px;user-select:none}
+.copeak-focus-toggle::-webkit-details-marker{display:none}
+.copeak-focus-toggle::marker{content:''}
+.copeak-focus-toggle:focus-visible{outline:2px solid #1d4ed8;outline-offset:3px;border-radius:4px}
+.copeak-focus-toggle-symbol{width:25px;height:25px;border-radius:6px;display:inline-grid;place-items:center;background:#e2e8f0;color:#334155;font-size:20px;font-weight:700;line-height:1}
+.copeak-focus-toggle-symbol::before{content:'＋'}
+.copeak-focus-editor[open] .copeak-focus-toggle-symbol::before{content:'－'}
+.copeak-focus-toggle-hint{margin-left:auto;font-size:11px;font-weight:500;color:#64748b}
+.copeak-focus-content{padding-top:5px}
 .copeak-focus-word{color:var(--copeak-focus-color)!important}
 .copeak-focus-highlight{background-color:var(--copeak-focus-highlight)!important;color:var(--copeak-focus-color)!important;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .copeak-focus-bold{font-weight:800!important}
