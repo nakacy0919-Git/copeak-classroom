@@ -3319,7 +3319,7 @@ function renderAssignmentList(
 
 
               <div class="student-assignment-content">
-                ${safeThumbnailUrl(assignment.thumbnail_data_url)?`<img class="student-assignment-thumbnail" src="${safeThumbnailUrl(assignment.thumbnail_data_url)}" alt="">`:''}
+                <img class="student-assignment-thumbnail" src="${safeThumbnailUrl(assignment.thumbnail_data_url)||'assets/copeak-classroom-thumbnail.svg'}" alt="">
                 <div class="student-assignment-title-row">
 
                   <div class="assignment-title">
