@@ -34,6 +34,7 @@
 
     href="styles.css">
   <link rel="stylesheet" href="deadline-notice.css">
+  <link rel="stylesheet" href="css/self-introduction-builder.css?v=20261119-preview-only">
   <link rel="stylesheet" href="teacher-assignment-cards.css?v=20261119-collapse">
   <link rel="stylesheet" href="teacher-learning-notice-settings.css?v=20261119">
 
@@ -1720,38 +1721,23 @@
 
       <main class="assignment-editor-main">
 <div class="field">
-
-  <label>
-    Lesson Type
-  </label>
-
-  <select
-    id="assignmentLessonType"
-    class="input">
-
-    <option value="text">
-      Text / 通常テキスト
-    </option>
-
-    <option value="dialogue">
-      Dialogue / 会話文
-    </option>
-
-  </select>
-
-  <div
-    class="tiny muted"
-    style="margin-top:6px">
-
-    Dialogueでは話者名を表示しますが、
-    Copeakで読む対象はセリフだけです。
-
+  <label id="assignmentLessonTypeLabel">Lesson Type</label>
+  <div id="assignmentLessonTypeButtons" class="lesson-type-switch" role="group" aria-labelledby="assignmentLessonTypeLabel">
+    <button type="button" class="lesson-type-option active" data-lesson-type="text" aria-pressed="true">Text / 通常</button>
+    <button type="button" class="lesson-type-option" data-lesson-type="dialogue" aria-pressed="false">Dialogue / 会話</button>
+    <button type="button" class="lesson-type-option" data-lesson-type="self_intro" aria-pressed="false">Self-Introduction</button>
   </div>
-
+  <select id="assignmentLessonType" class="input hidden" aria-hidden="true" tabindex="-1">
+    <option value="text">Text / 通常テキスト</option>
+    <option value="dialogue">Dialogue / 会話文</option>
+    <option value="self_intro">Self-Introduction</option>
+  </select>
+  <p id="assignmentLessonTypeHint" class="tiny muted" style="margin-top:7px">
+    通常の英文を入力して音読教材を作成します。
+  </p>
 </div>
 
-
-<div class="field">
+<div class="field" id="assignmentOcrImport">
 
   <label>
     教科書から取り込む
@@ -2053,7 +2039,68 @@
 
 
 
-        <div class="field" style="padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;margin:12px 0">
+        <!-- Self-Introduction builder: teacher-only local draft in stage 1 -->
+<div id="assignmentSelfIntroEditor" class="field hidden">
+  <div class="selfintro-builder">
+    <div class="selfintro-header">
+      <strong>Self-Introduction Builder</strong>
+      <span class="selfintro-stage">Teacher Template · 作成テスト版</span>
+    </div>
+    <div id="selfIntroTabs" class="selfintro-tabs" role="tablist" aria-label="自己紹介教材設定">
+      <button type="button" class="selfintro-tab active" data-selfintro-tab="basics" role="tab" aria-selected="true">基本設定</button>
+      <button type="button" class="selfintro-tab" data-selfintro-tab="fields" role="tab" aria-selected="false">入力項目</button>
+      <button type="button" class="selfintro-tab" data-selfintro-tab="expressions" role="tab" aria-selected="false">Expression Bank</button>
+    </div>
+    <div class="selfintro-panel-frame">
+      <section id="selfIntroPanel-basics" class="selfintro-panel" role="tabpanel">
+        <div>
+          <label for="selfIntroLevel">English Level</label>
+          <select id="selfIntroLevel" class="input">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+          <small class="selfintro-level-hint">英語レベルを選択後、推奨項目を適用できます。現在の選択は勝手に消えません。</small>
+        </div>
+        <div><button type="button" id="selfIntroRecommended" class="btn btn-light">このレベルの推奨項目を適用</button></div>
+        <label class="selfintro-field-row">
+          <input id="selfIntroStudentChoice" type="checkbox">
+          <span><strong>生徒が表現を選べるようにする</strong><small>ONの場合のみ、生徒の画面に表現の選択肢が表示されます。</small></span>
+        </label>
+        <div>
+          <label for="selfIntroInstructions">生徒への指示（任意）</label>
+          <textarea id="selfIntroInstructions" class="input" rows="2" maxlength="500" placeholder="例：趣味の理由まで具体的に伝えましょう。"></textarea>
+        </div>
+      </section>
+      <section id="selfIntroPanel-fields" class="selfintro-panel" role="tabpanel" hidden>
+        <div class="selfintro-preview-head">生徒に入力させる項目 <span id="selfIntroFieldCount">0項目</span></div>
+        <div id="selfIntroFieldList" class="selfintro-field-grid"></div>
+      </section>
+      <section id="selfIntroPanel-expressions" class="selfintro-panel" role="tabpanel" hidden>
+        <div>
+          <label for="selfIntroExpressionField">表現を設定する項目</label>
+          <select id="selfIntroExpressionField" class="input"></select>
+        </div>
+        <div id="selfIntroExpressionOptions" class="selfintro-expression-list"></div>
+        <small>各項目で自然な表現を選択できます。生徒に選ばせることも可能です。</small>
+      </section>
+    </div>
+    <div class="selfintro-preview" aria-live="polite">
+      <div class="selfintro-preview-head"><span>Sample Student Preview</span><span id="selfIntroPreviewWords">0 words</span></div>
+      <p id="selfIntroPreviewText" class="selfintro-preview-text"></p>
+    </div>
+    <p class="tiny muted" style="margin:9px 0 0">生徒ごとに英文が変わるため、固定モデル音声とサンプル英文の和訳は生徒のCopeak起動時に使用しません。</p>
+    <div class="selfintro-actions">
+      <button type="button" id="selfIntroReset" class="btn btn-light">初期化</button>
+      <button type="button" id="selfIntroSaveDraft" class="btn btn-primary">下書きを保存</button>
+    </div>
+    <p id="selfIntroNotice" class="selfintro-notice" role="status">
+      「下書きを保存」はこの端末への一時保存です。現在は教材作成の確認用です。Self-Introductionの正式な課題登録・生徒への配布はまだできません。
+    </p>
+  </div>
+</div>
+
+<div class="field" style="padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;margin:12px 0">
   <label for="assignmentScoreExclusions">採点しない固有名詞（任意）</label>
   <p class="tiny muted">1行に1語句。本文からは消さず、CopeakのAccuracyのみで除外します。</p>
   <button type="button" class="btn btn-light" id="suggestAssignmentScoreExclusions">固有名詞の候補を表示</button>
@@ -3473,6 +3520,7 @@
 
 
 <script src="js/config.js"></script>
+<script defer src="js/self-introduction-builder.js?v=20261119-preview-only"></script>
 <script src="js/focus-mode.js?v=20261119-collapse"></script>
 
 
@@ -3483,7 +3531,7 @@
 
   type="module"
 
-  src="js/teacher.js?v=20261119-guidance-modes">
+  src="js/teacher.js?v=20261119-selfintro-preview-only">
 
 </script>
 
