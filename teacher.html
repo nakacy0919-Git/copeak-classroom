@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="css/self-introduction-builder.css?v=20261119-preview-only">
   <link rel="stylesheet" href="teacher-assignment-cards.css?v=20261119-collapse">
   <link rel="stylesheet" href="teacher-learning-notice-settings.css?v=20261119">
-  <link rel="stylesheet" href="teacher-thumbnail.css?v=20261119-preview">
+  <link rel="stylesheet" href="teacher-thumbnail.css?v=20261120-bottom-form">
 
 
 
@@ -1688,15 +1688,14 @@
 
 
 
-        <div class="field">
+        <div class="assignment-editor-layout">
+
+      <main class="assignment-editor-main">
+<div class="field assignment-title-field">
 
 
 
-          <label>
-
-            Title
-
-          </label>
+          <label for="assignmentTitle">Title / 教材タイトル</label>
 
 
 
@@ -1711,28 +1710,10 @@
 
 
         </div>
-        <div class="field assignment-thumbnail-editor">
-          <label for="assignmentThumbnailInput">教材一覧のサムネイル（補助画像とは別）</label>
-          <div class="assignment-thumbnail-content">
-            <img id="assignmentThumbnailPreview" src="./assets/copeak-default-thumbnail.svg" alt="サムネイルのプレビュー">
-            <div class="assignment-thumbnail-details">
-              <input class="input" id="assignmentThumbnailInput" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
-              <div id="assignmentThumbnailStatus" class="tiny muted" role="status">未登録の場合はCopeakオリジナル画像を表示します</div>
-              <button id="assignmentThumbnailRemove" type="button" class="btn btn-sm btn-light">表紙を解除</button>
-            </div>
-          </div>
-        </div>
-        <div class="assignment-editor-layout">
 
-      <main class="assignment-editor-main">
 <div class="field">
-  <label id="assignmentLessonTypeLabel">Lesson Type</label>
-  <div id="assignmentLessonTypeButtons" class="lesson-type-switch" role="group" aria-labelledby="assignmentLessonTypeLabel">
-    <button type="button" class="lesson-type-option active" data-lesson-type="text" aria-pressed="true">Text / 通常</button>
-    <button type="button" class="lesson-type-option" data-lesson-type="dialogue" aria-pressed="false">Dialogue / 会話</button>
-    <button type="button" class="lesson-type-option" data-lesson-type="self_intro" aria-pressed="false">Self-Introduction</button>
-  </div>
-  <select id="assignmentLessonType" class="input hidden" aria-hidden="true" tabindex="-1">
+  <label id="assignmentLessonTypeLabel" for="assignmentLessonType">Lesson Type</label>
+  <select id="assignmentLessonType" class="input assignment-lesson-type-select">
     <option value="text">Text / 通常テキスト</option>
     <option value="dialogue">Dialogue / 会話文</option>
     <option value="self_intro">Self-Introduction</option>
@@ -3152,7 +3133,32 @@
   </label>
 
 
-  <div
+  
+
+</div>
+
+
+
+
+
+        
+      </aside>
+
+    </div>
+<div class="assignment-editor-bottom">
+<div class="field assignment-thumbnail-editor">
+          <label for="assignmentThumbnailInput">教材一覧のサムネイル（補助画像とは別）</label>
+          <div class="assignment-thumbnail-content">
+            <img id="assignmentThumbnailPreview" src="./assets/copeak-default-thumbnail.svg" alt="サムネイルのプレビュー">
+            <div class="assignment-thumbnail-details">
+              <input class="input" id="assignmentThumbnailInput" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+              <div id="assignmentThumbnailStatus" class="tiny muted" role="status">未登録の場合はCopeakオリジナル画像を表示します</div>
+              <button id="assignmentThumbnailRemove" type="button" class="btn btn-sm btn-light">表紙を解除</button>
+            </div>
+          </div>
+        </div>
+<div class="assignment-footer-actions">
+<div
     class="editor-actions"
     style="margin-top:14px">
 
@@ -3173,23 +3179,15 @@
     </button>
 
   </div>
-
-</div>
-
-
-
-
-
-        <div
+<div
 
           id="assignmentMsg"
 
           class="small">
 
         </div>
-      </aside>
-
-    </div>
+</div>
+</div>
 
 
 
@@ -3536,7 +3534,7 @@
 
   type="module"
 
-  src="js/teacher.js?v=20261119-selfintro-preview-only">
+  src="js/teacher.js?v=20261120-bottom-cover">
 
 </script>
 
