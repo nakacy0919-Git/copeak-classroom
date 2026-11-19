@@ -2129,7 +2129,7 @@
                 <input id="assignmentThumbnailInput" class="assignment-thumbnail-input" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" aria-label="教材一覧用サムネイルを選ぶ">
                 <span id="assignmentThumbnailFileName" class="assignment-thumbnail-filename">画像未登録（Copeak標準画像を表示）</span>
               </div>
-              <small class="assignment-thumbnail-hint">PNG / JPEG / WebP · 5MB以下 · 自動で軽量化</small>
+              <small class="assignment-thumbnail-hint">PNG / JPEG / WebP · 元画像5MB以下 · WebPへ自動圧縮（目標12KB／最大24KB）</small>
               <button id="assignmentThumbnailRemove" type="button" class="assignment-thumbnail-delete" disabled>登録画像を削除</button>
               <div id="assignmentThumbnailStatus" class="tiny muted" role="status" aria-live="polite">未登録の場合はCopeakオリジナル画像を表示します</div>
             </div>
@@ -3542,7 +3542,7 @@
 
   type="module"
 
-  src="js/teacher.js?v=20261120-bottom-cover">
+  src="js/teacher.js?v=20261120-r2-micro-thumbnails">
 
 </script>
 
