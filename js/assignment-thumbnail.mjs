@@ -101,7 +101,7 @@ export function initializeThumbnailEditor() {
     });
     pending.catch(() => {}); // saveAssignment still awaits the rejection.
   });
-  const uploadButton = document.querySelector('label[for="assignmentThumbnailInput"]');
+  const uploadButton = document.querySelector('.assignment-thumbnail-upload-btn');
   if (uploadButton) {
     uploadButton.addEventListener("keydown",e => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); }
