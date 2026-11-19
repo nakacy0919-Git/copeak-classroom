@@ -1,4 +1,4 @@
-/* Copeak Classroom Assignment Editor — compact title + bottom thumbnail. */
+/* Copeak Classroom Assignment Editor — aligned sidebar and thumbnail below delivery check. */
 #assignmentEditor .assignment-editor-layout{
   margin-top:0;
   align-items:start;
@@ -41,7 +41,7 @@
   gap:15px;
 }
 #assignmentEditor .assignment-thumbnail-editor{
-  margin:0;
+  margin:16px 0 0;
   padding:16px;
   display:flex;
   flex-direction:column;

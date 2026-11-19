@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="css/self-introduction-builder.css?v=20261119-preview-only">
   <link rel="stylesheet" href="teacher-assignment-cards.css?v=20261119-collapse">
   <link rel="stylesheet" href="teacher-learning-notice-settings.css?v=20261119">
-  <link rel="stylesheet" href="teacher-thumbnail.css?v=20261120-wide-title">
+  <link rel="stylesheet" href="teacher-thumbnail.css?v=20261120-left-column-layout">
 
 
 
@@ -1688,7 +1688,10 @@
 
 
 
-        <div class="field assignment-title-field">
+        <div class="assignment-editor-layout">
+
+      <main class="assignment-editor-main">
+<div class="field assignment-title-field">
 
 
 
@@ -1708,9 +1711,7 @@
 
         </div>
 
-        <div class="assignment-editor-layout">
 
-      <main class="assignment-editor-main">
 <div class="field">
   <label id="assignmentLessonTypeLabel" for="assignmentLessonType">Lesson Type</label>
   <select id="assignmentLessonType" class="input assignment-lesson-type-select">
@@ -2117,6 +2118,24 @@
 
 
         </div>
+
+<div class="field assignment-thumbnail-editor">
+          <label for="assignmentThumbnailInput">教材一覧のサムネイル（補助画像とは別）</label>
+          <div class="assignment-thumbnail-content">
+            <img id="assignmentThumbnailPreview" src="./assets/copeak-default-thumbnail.svg" alt="サムネイルのプレビュー">
+            <div class="assignment-thumbnail-details">
+              <div class="assignment-thumbnail-picker">
+                <label class="assignment-thumbnail-upload-btn" for="assignmentThumbnailInput" tabindex="0">🖼 画像を選択</label>
+                <input id="assignmentThumbnailInput" class="assignment-thumbnail-input" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" aria-label="教材一覧用サムネイルを選ぶ">
+                <span id="assignmentThumbnailFileName" class="assignment-thumbnail-filename">画像未登録（Copeak標準画像を表示）</span>
+              </div>
+              <small class="assignment-thumbnail-hint">PNG / JPEG / WebP · 5MB以下 · 自動で軽量化</small>
+              <button id="assignmentThumbnailRemove" type="button" class="assignment-thumbnail-delete" disabled>登録画像を削除</button>
+              <div id="assignmentThumbnailStatus" class="tiny muted" role="status" aria-live="polite">未登録の場合はCopeakオリジナル画像を表示します</div>
+            </div>
+          </div>
+        </div>
+
       </main>
 
       <aside class="assignment-editor-sidebar">
@@ -3146,22 +3165,6 @@
 
     </div>
 <div class="assignment-editor-bottom">
-<div class="field assignment-thumbnail-editor">
-          <label for="assignmentThumbnailInput">教材一覧のサムネイル（補助画像とは別）</label>
-          <div class="assignment-thumbnail-content">
-            <img id="assignmentThumbnailPreview" src="./assets/copeak-default-thumbnail.svg" alt="サムネイルのプレビュー">
-            <div class="assignment-thumbnail-details">
-              <div class="assignment-thumbnail-picker">
-                <label class="assignment-thumbnail-upload-btn" for="assignmentThumbnailInput" tabindex="0">🖼 画像を選択</label>
-                <input id="assignmentThumbnailInput" class="assignment-thumbnail-input" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" aria-label="教材一覧用サムネイルを選ぶ">
-                <span id="assignmentThumbnailFileName" class="assignment-thumbnail-filename">画像未登録（Copeak標準画像を表示）</span>
-              </div>
-              <small class="assignment-thumbnail-hint">PNG / JPEG / WebP · 5MB以下 · 自動で軽量化</small>
-              <button id="assignmentThumbnailRemove" type="button" class="assignment-thumbnail-delete" disabled>登録画像を削除</button>
-              <div id="assignmentThumbnailStatus" class="tiny muted" role="status" aria-live="polite">未登録の場合はCopeakオリジナル画像を表示します</div>
-            </div>
-          </div>
-        </div>
 <div class="assignment-footer-actions">
 <div
     class="editor-actions"
