@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   normalizeAssignmentFilter, normalizeAssignmentSort, assignmentMatchesSearch,
   sortAssignmentGroup, groupTeacherAssignments, isAssignmentGroupCollapsed,
@@ -59,4 +60,23 @@ test('unexpected filter and sort values revert to safe defaults',()=>{
   assert.equal(normalizeAssignmentFilter('not-valid'),'active');
   assert.equal(normalizeAssignmentSort('due-desc'),'due-desc');
   assert.equal(normalizeAssignmentSort('not-valid'),'manual');
+});
+
+test('teacher-only toolbar and all legacy assignment actions remain wired', () => {
+  const html = readFileSync(new URL('../teacher.html', import.meta.url), 'utf8');
+  const js = readFileSync(new URL('../js/teacher.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../teacher-assignment-cards.css', import.meta.url), 'utf8');
+  for (const filter of ['all', 'active', 'ended']) {
+    assert.ok(html.includes('data-assignment-filter="' + filter + '"'));
+  }
+  for (const action of ['edit','duplicate','delete','move-up','move-down','practice','deadline','toggle']) {
+    assert.ok(js.includes('data-assignment-action="' + action + '"'), action);
+  }
+  assert.ok(html.includes('id="assignmentListSearch"'));
+  assert.ok(html.includes('id="assignmentListSort"'));
+  assert.ok(html.includes('data-platform-page="assignments"'));
+  assert.ok(js.includes("isAssignmentGroupCollapsed(kind, preferences)"));
+  assert.ok(js.includes("moveTeacherAssignmentWithinGroup(previous"));
+  assert.ok(css.includes('.ta-group-cards[hidden]'));
+  assert.equal(js.includes('data-assignment-action="collapse"'), false);
 });
