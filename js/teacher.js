@@ -10,7 +10,8 @@ import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import { initializeThumbnailEditor, restoreThumbnailEditor, assignmentThumbnailForSave, uploadThumbnailToR2, hydrateThumbnailCards, thumbnailUrl } from './assignment-thumbnail.mjs?v=20261120-r2-tiny';
 import { LEARNING_NOTICE_MODES, normalizeLearningNoticeMode } from './student-learning-health.mjs?v=20261119-modes';
-import { createTeacherAssignmentCollapseStore, isAssignmentEnded, isAssignmentCollapsed } from './teacher-assignment-collapse.mjs';
+import { createTeacherAssignmentCollapseStore } from './teacher-assignment-collapse.mjs';
+import { groupTeacherAssignments, normalizeAssignmentFilter, normalizeAssignmentSort, isAssignmentGroupCollapsed, moveTeacherAssignmentWithinGroup } from './teacher-assignment-groups.mjs';
 import {
   requireUser,
   getClient,
@@ -91,6 +92,11 @@ let editingAssignmentId = null;
 const assignmentCollapseStore = createTeacherAssignmentCollapseStore((() => {
   try { return window.localStorage; } catch { return null; }
 })());
+
+// Teacher-only list display preferences; no Supabase/Gradebook changes.
+let assignmentFilter = 'active';
+let assignmentSort = 'manual';
+let assignmentSearch = '';
 
 $('#signOut').onclick =
   signOut;
@@ -461,152 +467,129 @@ function assignmentDateLabel(value) {
 
 
 function renderAssignmentManager() {
-
-  const root =
-    $('#assignmentManagementList');
-
-  if (!root) {
-    return;
+  const root = $('#assignmentManagementList');
+  if (!root) return;
+  const now = Date.now();
+  const groups = groupTeacherAssignments(assignments, { now, query: assignmentSearch, sort: assignmentSort });
+  for (const [filter, id] of [['all','assignmentCountAll'],['active','assignmentCountActive'],['ended','assignmentCountEnded']]) {
+    const counter = document.getElementById(id);
+    if (counter) counter.textContent = String(groups.counts[filter]);
   }
-
+  document.querySelectorAll('[data-assignment-filter]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.assignmentFilter === assignmentFilter));
+  });
+  const selector = $('#assignmentListSort');
+  if (selector && selector.value !== assignmentSort) selector.value = assignmentSort;
 
   if (!assignments.length) {
-
-    root.innerHTML = `
-      <div class="assignment-manager-empty">
-
-        <strong>
-          No assignments yet.
-        </strong>
-
-        <span>
-          New Assignmentから最初の課題を作成してください。
-        </span>
-
-      </div>
-    `;
-
+    root.innerHTML = '<div class="assignment-manager-empty"><strong>課題はまだありません</strong><span>New Assignmentから教材を登録してください。</span></div>';
     return;
   }
 
+  const counts = new Map();
+  for (const item of submissions) counts.set(item.assignment_id, (counts.get(item.assignment_id) || 0) + 1);
+  const paths = {
+    book:'<path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1zm0 0v14"/>',
+    calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/>',
+    users:'<path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2m19 0v-2a4 4 0 0 0-3-4"/><circle cx="9.5" cy="7" r="4"/><path d="M16 3a4 4 0 0 1 0 8"/>',
+    up:'<path d="M12 20V4m-7 7 7-7 7 7"/>',
+    down:'<path d="M12 4v16m-7-7 7 7 7-7"/>',
+    mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-3 0h6"/>',
+    edit:'<path d="m16 3 5 5-12 12-6 1 1-6L16 3zm-2 2 5 5"/>',
+    more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+    chevron:'<path d="m6 9 6 6 6-6"/>',
+    eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+    copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+    trash:'<path d="M3 6h18M9 6V3h6v3m4 0-1 15H6L5 6m5 4v7m4-7v7"/>'
+  };
+  const icon = name => `<svg class="ta-icon" aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[name]}</svg>`;
+  const canReorder = classOrderSupported && assignmentSort === 'manual' && !assignmentSearch.trim();
+  const preferences = assignmentCollapseStore.read(selectedClass?.id);
+  const visible = [];
 
-  const sorted = sortClassAssignments(assignments);
-  const collapsePreferences = assignmentCollapseStore.read(selectedClass?.id);
-  const now = Date.now();
-
-  root.innerHTML =
-    sorted
-      .map(
-        (assignment, index) => {
-
-          const submissionCount =
-            submissions.filter(
-              submission =>
-                submission.assignment_id ===
-                assignment.id
-            ).length;
-
-
-          const published =
-            assignment.is_published !==
-            false;
-          const modelAudioState = getAssignmentAudioState(assignment);
-          const modelAudioWarning = modelAudioState.status === 'expired'
-            ? '⚠ モデル音声の利用期限（登録後14日）が過ぎています。EditでMP3/WAVを再アップロードしてください。'
-            : modelAudioState.status === 'expiring'
-              ? '⚠ モデル音声の利用期限が3日以内です。継続する場合は再アップロードしてください。'
-              : '';
-
-
-          const lessonText =
-            String(
-              assignment.lesson_text ||
-              ''
-            ).trim();
-
-
-          const excerpt =
-            lessonText
-
-              ? (
-                  lessonText.length > 150
-                    ? `${lessonText.slice(0, 150)}…`
-                    : lessonText
-                )
-
-              : '本文未登録';
-
-
-          const actionIcon = (name) => {
-            const icons = {
-              book:'<path d="M12 6c-3-2-6-2-9-1v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1zm0 0v14"/>',
-              calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/>',
-              users:'<path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2m19 0v-2a4 4 0 0 0-3-4"/><circle cx="9.5" cy="7" r="4"/><path d="M16 3a4 4 0 0 1 0 8"/>',
-              up:'<path d="M12 20V4m-7 7 7-7 7 7"/>',
-              down:'<path d="M12 4v16m-7-7 7 7 7-7"/>',
-              mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-3 0h6"/>',
-              edit:'<path d="m16 3 5 5-12 12-6 1 1-6L16 3zm-2 2 5 5"/>',
-              more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
-              chevron:'<path d="m6 9 6 6 6-6"/>',
-              eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
-              copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
-              trash:'<path d="M3 6h18M9 6V3h6v3m4 0-1 15H6L5 6m5 4v7m4-7v7"/>'
-            };
-            return '<svg class="ta-icon" aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+icons[name]+'</svg>';
-          };
-          const aid = esc(assignment.id);
-          const ended = isAssignmentEnded(assignment, now);
-          const collapsed = isAssignmentCollapsed(assignment, collapsePreferences, now);
-          return `
-            <article class="teacher-assignment-card ta-redesign ${collapsed ? 'ta-is-collapsed' : ''}">
-              <div class="teacher-assignment-week">
-                <span>${assignment.audience_type === 'targeted' ? '個別' : 'No.'}</span>
-                <strong class="${assignment.audience_type === 'targeted' ? 'assignment-study-label' : ''}">${assignment.audience_type === 'targeted' ? '自習教材' : (assignmentNumber(assignment) || assignment.week_no)}</strong>
+  function card(item, index, peers, isEnded) {
+    const id = esc(item.id);
+    const published = item.is_published !== false;
+    const release = new Date(item.release_at).getTime();
+    const scheduled = Number.isFinite(release) && release > now;
+    const status = isEnded ? '終了' : !published ? '下書き' : scheduled ? '公開予定' : '受付中';
+    const statusClass = isEnded ? 'ended' : !published ? 'draft' : scheduled ? 'scheduled' : 'active';
+    const audio = getAssignmentAudioState(item);
+    const warning = audio.status === 'expired' ? 'モデル音声の利用期限（14日）が切れています。Editから再登録してください。'
+      : audio.status === 'expiring' ? 'モデル音声の利用期限が3日以内です。' : '';
+    const study = item.audience_type === 'targeted';
+    const number = study ? '自習教材' : assignmentNumber(item) || item.week_no;
+    const moveUpDisabled = !canReorder || index === 0 ? 'disabled' : '';
+    const moveDownDisabled = !canReorder || index === peers.length - 1 ? 'disabled' : '';
+    return `
+      <article class="teacher-assignment-card ta-redesign ta-compact-card">
+        <div class="teacher-assignment-week ${study ? 'ta-study-number' : ''}">
+          ${study ? '<strong class="assignment-study-label">自習教材</strong>' : `<span>No.</span><strong>${esc(number)}</strong>`}
+        </div>
+        <div class="teacher-assignment-main">
+          <div class="teacher-assignment-heading">
+            <div class="ta-heading-copy">
+              <div class="ta-thumbnail-title">
+                <img class="ta-thumbnail" data-assignment-thumb-id="${id}" data-thumb-key="${esc(item.thumbnail_object_key || '')}" src="${thumbnailUrl(item.thumbnail_data_url)}" alt="" loading="lazy">
+                <div class="teacher-assignment-title">${esc(item.title)}</div>
               </div>
-              <div class="teacher-assignment-main">
-                <div class="teacher-assignment-heading">
-                  <div class="ta-heading-copy">
-                    <div class="ta-thumbnail-title"><img class="ta-thumbnail" data-assignment-thumb-id="${aid}" data-thumb-key="${esc(assignment.thumbnail_object_key || '')}" src="${thumbnailUrl(assignment.thumbnail_data_url)}" alt="" loading="lazy"><div class="teacher-assignment-title">${esc(assignment.title)}</div></div>
-                    <div class="teacher-assignment-meta">
-                      <span>${actionIcon('book')}${esc(assignment.category || 'Reading')}</span>
-                      <span>${actionIcon('calendar')}${assignmentDateTimeLabel(assignment.release_at)} ～ ${assignmentDateTimeLabel(assignment.due_at)}</span>
-                      <span>${actionIcon('users')}${submissionCount} 件の提出</span>
-                      <span class="assignment-publish-badge ${published ? 'published' : 'draft'}">${published ? '公開中' : '非公開'}</span>
-                      ${ended ? '<span class="ta-ended-badge">終了</span>' : ''}
-                    </div>
-                  </div>
-                  <div class="ta-reorder" role="group" aria-label="課題の表示順">
-                    <button type="button" class="btn btn-sm btn-light ta-arrow" aria-label="課題を上へ移動" title="表示順を上へ" data-assignment-action="move-up" data-assignment-id="${aid}" ${index===0||!classOrderSupported?'disabled':''}>${actionIcon('up')}</button>
-                    <button type="button" class="btn btn-sm btn-light ta-arrow" aria-label="課題を下へ移動" title="表示順を下へ" data-assignment-action="move-down" data-assignment-id="${aid}" ${index===sorted.length-1||!classOrderSupported?'disabled':''}>${actionIcon('down')}</button>
-                  </div>
-                  <button type="button" class="ta-collapse-button" data-assignment-action="collapse" data-assignment-id="${aid}" aria-expanded="${!collapsed}" aria-controls="ta-details-${aid}" aria-label="${collapsed ? '課題を展開' : '課題を折りたたむ'}" title="${collapsed ? '課題を展開' : '課題を折りたたむ'}">
-                    <span class="ta-collapse-symbol" aria-hidden="true">${collapsed ? '+' : '−'}</span><span class="ta-collapse-text">${collapsed ? '展開' : '閉じる'}</span>
-                  </button>
-                </div>
-                <div class="teacher-assignment-detail" id="ta-details-${aid}" ${collapsed ? 'hidden' : ''}>
-                  <div class="teacher-assignment-excerpt">${esc(excerpt)}</div>
-                ${modelAudioWarning ? `<p class="teacher-audio-expiry-warning" role="status">${esc(modelAudioWarning)}</p>` : ''}
-                <div class="teacher-assignment-actions">
-                  <button type="button" class="btn btn-sm btn-primary ta-practice" data-assignment-action="practice" data-assignment-id="${aid}" title="先生自身がCopeakで音読・録音・採点します（生徒の成績には送信されません）" ${!lessonText?'disabled':''}>${actionIcon('mic')} 自分で音読</button>
-                  <button type="button" class="btn btn-sm btn-light deadline-action-button ta-secondary" data-assignment-action="deadline" data-assignment-id="${aid}" title="締切のお知らせカードを表示">${actionIcon('calendar')} Deadline</button>
-                  <button type="button" class="btn btn-sm btn-light ta-secondary" data-assignment-action="edit" data-assignment-id="${aid}">${actionIcon('edit')} Edit</button>
-                  <details class="ta-more">
-                    <summary class="ta-more-trigger">${actionIcon('more')} その他 ${actionIcon('chevron')}</summary>
-                    <div class="ta-more-panel" role="group" aria-label="その他の課題操作">
-                      <button type="button" data-assignment-action="toggle" data-assignment-id="${aid}">${actionIcon('eye')} ${published?'Unpublish（非公開）':'Publish（公開）'}</button>
-                      <button type="button" data-assignment-action="duplicate" data-assignment-id="${aid}">${actionIcon('copy')} Duplicate（複製）</button>
-                      <button type="button" class="ta-delete" data-assignment-action="delete" data-assignment-id="${aid}" title="課題と提出記録を完全削除">${actionIcon('trash')} 完全削除</button>
-                    </div>
-                  </details>
-                </div>
-                </div>
+              <div class="teacher-assignment-meta">
+                <span>${icon('book')}${esc(item.category || 'Reading')}</span>
+                <span>${icon('calendar')}${esc(assignmentDateTimeLabel(item.release_at))} ～ ${esc(assignmentDateTimeLabel(item.due_at))}</span>
+                <span>${icon('users')}${counts.get(item.id) || 0}件の提出</span>
+                <span class="assignment-publish-badge ${published ? 'published' : 'draft'}">${published ? '公開中' : '非公開'}</span>
+                <span class="ta-status-badge ta-status-${statusClass}">${status}</span>
               </div>
-            </article>
-          `;
-        }
-      )
-      .join('');
-  if (!ctx?.demo) void hydrateThumbnailCards(sorted, getClient('teacher'), root);
+              ${warning ? `<div class="ta-audio-warning" role="status">⚠ ${esc(warning)}</div>` : ''}
+            </div>
+            <div class="ta-card-controls" role="group" aria-label="${esc(item.title)} の操作">
+              <div class="ta-reorder" role="group" aria-label="順番を変更">
+                <button type="button" class="ta-card-icon-button ta-arrow" aria-label="上に移動" title="上に移動" data-assignment-action="move-up" data-assignment-id="${id}" ${moveUpDisabled}>${icon('up')}</button>
+                <button type="button" class="ta-card-icon-button ta-arrow" aria-label="下に移動" title="下に移動" data-assignment-action="move-down" data-assignment-id="${id}" ${moveDownDisabled}>${icon('down')}</button>
+              </div>
+              <button type="button" class="ta-card-icon-button" aria-label="課題を編集" title="課題を編集・期限を延長" data-assignment-action="edit" data-assignment-id="${id}">${icon('edit')}</button>
+              <button type="button" class="ta-card-icon-button" aria-label="課題を複製" title="課題を複製" data-assignment-action="duplicate" data-assignment-id="${id}">${icon('copy')}</button>
+              <button type="button" class="ta-card-icon-button ta-card-delete" aria-label="課題を削除" title="課題を削除（確認あり）" data-assignment-action="delete" data-assignment-id="${id}">${icon('trash')}</button>
+              <details class="ta-more">
+                <summary class="ta-card-icon-button ta-more-trigger" aria-label="その他の操作" title="音読・締切カード・公開設定">${icon('more')}</summary>
+                <div class="ta-more-panel" role="group" aria-label="その他の操作">
+                  <button type="button" data-assignment-action="practice" data-assignment-id="${id}" ${!String(item.lesson_text || '').trim() ? 'disabled' : ''}>${icon('mic')} 自分で音読</button>
+                  <button type="button" data-assignment-action="deadline" data-assignment-id="${id}">${icon('calendar')} 締切カード</button>
+                  <button type="button" data-assignment-action="toggle" data-assignment-id="${id}">${icon('eye')} ${published ? 'Unpublish（非公開）' : 'Publish（公開）'}</button>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function group(kind, rows) {
+    const isEnded = kind === 'ended';
+    const title = isEnded ? '終了した課題' : '受付中の課題';
+    const collapsed = !assignmentSearch.trim() && isAssignmentGroupCollapsed(kind, preferences);
+    const countText = assignmentSearch.trim() ? `${rows.length} / ${groups.counts[kind]}件` : `${groups.counts[kind]}件`;
+    if (!collapsed) visible.push(...rows);
+    return `
+      <section class="ta-assignment-group ta-group-${kind}" aria-label="${title}">
+        <button type="button" class="ta-group-toggle" data-assignment-group-toggle="${kind}" aria-expanded="${!collapsed}" aria-controls="ta-group-${kind}-cards">
+          <span class="ta-group-dot" aria-hidden="true">${isEnded ? '✓' : '●'}</span>
+          <span class="ta-group-title">${title} <span class="ta-group-count">(${countText})</span></span>
+          <span class="ta-group-hint">${collapsed ? 'クリックして再表示' : 'クリックして折りたたむ'}</span>
+          ${icon('chevron')}
+        </button>
+        <div class="ta-group-cards" id="ta-group-${kind}-cards" ${collapsed ? 'hidden' : ''}>
+          ${rows.length ? rows.map((item, index) => card(item, index, rows, isEnded)).join('') : '<p class="ta-group-empty">該当する課題はありません。</p>'}
+        </div>
+      </section>`;
+  }
+
+  root.innerHTML = [
+    assignmentFilter === 'ended' ? '' : group('active', groups.active),
+    group('ended', groups.ended)
+  ].join('');
+  // Never sign R2 thumbnail URLs for cards hidden inside a closed group.
+  if (!ctx?.demo && visible.length) void hydrateThumbnailCards(visible, getClient('teacher'), root);
 }
 
 // Class-local display ordering. Assignment IDs and Gradebook numbers stay fixed.
