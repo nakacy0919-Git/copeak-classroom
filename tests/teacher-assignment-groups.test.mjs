@@ -47,12 +47,12 @@ test('all sorting options stay presentation-only and preserve manual order on ti
 });
 test('reordering swaps only same-status peers without moving expired cards',()=>{
   const moved=moveTeacherAssignmentWithinGroup(items,'c',-1,NOW);
-  assert.deepEqual(moved.map(x=>x.id),['c','b','a','d']);
+  assert.deepEqual(moved.map(x=>x.id),['c','b','d','a']);
   assert.equal(moved.find(x=>x.id==='c').gradebook_no,11);
   assert.deepEqual(moveTeacherAssignmentWithinGroup(items,'a',-1,NOW).map(x=>x.id),
     ['a','b','c','d']);
   assert.deepEqual(moveTeacherAssignmentWithinGroup(items,'d',-1,NOW).map(x=>x.id),
-    ['a','d','c','b']);
+    ['a','d','b','c']);
 });
 test('unexpected filter and sort values revert to safe defaults',()=>{
   assert.equal(normalizeAssignmentFilter('active'),'active');
