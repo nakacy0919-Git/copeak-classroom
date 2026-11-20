@@ -56,3 +56,190 @@
 #assignmentManagementList .ta-is-collapsed .teacher-assignment-main{align-self:center}
 @media(max-width:760px){#assignmentManagementList .ta-redesign .ta-collapse-button{min-width:40px;width:40px;min-height:40px;padding:0}#assignmentManagementList .ta-collapse-text{display:none}}
 @media(max-width:480px){#assignmentManagementList .ta-redesign.ta-is-collapsed{padding:10px;gap:9px}#assignmentManagementList .ta-is-collapsed .teacher-assignment-week{min-height:60px}}
+
+/* =============================================================
+   November 2026 teacher-only assignment list redesign.
+   Scope deliberately excludes the existing left navigation/editor.
+   ============================================================= */
+#assignmentListToolbar.ta-list-toolbar {
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+  gap:12px 20px;margin:18px 0 10px;
+}
+#assignmentListToolbar .ta-filter-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#assignmentListToolbar .ta-filter-tab{
+  min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  padding:7px 16px;border-radius:999px;border:1px solid #d4e2df;
+  background:#fff;color:#34465c;font-size:13px;font-weight:800;
+  box-shadow:0 2px 5px #1b3e3010;cursor:pointer;
+}
+#assignmentListToolbar .ta-filter-tab[aria-pressed="true"]{
+  border-color:#078bc5;background:linear-gradient(130deg,#199cde,#087aab);
+  color:white;box-shadow:0 3px 9px #1978af2b;
+}
+#assignmentListToolbar .ta-filter-count{
+  display:inline-flex;align-items:center;justify-content:center;min-width:25px;height:25px;
+  padding:0 5px;border-radius:50px;background:#e8eef3;color:#33495c;font-variant-numeric:tabular-nums;
+}
+#assignmentListToolbar .ta-filter-tab[aria-pressed="true"] .ta-filter-count{
+  background:#fff;color:#08769b;
+}
+#assignmentListToolbar .ta-list-tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-left:auto}
+#assignmentListToolbar .ta-assignment-search{
+  display:flex;align-items:center;gap:8px;min-height:41px;box-sizing:border-box;
+  width:clamp(180px,22vw,300px);padding:0 12px;background:#fff;color:#65788c;
+  border:1px solid #d6e0e7;border-radius:12px;
+}
+#assignmentListToolbar .ta-assignment-search input{
+  border:0;outline:0;background:transparent;color:#173149;font:inherit;font-size:13px;min-width:0;width:100%;
+}
+#assignmentListToolbar .ta-assignment-search:focus-within{outline:2px solid #178dbd;outline-offset:1px}
+#assignmentListToolbar .ta-assignment-sort{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:#506c70;white-space:nowrap}
+#assignmentListToolbar .ta-assignment-sort select{
+  min-height:41px;border:1px solid #d6e0e7;border-radius:11px;padding:0 28px 0 12px;
+  background:#fff;color:#27445b;font:inherit;font-size:13px;max-width:205px;
+}
+#assignmentListToolbar button:focus-visible,#assignmentListToolbar select:focus-visible{
+  outline:2px solid #087cba;outline-offset:2px;
+}
+#assignmentListToolbar .ta-visually-hidden{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+#assignmentManagementList{display:grid;gap:16px;margin-top:14px;min-width:0}
+#assignmentManagementList .ta-assignment-group{
+  min-width:0;border:1px solid #dbe7e3;border-radius:17px;overflow:visible;background:#fff;
+  box-shadow:0 4px 14px #233f3e0b;
+}
+#assignmentManagementList .ta-group-toggle{
+  display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:16px;
+  min-height:54px;padding:11px 18px;text-align:left;cursor:pointer;color:#153b40;
+  background:linear-gradient(90deg,#e0f3eb,#eef8f5);
+}
+#assignmentManagementList .ta-group-ended .ta-group-toggle{
+  color:#314b61;background:linear-gradient(90deg,#e3ebf3,#edf3f8);
+}
+#assignmentManagementList .ta-group-toggle .ta-icon{
+  width:21px;height:21px;transition:transform .15s ease;transform:rotate(180deg);
+}
+#assignmentManagementList .ta-group-toggle[aria-expanded="false"] .ta-icon{transform:rotate(0deg)}
+#assignmentManagementList .ta-group-toggle:focus-visible{outline:2px solid #178b95;outline-offset:2px}
+#assignmentManagementList .ta-group-dot{
+  display:inline-grid;place-items:center;flex:none;width:24px;height:24px;
+  border-radius:50%;background:#c8f0d6;color:#087947;font-size:13px;font-weight:900;
+}
+#assignmentManagementList .ta-group-active .ta-group-dot{color:#10a14a;background:transparent;font-size:25px}
+#assignmentManagementList .ta-group-ended .ta-group-dot{background:#7d96af;color:#fff}
+#assignmentManagementList .ta-group-title{flex:1;min-width:0;font-size:17px;font-weight:850;line-height:1.4}
+#assignmentManagementList .ta-group-count{white-space:nowrap;font-size:15px}
+#assignmentManagementList .ta-group-hint{color:#647c87;font-size:11px;font-weight:650;margin-left:auto}
+#assignmentManagementList .ta-group-cards{display:grid;gap:5px;padding:10px;background:#fff;border-radius:0 0 16px 16px}
+#assignmentManagementList .ta-group-cards[hidden]{display:none!important}
+#assignmentManagementList .ta-group-empty{margin:0;padding:20px;color:#667c7b;text-align:center;font-size:13px}
+#assignmentManagementList .ta-compact-card.ta-redesign{
+  display:grid;grid-template-columns:clamp(94px,11vw,138px) minmax(0,1fr);
+  gap:13px;padding:9px 12px;border-radius:13px;min-height:78px;
+  box-shadow:none;border:1px solid #e1eae8;background:#fff;align-items:center;
+}
+#assignmentManagementList .ta-compact-card.ta-redesign:hover{border-color:#b3d8cb;box-shadow:0 3px 9px #184e3320}
+#assignmentManagementList .ta-compact-card .teacher-assignment-week{
+  display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;
+  min-height:56px;align-self:stretch;padding:6px 7px;border-radius:12px;
+  background:linear-gradient(120deg,#e5f6ef,#e0f0e8);
+}
+#assignmentManagementList .ta-compact-card .teacher-assignment-week span{font-size:16px;font-weight:800;color:#234e43;white-space:nowrap}
+#assignmentManagementList .ta-compact-card .teacher-assignment-week strong{
+  font-size:clamp(25px,2.4vw,34px);line-height:1;color:#00643f;font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+#assignmentManagementList .ta-compact-card .teacher-assignment-week .assignment-study-label{font-size:12px}
+#assignmentManagementList .ta-compact-card .teacher-assignment-main{
+  border-left:0;padding-left:0;min-width:0;width:100%;
+}
+#assignmentManagementList .ta-compact-card .teacher-assignment-heading{
+  display:flex;align-items:center;flex-direction:row;justify-content:space-between;gap:12px;min-width:0;
+}
+#assignmentManagementList .ta-compact-card .ta-heading-copy{min-width:0;flex:1}
+#assignmentManagementList .ta-compact-card .ta-thumbnail-title{display:flex;align-items:center;gap:11px;min-width:0}
+#assignmentManagementList .ta-compact-card .ta-thumbnail{width:70px;height:43px;border-radius:8px}
+#assignmentManagementList .ta-compact-card .teacher-assignment-title{
+  font-size:clamp(14px,1.3vw,17px);font-weight:800;line-height:1.34;color:#172938;
+  overflow-wrap:anywhere;
+}
+#assignmentManagementList .ta-compact-card .teacher-assignment-meta{
+  margin-top:5px;display:flex;flex-wrap:wrap;gap:4px 10px;color:#526778;
+  font-size:11px;line-height:1.5;align-items:center;
+}
+#assignmentManagementList .ta-compact-card .teacher-assignment-meta>span{
+  display:inline-flex;align-items:center;gap:5px;min-width:0;
+}
+#assignmentManagementList .ta-compact-card .teacher-assignment-meta>span:not(:first-child){border-left:0;padding-left:0}
+#assignmentManagementList .ta-compact-card .teacher-assignment-meta .ta-icon{width:14px;height:14px}
+#assignmentManagementList .ta-compact-card .assignment-publish-badge{
+  font-size:10px;line-height:1.4;padding:3px 8px;border-radius:50px;white-space:nowrap;
+}
+#assignmentManagementList .ta-status-badge{
+  display:inline-flex;align-items:center;border-radius:50px;padding:3px 9px;
+  font-size:10px;font-weight:850;line-height:1.5;white-space:nowrap;border:1px solid transparent;
+}
+#assignmentManagementList .ta-status-active{color:#057b4d;background:#dcf9ea;border-color:#a9eac6}
+#assignmentManagementList .ta-status-ended{color:#5c6f71;background:#edf2f2;border-color:#d1dcdb}
+#assignmentManagementList .ta-status-draft{color:#956622;background:#fff5dc;border-color:#f6dfab}
+#assignmentManagementList .ta-status-scheduled{color:#326b91;background:#e8f4fc;border-color:#c1e4f7}
+#assignmentManagementList .ta-audio-warning{font-size:11px;color:#946017;margin-top:5px}
+#assignmentManagementList .ta-card-controls{display:flex;align-items:center;gap:6px;flex:none}
+#assignmentManagementList .ta-compact-card .ta-reorder{display:flex;align-items:center;gap:6px;margin-right:5px}
+#assignmentManagementList .ta-compact-card .ta-card-icon-button{
+  display:inline-flex;align-items:center;justify-content:center;width:37px;height:39px;
+  min-width:37px;min-height:39px;box-sizing:border-box;padding:0;
+  background:#fff;border:1px solid #d5e1e5;border-radius:10px;color:#24506d;
+  cursor:pointer;box-shadow:none;list-style:none;line-height:1;
+}
+#assignmentManagementList .ta-compact-card .ta-card-icon-button .ta-icon{width:18px;height:18px}
+#assignmentManagementList .ta-compact-card .ta-card-icon-button:hover{background:#eff7fa;border-color:#a2cddc}
+#assignmentManagementList .ta-compact-card .ta-card-icon-button:focus-visible{outline:2px solid #1384b0;outline-offset:2px}
+#assignmentManagementList .ta-compact-card .ta-card-icon-button:disabled{
+  opacity:.28;cursor:not-allowed;box-shadow:none;
+}
+#assignmentManagementList .ta-compact-card .ta-card-delete{
+  background:#fff6f6;border-color:#f4c7c9;color:#c42b36;
+}
+#assignmentManagementList .ta-compact-card .ta-card-delete:hover{background:#ffeaeb;border-color:#eb9da2}
+#assignmentManagementList .ta-compact-card .ta-more{position:relative;flex:none}
+#assignmentManagementList .ta-compact-card .ta-more-trigger{
+  padding:0;border:1px solid #d5e1e5;border-radius:10px;background:#fff;
+  font-size:14px;min-height:39px;min-width:37px;width:37px;height:39px;
+}
+#assignmentManagementList .ta-compact-card .ta-more[open] .ta-more-trigger{background:#e9f3f7}
+#assignmentManagementList .ta-compact-card .ta-more-panel{min-width:205px}
+#assignmentManagementList .ta-compact-card .ta-more-panel>button:disabled{opacity:.35;cursor:not-allowed}
+@media(max-width:1180px){
+  #assignmentListToolbar .ta-list-tools{margin-left:0}
+  #assignmentManagementList .ta-compact-card .teacher-assignment-heading{flex-wrap:wrap}
+  #assignmentManagementList .ta-card-controls{margin-left:auto}
+}
+@media(max-width:760px){
+  #assignmentListToolbar .ta-assignment-search{width:100%;min-width:180px;flex:1}
+  #assignmentListToolbar .ta-list-tools{width:100%}
+  #assignmentManagementList .ta-compact-card.ta-redesign{grid-template-columns:92px minmax(0,1fr);gap:10px;padding:9px}
+  #assignmentManagementList .ta-compact-card .teacher-assignment-week{min-height:52px;gap:5px}
+  #assignmentManagementList .ta-compact-card .teacher-assignment-week strong{font-size:28px}
+  #assignmentManagementList .ta-compact-card .teacher-assignment-week span{font-size:13px}
+  #assignmentManagementList .ta-compact-card .teacher-assignment-title{font-size:14px}
+  #assignmentManagementList .ta-compact-card .ta-thumbnail{width:58px;height:36px}
+  #assignmentManagementList .ta-group-hint{display:none}
+}
+@media(max-width:480px){
+  #assignmentListToolbar .ta-filter-tab{padding:7px 11px;font-size:12px;gap:6px}
+  #assignmentListToolbar .ta-assignment-sort{width:100%;justify-content:space-between}
+  #assignmentListToolbar .ta-assignment-sort select{max-width:240px;flex:1}
+  #assignmentManagementList .ta-group-title{font-size:14px}
+  #assignmentManagementList .ta-group-cards{padding:7px;gap:7px}
+  #assignmentManagementList .ta-compact-card.ta-redesign{grid-template-columns:70px minmax(0,1fr)}
+  #assignmentManagementList .ta-compact-card .teacher-assignment-week{flex-direction:column;gap:1px}
+  #assignmentManagementList .ta-compact-card .teacher-assignment-week strong{font-size:25px}
+  #assignmentManagementList .ta-compact-card .ta-card-icon-button{width:34px;min-width:34px;height:37px;min-height:37px}
+  #assignmentManagementList .ta-compact-card .ta-more-trigger{width:34px;min-width:34px;height:37px;min-height:37px}
+  #assignmentManagementList .ta-compact-card .ta-reorder{gap:3px;margin-right:0}
+  #assignmentManagementList .ta-card-controls{gap:4px;flex-wrap:wrap;justify-content:flex-end}
+}
+@media(prefers-reduced-motion:reduce){#assignmentManagementList .ta-group-toggle .ta-icon{transition:none}}
