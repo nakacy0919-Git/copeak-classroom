@@ -5,7 +5,7 @@ import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
 import { bestMetricMap, effectiveMetric, countAttempts } from './shared-gradebook.mjs?v=20261117';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
 import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
-import { sortClassAssignments, moveClassAssignment } from './assignment-order.mjs';
+import { sortClassAssignments } from './assignment-order.mjs';
 import { openDeadlineNotice } from './assignment-deadline-notice.mjs';
 import { getAssignmentAudioState } from './assignment-audio-state.mjs';
 import { initializeThumbnailEditor, restoreThumbnailEditor, assignmentThumbnailForSave, uploadThumbnailToR2, hydrateThumbnailCards, thumbnailUrl } from './assignment-thumbnail.mjs?v=20261120-r2-tiny';
@@ -596,7 +596,7 @@ function renderAssignmentManager() {
 async function moveAssignmentDisplayOrder(assignmentId, direction) {
   if (!selectedClass || !classOrderSupported) return;
   const previous = sortClassAssignments(assignments);
-  const next = moveClassAssignment(previous, assignmentId, direction);
+  const next = moveTeacherAssignmentWithinGroup(previous, assignmentId, direction);
   if (next.every((item, i) => item.id === previous[i]?.id)) return;
 
   if (ctx.demo) {
@@ -10814,6 +10814,27 @@ $('#assignmentRelease').onchange =
   updateDueDate;
 
 
+// Filter/search/sort operate on teacher display only, never student data.
+document.querySelectorAll('[data-assignment-filter]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const next = normalizeAssignmentFilter(tab.dataset.assignmentFilter);
+    assignmentFilter = next;
+    // Ending is folded by default; explicit All/Ended selection reveals its cards.
+    assignmentCollapseStore.set(selectedClass?.id, '__group_ended', next === 'active');
+    if (next === 'ended') assignmentCollapseStore.set(selectedClass?.id, '__group_active', true);
+    else assignmentCollapseStore.set(selectedClass?.id, '__group_active', false);
+    renderAssignmentManager();
+  });
+});
+$('#assignmentListSearch')?.addEventListener('input', event => {
+  assignmentSearch = event.target.value || '';
+  renderAssignmentManager();
+});
+$('#assignmentListSort')?.addEventListener('change', event => {
+  assignmentSort = normalizeAssignmentSort(event.target.value);
+  renderAssignmentManager();
+});
+
 // Native details supports keyboard and touch; only one overflow menu stays open.
 const assignmentManagerRoot = $('#assignmentManagementList');
 function closeAssignmentMenus(except = null) {
@@ -10837,6 +10858,18 @@ assignmentManagerRoot?.addEventListener('keydown', event => {
   ?.addEventListener(
     'click',
     async event => {
+      const groupToggle = event.target.closest?.('[data-assignment-group-toggle]');
+      if (groupToggle) {
+        const group = groupToggle.dataset.assignmentGroupToggle;
+        if (group !== 'ended' && group !== 'active') return;
+        const preferences = assignmentCollapseStore.read(selectedClass?.id);
+        const wasCollapsed = isAssignmentGroupCollapsed(group, preferences);
+        assignmentCollapseStore.set(selectedClass?.id, '__group_' + group, !wasCollapsed);
+        renderAssignmentManager();
+        assignmentManagerRoot?.querySelector('[data-assignment-group-toggle="' + group + '"]')
+          ?.focus({ preventScroll: true });
+        return;
+      }
 
       const button =
         event.target.closest(
@@ -10870,17 +10903,7 @@ assignmentManagerRoot?.addEventListener('keydown', event => {
 
       try {
 
-        if (action === 'collapse') {
-          const isCollapsed = isAssignmentCollapsed(
-            assignment, assignmentCollapseStore.read(selectedClass?.id)
-          );
-          assignmentCollapseStore.set(selectedClass?.id, assignment.id, !isCollapsed);
-          renderAssignmentManager();
-          [...assignmentManagerRoot.querySelectorAll('[data-assignment-action="collapse"]')]
-            .find(el => el.dataset.assignmentId === assignment.id)
-            ?.focus({ preventScroll: true });
-
-        } else if (action === 'practice') {
+        if (action === 'practice') {
           await openTeacherReadingPractice(assignment);
 
         } else if (action === 'deadline') {
