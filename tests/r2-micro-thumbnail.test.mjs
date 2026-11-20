@@ -121,7 +121,9 @@ test('Classroom save references keys, not base64, and legacy fallback remains',(
   const thumbnailJs = readFileSync(new URL('../js/assignment-thumbnail.mjs', import.meta.url),'utf8');
   assert.ok(teacherJs.includes('uploadThumbnailToR2(thumbnailValue'));
   assert.ok(teacherJs.includes('thumbnail_object_key = cover.objectKey'));
-  assert.ok(teacherJs.includes('hydrateThumbnailCards(sorted'));
+  // Grouped lists sign URLs only for expanded/visible cards; legacy flat layout used sorted.
+  assert.ok(teacherJs.includes('hydrateThumbnailCards(visible') ||
+    teacherJs.includes('hydrateThumbnailCards(sorted'));
   assert.equal(teacherJs.includes('thumbnail_data_url: thumbnailValue'),false);
   assert.ok(thumbnailJs.includes("thumbnailUrl(raw)"));
   assert.ok(thumbnailJs.includes('TARGET_BYTES = 12 * 1024'));
