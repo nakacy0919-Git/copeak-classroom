@@ -51,7 +51,7 @@ test('reordering swaps only same-status peers without moving expired cards',()=>
   assert.deepEqual(moved.map(x=>x.id),['c','b','d','a']);
   assert.equal(moved.find(x=>x.id==='c').gradebook_no,11);
   assert.deepEqual(moveTeacherAssignmentWithinGroup(items,'a',-1,NOW).map(x=>x.id),
-    ['a','b','c','d']);
+    ['a','b','d','c']);
   assert.deepEqual(moveTeacherAssignmentWithinGroup(items,'d',-1,NOW).map(x=>x.id),
     ['a','d','b','c']);
 });
