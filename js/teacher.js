@@ -97,6 +97,7 @@ const assignmentCollapseStore = createTeacherAssignmentCollapseStore((() => {
 let assignmentFilter = 'active';
 let assignmentSort = 'manual';
 let assignmentSearch = '';
+let assignmentSearchGroupState = { active: false, ended: false };
 
 $('#signOut').onclick =
   signOut;
@@ -567,7 +568,9 @@ function renderAssignmentManager() {
   function group(kind, rows) {
     const isEnded = kind === 'ended';
     const title = isEnded ? '終了した課題' : '受付中の課題';
-    const collapsed = !assignmentSearch.trim() && isAssignmentGroupCollapsed(kind, preferences);
+    const collapsed = assignmentSearch.trim()
+      ? assignmentSearchGroupState[kind] === true
+      : isAssignmentGroupCollapsed(kind, preferences);
     const countText = assignmentSearch.trim() ? `${rows.length} / ${groups.counts[kind]}件` : `${groups.counts[kind]}件`;
     if (!collapsed) visible.push(...rows);
     return `
@@ -10828,6 +10831,7 @@ document.querySelectorAll('[data-assignment-filter]').forEach(tab => {
 });
 $('#assignmentListSearch')?.addEventListener('input', event => {
   assignmentSearch = event.target.value || '';
+  assignmentSearchGroupState = { active: false, ended: false };
   renderAssignmentManager();
 });
 $('#assignmentListSort')?.addEventListener('change', event => {
@@ -10863,8 +10867,12 @@ assignmentManagerRoot?.addEventListener('keydown', event => {
         const group = groupToggle.dataset.assignmentGroupToggle;
         if (group !== 'ended' && group !== 'active') return;
         const preferences = assignmentCollapseStore.read(selectedClass?.id);
-        const wasCollapsed = isAssignmentGroupCollapsed(group, preferences);
-        assignmentCollapseStore.set(selectedClass?.id, '__group_' + group, !wasCollapsed);
+        if (assignmentSearch.trim()) {
+          assignmentSearchGroupState[group] = !assignmentSearchGroupState[group];
+        } else {
+          const wasCollapsed = isAssignmentGroupCollapsed(group, preferences);
+          assignmentCollapseStore.set(selectedClass?.id, '__group_' + group, !wasCollapsed);
+        }
         renderAssignmentManager();
         assignmentManagerRoot?.querySelector('[data-assignment-group-toggle="' + group + '"]')
           ?.focus({ preventScroll: true });
