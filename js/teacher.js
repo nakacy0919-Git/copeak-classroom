@@ -2,6 +2,7 @@ import { reviewDeliveryUrl } from './launch-safety.js';
 import { buildTeacherPracticeUrl } from './teacher-reading-practice.mjs?v=20261117-focus';
 import './scoring-exclusions.js';
 import { fetchGradebookSubmissions } from './gradebook-submissions.mjs';
+import { buildSubmissionStatus, sortSubmissionStatus, STATUS_LABELS, STATUS_ORDER } from './teacher-submission-status.mjs';
 import { bestMetricMap, effectiveMetric, countAttempts } from './shared-gradebook.mjs?v=20261117';
 import { assignmentNumber, assignmentLabel, nextClassNumber, targetsStudent } from './assignment-labels.mjs';
 import { evaluatePassCriteria, buildPassingAttemptMap } from './pass-criteria.mjs';
@@ -42,6 +43,7 @@ let selectedClass = null;
 let classOrderSupported = true;
 
 let students = [];
+let submissionRoster = [];
 
 let assignments = [];
 
@@ -467,6 +469,81 @@ function assignmentDateLabel(value) {
 }
 
 
+
+let submissionStatusDialog = null;
+function openSubmissionStatus(assignment) {
+  // Use the same current class and authorized teacher data as the Gradebook.
+  const rows = buildSubmissionStatus(assignment, students, submissions, manualScores, preservedPasses, submissionRoster);
+  const base = evaluatePassCriteria(assignment, null, null);
+  if (submissionStatusDialog?.open) submissionStatusDialog.close();
+  submissionStatusDialog?.remove();
+  const previousFocus = document.activeElement;
+  const dialog = document.createElement('dialog');
+  submissionStatusDialog = dialog;
+  dialog.className = 'tss-dialog';
+  dialog.setAttribute('aria-labelledby', 'tss-heading');
+  const counts = Object.fromEntries(STATUS_ORDER.map(status => [status, rows.filter(row => row.status === status).length]));
+  const complete = counts.passed;
+  const target = [base.targets.accuracy == null ? '' : 'Accuracy ' + base.targets.accuracy + '%', base.targets.wpm == null ? '' : 'WPM ' + base.targets.wpm].filter(Boolean).join(' / ');
+  dialog.innerHTML = `
+    <div class="tss-shell">
+      <header class="tss-header">
+        <div><div class="tss-kicker">ASSIGNMENT STATUS · ${esc(selectedClass?.name || '')}</div>
+        <h2 id="tss-heading">${esc(assignment.title)}</h2>
+        <p>対象 ${rows.length}名 · 完了 ${complete}名 · 未完了 ${rows.length-complete}名</p></div>
+        <button type="button" class="tss-close" aria-label="閉じる">×</button>
+      </header>
+      <div class="tss-progress" role="progressbar" aria-label="課題完了率" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${rows.length ? Math.round(complete/rows.length*100) : 0}">
+        <span style="width:${rows.length ? complete/rows.length*100 : 0}%"></span>
+      </div>
+      <p class="tss-hint">${base.configured ? '合格基準：'+esc(target)+'。あと少し：同一の音読でAccuracyは基準まで5ポイント以内、WPMは10以内（設定項目のみ）。' : '合格基準なし：提出完了を緑色で表示します。'} 合否は保存済み課題の基準を使用します。</p>
+      <div class="tss-summary" aria-label="状態で絞り込む">
+        ${STATUS_ORDER.map(status => `<button type="button" data-tss-filter="${status}" class="tss-summary-card tss-${status}" aria-pressed="false"><span>${STATUS_LABELS[status]}</span><strong>${counts[status]}<small> 名</small></strong></button>`).join('')}
+      </div>
+      <div class="tss-controls">
+        <button type="button" data-tss-filter="all" aria-pressed="true">全員</button>
+        <button type="button" data-tss-filter="incomplete" aria-pressed="false">未完了のみ (${rows.length-complete})</button>
+        <button type="button" data-tss-filter="no-record" aria-pressed="false">提出記録なし</button>
+        <label>並べ替え <select class="tss-sort"><option value="status">状態順（未トライから）</option><option value="number">出席番号順</option><option value="attempts-desc">挑戦回数の多い順</option><option value="attempts-asc">挑戦回数の少ない順</option><option value="accuracy-desc">Accuracyの高い順</option><option value="accuracy-asc">Accuracyの低い順</option><option value="wpm-desc">WPMの高い順</option><option value="latest">最終提出の新しい順</option></select></label>
+        <label>検索 <input type="search" class="tss-search" placeholder="名前・出席番号"></label>
+      </div>
+      <div class="tss-result-count" aria-live="polite"></div>
+      <div class="tss-student-grid"></div>
+    </div>`;
+  let filter = 'all';
+  function refresh() {
+    const query = dialog.querySelector('.tss-search').value.normalize('NFKC').trim().toLocaleLowerCase();
+    const filtered = rows.filter(row =>
+      (filter === 'all' || (filter === 'incomplete' ? row.status !== 'passed' : filter === 'no-record' ? !row.hasRecord && row.status !== 'passed' : row.status === filter)) &&
+      (!query || [row.student.display_name, row.student.student_number].join(' ').normalize('NFKC').toLocaleLowerCase().includes(query)));
+    const sorted = sortSubmissionStatus(filtered, dialog.querySelector('.tss-sort').value);
+    dialog.querySelectorAll('[data-tss-filter]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.tssFilter === filter)));
+    dialog.querySelector('.tss-result-count').textContent = sorted.length + '名を表示';
+    dialog.querySelector('.tss-student-grid').innerHTML = sorted.length ? sorted.map(row => `
+      <article class="tss-student tss-${row.status}">
+        <div class="tss-student-heading"><span>No. ${esc(row.student.student_number || '—')}</span><strong>${esc(row.student.display_name || '名前未登録')}</strong></div>
+        <div class="tss-student-status">${esc(row.label)}${row.legacyPassed ? '（旧基準）' : ''}</div>
+        <div class="tss-metrics"><span>挑戦 <b>${row.attempts}回</b></span><span>Accuracy <b>${row.accuracy == null ? '—' : esc(row.accuracy)+'%'}</b></span><span>WPM <b>${row.wpm == null ? '—' : esc(row.wpm)}</b></span></div>
+        <div class="tss-last">最終提出：${row.last ? esc(new Date(row.last).toLocaleString('ja-JP')) : '—'}${row.manualOnly ? ' · 手入力記録あり' : ''}</div>
+      </article>`).join('') : '<p class="tss-empty">該当する生徒はいません。</p>';
+  }
+  dialog.addEventListener('click', event => {
+    const button = event.target.closest('[data-tss-filter]');
+    if (button) { filter = button.dataset.tssFilter; refresh(); }
+    if (event.target.closest('.tss-close')) dialog.close();
+  });
+  dialog.querySelector('.tss-sort').addEventListener('change', refresh);
+  dialog.querySelector('.tss-search').addEventListener('input', refresh);
+  dialog.addEventListener('close', () => {
+    dialog.remove();
+    if (submissionStatusDialog === dialog) submissionStatusDialog = null;
+    if (previousFocus?.isConnected) previousFocus.focus({preventScroll:true});
+  }, {once:true});
+  document.body.append(dialog);
+  refresh();
+  dialog.showModal();
+}
+
 function renderAssignmentManager() {
   const root = $('#assignmentManagementList');
   if (!root) return;
@@ -532,12 +609,13 @@ function renderAssignmentManager() {
             <div class="ta-heading-copy">
               <div class="ta-thumbnail-title">
                 <img class="ta-thumbnail" data-assignment-thumb-id="${id}" data-thumb-key="${esc(item.thumbnail_object_key || '')}" src="${thumbnailUrl(item.thumbnail_data_url)}" alt="" loading="lazy">
-                <div class="teacher-assignment-title">${esc(item.title)}</div>
+                <button type="button" class="teacher-assignment-title tss-title-button" data-assignment-action="submissions" data-assignment-id="${id}" title="課題の提出状況を見る">${esc(item.title)}</button>
               </div>
               <div class="teacher-assignment-meta">
                 <span>${icon('book')}${esc(item.category || 'Reading')}</span>
                 <span>${icon('calendar')}${esc(assignmentDateTimeLabel(item.release_at))} ～ ${esc(assignmentDateTimeLabel(item.due_at))}</span>
-                <span>${icon('users')}${counts.get(item.id) || 0}件の提出</span>
+                <span>${icon('users')}${counts.get(item.id) || 0}件の提出記録</span>
+                 <button type="button" class="tss-open-button" data-assignment-action="submissions" data-assignment-id="${id}">${icon('users')} 提出状況</button>
                 <span class="assignment-publish-badge ${published ? 'published' : 'draft'}">${published ? '公開中' : '非公開'}</span>
                 <span class="ta-status-badge ta-status-${statusClass}">${status}</span>
               </div>
@@ -5018,6 +5096,11 @@ function openAssignmentEditor(
   editingAssignmentId =
     assignment?.id ||
     null;
+  const submissionButton = $('#assignmentEditorSubmissionStatus');
+  if (submissionButton) {
+    submissionButton.disabled = !assignment?.id;
+    submissionButton.title = assignment?.id ? '保存済み課題の提出状況を見る' : '課題を保存してから提出状況を確認できます';
+  }
 
 
   const release =
@@ -8059,7 +8142,7 @@ async function loadClass(
       'class_roster'
     )
     .select(
-      'linked_student_id, student_number'
+      'linked_student_id, student_number, display_name'
     )
     .eq(
       'class_id',
@@ -8073,6 +8156,7 @@ if (rosterError) {
 }
 
 
+submissionRoster = rosterRows || [];
 const studentNumberMap =
   new Map(
     (rosterRows || [])
@@ -10813,6 +10897,11 @@ $('#assignmentClassList')
     }
   );
 
+$('#assignmentEditorSubmissionStatus')?.addEventListener('click', () => {
+  const assignment = assignments.find(item => item.id === editingAssignmentId);
+  if (assignment) openSubmissionStatus(assignment);
+});
+
 $('#assignmentRelease').onchange =
   updateDueDate;
 
@@ -10911,7 +11000,9 @@ assignmentManagerRoot?.addEventListener('keydown', event => {
 
       try {
 
-        if (action === 'practice') {
+        if (action === 'submissions') {
+          openSubmissionStatus(assignment);
+        } else if (action === 'practice') {
           await openTeacherReadingPractice(assignment);
 
         } else if (action === 'deadline') {
