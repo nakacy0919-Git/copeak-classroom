@@ -243,3 +243,48 @@
   #assignmentManagementList .ta-card-controls{gap:4px;flex-wrap:wrap;justify-content:flex-end}
 }
 @media(prefers-reduced-motion:reduce){#assignmentManagementList .ta-group-toggle .ta-icon{transition:none}}
+
+/* Teacher assignment status: responsive, accessible, teacher-only. */
+.tss-title-button{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:800;text-align:left;padding:0;cursor:pointer;overflow-wrap:anywhere}
+.tss-title-button:hover{text-decoration:underline;text-underline-offset:3px}
+.tss-open-button{display:inline-flex;align-items:center;gap:5px;background:#eef7ff;color:#174e80;border:1px solid #bddbf5;border-radius:8px;padding:5px 9px;font:inherit;font-weight:750;cursor:pointer}
+.tss-open-button .ta-icon{width:15px;height:15px}
+.tss-editor-button:disabled{opacity:.5;cursor:not-allowed}
+.tss-dialog{box-sizing:border-box;width:min(1100px,96vw);max-width:96vw;max-height:92vh;max-height:92dvh;padding:0;border:1px solid #dce5eb;border-radius:20px;background:#fff;color:#172b3d;box-shadow:0 20px 65px #15263745;overflow:auto}
+.tss-dialog::backdrop{background:#13253c99}
+.tss-shell{padding:clamp(12px,2.5vw,26px)}
+.tss-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.tss-header h2{margin:5px 0;font-size:clamp(18px,3vw,28px);overflow-wrap:anywhere}
+.tss-header p,.tss-hint{margin:4px 0;color:#526475;font-size:13px;line-height:1.6}
+.tss-kicker{font-weight:800;font-size:11px;letter-spacing:.07em;color:#536d84}
+.tss-close{flex:0 0 40px;width:40px;height:40px;border:1px solid #d5dee6;border-radius:10px;background:#f7f9fb;font-size:25px;cursor:pointer}
+.tss-progress{height:8px;border-radius:10px;background:#e9eef3;margin:15px 0 8px;overflow:hidden}
+.tss-progress span{display:block;height:100%;background:#18804f}
+.tss-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+.tss-unattempted{--tss-bg:#fff0f0;--tss-ink:#a32e36;--tss-border:#f1b5ba}
+.tss-working{--tss-bg:#fff3e2;--tss-ink:#91500b;--tss-border:#edca91}
+.tss-near{--tss-bg:#fffbe0;--tss-ink:#735b00;--tss-border:#e5d57a}
+.tss-passed{--tss-bg:#eaf8ef;--tss-ink:#17613b;--tss-border:#a9dcc1}
+.tss-summary-card,.tss-student{background:var(--tss-bg);border:1px solid var(--tss-border);color:var(--tss-ink);border-radius:12px;min-width:0;padding:12px}
+.tss-summary-card{display:flex;flex-direction:column;align-items:flex-start;gap:5px;cursor:pointer;font:inherit;font-weight:700;text-align:left}
+.tss-summary-card strong{font-size:27px;font-variant-numeric:tabular-nums}
+.tss-summary-card small{font-size:12px}
+.tss-summary-card[aria-pressed=true]{outline:2px solid var(--tss-ink);outline-offset:2px}
+.tss-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:10px 0;font-size:13px}
+.tss-controls button,.tss-controls select,.tss-controls input{border:1px solid #cbd7e2;border-radius:8px;background:#fff;color:#243b50;font:inherit;padding:8px;min-height:36px;max-width:100%;box-sizing:border-box}
+.tss-controls button{cursor:pointer}
+.tss-controls button[aria-pressed=true]{background:#1b4568;color:white;border-color:#1b4568}
+.tss-controls label{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.tss-result-count{font-size:12px;color:#617181;margin:8px 0}
+.tss-student-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:9px}
+.tss-student{border-left:4px solid var(--tss-ink)}
+.tss-student-heading{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;color:#192d40}
+.tss-student-heading span{font-size:12px;color:var(--tss-ink);white-space:nowrap}
+.tss-student-heading strong{font-size:16px;overflow-wrap:anywhere}
+.tss-student-status{font-size:12px;font-weight:800;margin:8px 0}
+.tss-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;color:#435566;font-size:11px}
+.tss-metrics b{display:block;color:#172b3d;font-size:16px;font-variant-numeric:tabular-nums}
+.tss-last{font-size:11px;color:#536575;margin-top:8px;overflow-wrap:anywhere}
+.tss-empty{grid-column:1/-1;padding:20px;text-align:center;color:#526475}
+.tss-dialog button:focus-visible,.tss-title-button:focus-visible,.tss-open-button:focus-visible{outline:3px solid #2271b1;outline-offset:2px}
+@media(max-width:600px){.tss-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.tss-summary-card strong{font-size:23px}.tss-controls label{width:100%}.tss-controls label select,.tss-controls label input{flex:1;min-width:0}}
