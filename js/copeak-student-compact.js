@@ -12,6 +12,13 @@
   link.rel = 'stylesheet'; link.href = cssUrl.href;
   link.id = 'csoV3Styles';
   document.head.append(link);
+  const ruleStyle=makeRuleStyle();
+  document.head.append(ruleStyle);
+  function makeRuleStyle(){
+    const style=document.createElement('style');
+    style.textContent='#csoBoard .cso-pass-rule,#csoModal .cso-pass-rule{display:grid;gap:4px;margin:7px 0 9px;padding:8px 10px;border:1px solid #eedcc1;border-radius:10px;background:#fffbf2;color:#63451d;font-size:11px;line-height:1.45;white-space:normal;overflow-wrap:anywhere;text-align:left}#csoBoard .cso-pass-rule.is-passed,#csoModal .cso-pass-rule.is-passed{background:#f0faf3;border-color:#c7e3d0;color:#23543c}#csoBoard .cso-pass-rule strong,#csoModal .cso-pass-rule strong{font-size:12px;font-weight:800}#csoBoard .cso-pass-rule span,#csoModal .cso-pass-rule span{font-weight:650}#csoModal .cso-pass-rule{font-size:14px;padding:12px;margin-top:12px}#csoModal .cso-pass-rule strong{font-size:15px}#csoModal .cso-criteria .student-pass-guide{display:block!important;visibility:visible!important;font-size:13px;line-height:1.6;white-space:normal;color:#43564f}';
+    return style;
+  }
 
   const ICONS = {
     book: '<path d="M12 6.2c-2.6-2-5.9-2.3-9-1.3v13.5c3.3-1.2 6.5-.7 9 1.2m0-13.4c2.6-2 5.9-2.3 9-1.3v13.5c-3.3-1.2-6.5-.7-9 1.2m0-13.4v13.4"/>',
@@ -215,6 +222,33 @@
     const remaining=left>24*3600000?'あと2日':left>=3600000?'あと'+Math.ceil(left/3600000)+'時間':left>=60000?'あと'+Math.ceil(left/60000)+'分':'あと1分未満';
     return {kind:'urgent',remaining};
   }
+  function passRule(item){
+    if(item.type!=='copeak'||!item.pct)return null;
+    const panel=item.pct, guide=clean(panel.querySelector('.student-pass-guide')?.textContent);
+    const ja=!/Values|Your previous PASS/i.test(guide);
+    const gauges=[...panel.querySelectorAll('.student-gauge-card')];
+    const targets=gauges.map(g=>{
+      const name=clean(g.querySelector('.student-gauge-label')?.textContent);
+      const raw=clean(g.querySelector('.student-gauge-goal-text')?.textContent);
+      const value=raw.match(/[0-9]+(?:\.[0-9]+)?%?/)?.[0];
+      return name&&value?name+' '+value+(ja?'以上':'+'):'';
+    }).filter(Boolean);
+    const passed=panel.classList.contains('passed');
+    const legacy=/旧基準|previous rule/i.test(clean(panel.querySelector('.student-pass-status')?.textContent));
+    const both=targets.length>1;
+    const separate=!passed&&both&&gauges.every(g=>g.classList.contains('reached'));
+    const status=legacy?(ja?'合格済み（旧基準）':'PASS (previous rule)'):passed?(ja?'合格済み':'PASS'):separate?(ja?'未合格：別々の回で目標達成':'Not passed: targets met separately'):panel.classList.contains('waiting')?(ja?'未挑戦':'Not attempted'):(ja?'未合格':'Not passed');
+    const instruction=legacy?'':ja?(both?'1回の音読で両方を同時達成':'1回の音読で設定基準を達成'):(both?'Meet both targets in the same reading':'Meet the target in one reading');
+    return {status,targets,instruction,passed,ja};
+  }
+  function ruleNotice(item){
+    const rule=passRule(item);if(!rule)return null;
+    const node=make('div','cso-pass-rule'+(rule.passed?' is-passed':''));
+    node.append(make('strong','',rule.status));
+    if(rule.targets.length)node.append(make('span','',rule.targets.join(' ＋ ')));
+    if(rule.instruction)node.append(make('span','',rule.instruction));
+    return node;
+  }
   function tile(item){
     const reading=item.type==='copeak', d=deadlineState(item);
     const b=make('button','cso-tile '+(reading?'cso-green cso-reading-card':'cso-pink')+(item.done?' cso-complete':'')+(item.overdue||d.kind==='expired'?' cso-expired':'')+(d.kind==='urgent'?' cso-deadline-urgent':''));
@@ -239,6 +273,7 @@
     const stamp=make('span','cso-tile-illustration');stamp.append(icon(glyph(item),22));
     if(reading)inner.append(stamp,textBlock);else inner.append(textBlock,stamp);
     b.append(inner);
+    const rule=ruleNotice(item);if(rule)b.append(rule);
     const foot=make('div','cso-tile-footer');
     if(reading){
       const deadline=make('span','cso-deadline-box cso-deadline-'+d.kind);
@@ -277,7 +312,7 @@
     // Keep unchanged cards in place across the one-second countdown render.
     // This also preserves keyboard focus and the deadline pulse animation.
     const pageItems=ordered.slice(main.page*limit,(main.page+1)*limit);
-    const signature=JSON.stringify([main.status,main.source,main.page,pageItems.map(item=>[item.key,item.title,item.assignmentNo,item.assignmentLabel,item.status,item.done,item.upcoming,item.overdue,item.deadlineDate,item.deadline,item.headline,item.mode,deadlineState(item)])]);
+    const signature=JSON.stringify([main.status,main.source,main.page,pageItems.map(item=>[item.key,item.title,item.assignmentNo,item.assignmentLabel,item.status,item.done,item.upcoming,item.overdue,item.deadlineDate,item.deadline,item.headline,item.mode,passRule(item),deadlineState(item)])]);
     if(grid.dataset.cardSignature!==signature){
       grid.dataset.cardSignature=signature;
       grid.replaceChildren();for(const item of pageItems)grid.append(tile(item));
@@ -304,7 +339,8 @@
     const summary=make('div','cso-modal-grid');const left=make('div','cso-details-left');const right=make('div','cso-details-right');
     const description=make('section','cso-info-card');description.append(make('h3','','学習について'));const bits=make('div','cso-info-bits');bits.append(chip('layers',label(item)),chip('check',standardStatus(item)));if(item.deadline)bits.append(chip('clock',item.deadline));else if(item.subtitle){const d=item.subtitle.match(/締切.*/)?.[0];if(d)bits.append(chip('clock',d));}description.append(bits);
     if(item.type==='copeak'){
-      const panel=item.source.querySelector('.student-pass-panel');if(panel){const note=make('div','cso-criteria');note.append(make('h4','','合格基準と進捗'));note.append(panel.cloneNode(true));description.append(note);}
+      const rule=ruleNotice(item);if(rule)description.append(rule);
+      const panel=item.source.querySelector('.student-pass-panel');if(panel){const note=make('div','cso-criteria');const ja=passRule(item)?.ja!==false;note.append(make('h4','',ja?'項目別最高記録（参考・合格判定とは別）':'Separate personal bests — reference only'));const copy=panel.cloneNode(true);const title=copy.querySelector('.student-pass-title');if(title)title.textContent=ja?'項目別の目標と最高記録':'Individual targets and bests';copy.querySelectorAll('.student-gauge-goal-text,.student-gauge-goal-line span').forEach(el=>{el.textContent=el.textContent.replace(/合格/g,'目標');});note.append(copy);description.append(note);}
     }else{
       const details=item.source.querySelector('.psl-detail');if(details){const breakdown=details.cloneNode(true);breakdown.hidden=false;description.append(breakdown);}
     }
@@ -314,7 +350,7 @@
       const value=clean(scores[i].querySelector('strong')?.textContent)||'—';const cap=clean(scores[i].querySelector('span')?.textContent)||['最高達成率','練習回数','累計単語'][i];quick.append(kpi(cap,value,'',i===0?'target':i===1?'layers':'microphone'));}
     }else{
       const acc=num(item.acc),wpm=num(item.wpm),performance=num(item.performance),reads=num(item.reads);
-      quick.append(kpi('Accuracy',acc===null?'—':acc+'%','Gradebookと同じ最高記録・教員修正反映','target'),kpi('WPM',wpm===null?'—':String(wpm),'Gradebookと同じ最高記録・教員修正反映','bolt'),kpi('Reading Performance',performance===null?'—':performance+'/100','最高記録・教員修正反映','target'),kpi('音読回数',String(reads??0)+'回','提出された全音読記録','layers'));
+      quick.append(kpi('Accuracy',acc===null?'—':acc+'%','項目別最高記録（参考）・合格判定とは別','target'),kpi('WPM',wpm===null?'—':String(wpm),'項目別最高記録（参考）・合格判定とは別','bolt'),kpi('Reading Performance',performance===null?'—':performance+'/100','最高記録・教員修正反映','target'),kpi('音読回数',String(reads??0)+'回','提出された全音読記録','layers'));
       const latestA=num(item.latestAcc),latestW=num(item.latestWpm);
       if(latestA!==null||latestW!==null){const last=make('p','cso-kpi-note','最新の音読（参考）：Accuracy '+(latestA===null?'—':latestA+'%')+' / WPM '+(latestW===null?'—':latestW));last.style.margin='10px 0 0';perf.append(last);}
     }
